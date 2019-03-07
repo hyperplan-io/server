@@ -18,6 +18,8 @@ import scala.util.Properties.envOrNone
 import services.http.PredictionService
 import scala.concurrent.ExecutionContext
 
+import services.serialization.CirceEncoders._
+
 object Server {
   val port: Int = envOrNone("HTTP_PORT").fold(9090)(_.toInt)
 
