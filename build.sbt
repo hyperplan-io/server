@@ -3,6 +3,7 @@ val Specs2Version = "4.1.0"
 val LogbackVersion = "1.2.3"
 val ScalazZIOVersion = "1.0-RC1"
 val circeVersion = "0.10.0"
+val DoobieVersion = "0.6.0"
 
 fork in run := true
 
@@ -20,12 +21,13 @@ lazy val root = (project in file("."))
       "ch.qos.logback"  %  "logback-classic"         % LogbackVersion,
       "org.scalaz"      %% "scalaz-zio"              % ScalazZIOVersion,
       "org.scalaz"      %% "scalaz-zio-interop-cats" % ScalazZIOVersion,
-      "org.scalaz"      %% "scalaz-zio-interop-shared" % ScalazZIOVersion,
       "org.scalaz"      %% "scalaz-zio-interop-future" % ScalazZIOVersion,
       "io.circe" %% "circe-core" % circeVersion,
       "io.circe" %% "circe-generic" % circeVersion,
       "io.circe" %% "circe-parser" % circeVersion,
-      "com.amazonaws" % "aws-java-sdk-kinesis" % "1.11.514"
+      "org.tpolecat"    %% "doobie-core"                % DoobieVersion,
+      "org.tpolecat"    %% "doobie-postgres"            % DoobieVersion,
+      "org.tpolecat"    %% "doobie-scalatest"           % DoobieVersion,
     ),
     addCompilerPlugin("org.spire-math" %% "kind-projector"     % "0.9.6"),
     addCompilerPlugin("com.olegpy"     %% "better-monadic-for" % "0.2.4")
