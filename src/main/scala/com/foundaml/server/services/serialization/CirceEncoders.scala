@@ -6,6 +6,8 @@ import com.foundaml.server.models._
 
 object CirceEncoders {
 
-  implicit val predictionDecoder: Decoder[Prediction] = deriveDecoder[Prediction]
-	implicit val predictionEncoder: Encoder[Prediction] = deriveEncoder[Prediction]
+  implicit val predictionDecoder: Decoder[Prediction] =
+    deriveDecoder[Prediction]
+  implicit val predictionEncoder: Encoder[Prediction] =
+    deriveEncoder[Prediction]
 }
