@@ -15,8 +15,10 @@ import scalaz.zio.interop.catz.taskEffectInstances
 import org.http4s.server.blaze.BlazeBuilder
 import scala.concurrent.duration.{FiniteDuration, NANOSECONDS, TimeUnit}
 import scala.util.Properties.envOrNone
-import services.http.PredictionsHttpService
+import services.infrastructure.http.PredictionsHttpService
 import scala.concurrent.ExecutionContext
+
+import com.foundaml.server.services.domain._
 
 import services.serialization.CirceEncoders._
 
@@ -37,12 +39,13 @@ object Server {
       zioClock.sleep(Duration.fromScala(duration))
   }
 
-  def predictionService = new PredictionsHttpService[Task].service
-
-  def stream(implicit ec: ExecutionContext) =
+  def stream(predictionsService: PredictionsService)(implicit ec: ExecutionContext) =
     BlazeBuilder[Task]
       .bindHttp(8080, "0.0.0.0")
-      .mountService(predictionService, "/predictions")
+      .mountService(
+        new PredictionsHttpService(predictionsService).service, 
+        "/predictions"
+      )
       .serve
 
 }

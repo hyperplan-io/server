@@ -17,9 +17,10 @@ import scalaz.zio.interop.catz._
 import scalaz.zio.{IO, App, ZIO, Promise, Task}
 
 import services._
+import services.domain._
 import services.serialization._
 import services.streaming._
-import services.http._
+import services.infrastructure.http._
 import services.infrastructure.storage._
 
 import models._
@@ -53,6 +54,7 @@ object Main extends App {
     for {
       _ <- printLine("Connected to database")
       jsonService = new JsonService()
+      predictionsService = new PredictionsService()
       kinesisService <- KinesisService("us-east-2", jsonService)
       _ <- printLine("Services have been correctly instanciated")
       predictionId = "test-id"
@@ -61,7 +63,7 @@ object Main extends App {
         "test",
         predictionId
       )
-      _ <- Server.stream.compile.drain
+      _ <- Server.stream(predictionsService).compile.drain
     } yield ()
 
   def program(): Task[Unit] =
