@@ -25,5 +25,7 @@ class HelloWorldSpec extends org.specs2.mutable.Specification {
     retHelloWorld.status must beEqualTo(Status.Ok)
 
   private[this] def uriReturnsHelloWorld(): MatchResult[String] =
-    retHelloWorld.as[String].unsafeRunSync() must beEqualTo("{\"message\":\"Hello, world\"}")
+    retHelloWorld.as[String].unsafeRunSync() must beEqualTo(
+      "{\"message\":\"Hello, world\"}"
+    )
 }
