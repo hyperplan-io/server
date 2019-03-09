@@ -33,8 +33,6 @@ class PredictionsHttpService(predictionsService: PredictionsService) extends Htt
   val service: HttpService[Task] = {
     HttpService[Task] {
       case req @ POST -> Root =>
-
-
           Ok(for {
           predictionRequest <- req.as[PredictionRequest]
           prediction <- predict(predictionRequest)
@@ -45,7 +43,7 @@ class PredictionsHttpService(predictionsService: PredictionsService) extends Htt
 
 
   def predict(request: PredictionRequest) ={
-    def compute(features: TensorFlowClassificationFeatures): TensorFlowClassificationLabels =
+    def compute(features: Features): Labels =
       TensorFlowClassificationLabels(
         List(
           TensorFlowClassicationLabel(
@@ -57,22 +55,20 @@ class PredictionsHttpService(predictionsService: PredictionsService) extends Htt
         )
        ) 
         
-       val defaultAlgorithm = Algorithm[TensorFlowClassificationFeatures, TensorFlowClassificationLabels](
+       val defaultAlgorithm = Algorithm(
         "algorithm id",
         Local(compute)
         )
       
-        val project = Project[
-          TensorFlowClassificationFeatures,
-          TensorFlowClassificationLabels
-        ](
+        val project = Project(
           "id",
           "example project",
           Classification,
+          "tf.cl",
+          "tf.cl",
           Map.empty,
           DefaultAlgorithm(defaultAlgorithm) 
         )
-
     request.features match {
       case f: TensorFlowClassificationFeatures =>
         predictionsService.predict(

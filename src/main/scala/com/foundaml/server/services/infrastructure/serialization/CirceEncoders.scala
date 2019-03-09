@@ -20,7 +20,6 @@ import scalaz.zio.interop.catz._
 
 object CirceEncoders {
 
-  implicit val requestDecoder: EntityDecoder[Task, PredictionRequest] = jsonOf[Task, PredictionRequest]
 
   implicit val oneToManyDecoder: Decoder[OneToMany] =
     deriveDecoder[OneToMany]

@@ -10,4 +10,4 @@ case class TensorFlowClassicationLabel(
 )
 case class TensorFlowClassificationLabels(
   predictions: List[TensorFlowClassicationLabel]
-)
+) extends Labels
