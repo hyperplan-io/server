@@ -8,6 +8,7 @@ import org.http4s.server.blaze.BlazeBuilder
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.{FiniteDuration, NANOSECONDS, TimeUnit}
+import scala.util.{Left, Right}
 
 import scalaz.zio.clock.Clock
 import scalaz.zio.duration.Duration
@@ -19,6 +20,7 @@ import services._
 import services.serialization._
 import services.streaming._
 import services.http._
+import services.infrastructure.storage._
 
 import models._
 
@@ -47,9 +49,9 @@ object Main extends App {
       1
     }, _ => 0))
 
-  def program(): Task[Unit] =
+  def databaseConnected() =
     for {
-      _ <- printLine("Starting Foundaml server")
+      _ <- printLine("Connected to database")
       jsonService = new JsonService()
       kinesisService <- KinesisService("us-east-2", jsonService)
       _ <- printLine("Services have been correctly instanciated")
@@ -60,6 +62,29 @@ object Main extends App {
         predictionId
       )
       _ <- Server.stream.compile.drain
+    } yield ()
+
+  def program(): Task[Unit] =
+    for {
+      _ <- printLine("Starting Foundaml server")
+      _ <- printLine("Connecting to database")
+      transactor = PostgresqlService(
+        "127.0.0.1",
+        "5432",
+        "test",
+        "postgres",
+        "postgres"
+      )
+      _ <- transactor.use { implicit xa =>
+        PostgresqlService.testConnection.flatMap {
+          _.toEither match {
+            case Right(ret) =>
+              databaseConnected()
+            case Left(err) =>
+              printLine(s"Could not connect to the database: $err")
+          }
+        }
+      }
     } yield ()
 
   def printLine(whatToPrint: String) =
