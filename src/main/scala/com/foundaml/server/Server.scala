@@ -39,11 +39,13 @@ object Server {
       zioClock.sleep(Duration.fromScala(duration))
   }
 
-  def stream(predictionsService: PredictionsService)(implicit ec: ExecutionContext) =
+  def stream(
+      predictionsService: PredictionsService
+  )(implicit ec: ExecutionContext) =
     BlazeBuilder[Task]
       .bindHttp(8080, "0.0.0.0")
       .mountService(
-        new PredictionsHttpService(predictionsService).service, 
+        new PredictionsHttpService(predictionsService).service,
         "/predictions"
       )
       .serve

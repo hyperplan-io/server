@@ -17,11 +17,11 @@ case class DefaultAlgorithm(algorithm: Algorithm) extends AlgorithmPolicy {
 //case class ABTesting[FeatureType, LabelType](algorithms: List[Algorithm[FeatureType, LabelType]], weights: List[Float]) extends AlgorithmPolicy[FeatureType, LabelType]
 
 case class Project(
-  id: String,
-  name: String,
-  problem: ProblemType,
-  featureType: String,
-  labelType: String,
-  algorithms: Map[String, Algorithm],
-  policy: AlgorithmPolicy
+    id: String,
+    name: String,
+    problem: ProblemType,
+    featureType: String,
+    labelType: String,
+    algorithms: Map[String, Algorithm],
+    policy: AlgorithmPolicy
 )
