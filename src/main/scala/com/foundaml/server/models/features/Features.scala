@@ -7,7 +7,7 @@ case class OneToMany[K,V](
   values: List[V]
 )
 
-case class TensorFlowFeatures(
+case class TensorFlowClassificationFeatures(
   signatureName: String,
   instances: List[OneToMany[String, Double]]
 ) extends Features

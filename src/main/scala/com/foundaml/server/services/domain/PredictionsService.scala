@@ -8,7 +8,11 @@ class PredictionsService {
   def predictWithProjectPolicy[FeatureType, LabelType](
     features: FeatureType,
     project: Project[FeatureType, LabelType]
-  ) = ???
+  ) = 
+    predictWithAlgorithm(
+      features,
+      project.policy.take()
+    )
 
 
   def predictWithAlgorithm[FeatureType, LabelType](
