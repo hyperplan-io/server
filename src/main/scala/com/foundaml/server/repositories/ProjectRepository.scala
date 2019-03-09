@@ -11,9 +11,9 @@ import scalaz.zio.interop.catz._
 
 import com.foundaml.server.models.Project
 
-class ProjectsRepository(implicit xa: HikariTransactor[Task]){
+class ProjectsRepository(implicit xa: HikariTransactor[Task]) {
 
-  def insert(project: Project) = 
+  def insert(project: Project) =
     sql"""INSERT INTO projects(
       id, 
       name, 
@@ -29,5 +29,16 @@ class ProjectsRepository(implicit xa: HikariTransactor[Task]){
       ${project.featureType.toString},
       ${project.labelType.toString},
     )""".update
+
+  def read(projectId: String) =
+    sql"""
+      SELECT id, name, problem, policy, feature_type, label_type
+      FROM projects
+      WHERE id=${projectId}
+      """
+      .query[(String, String, String, String, String, String)]
+      .unique
+      .transact(xa)
+      .run
 
 }
