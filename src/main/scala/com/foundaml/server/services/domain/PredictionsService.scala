@@ -1,5 +1,7 @@
 package com.foundaml.server.services.domain
 
+import scalaz.zio.IO
+
 import com.foundaml.server.models.backends._
 import com.foundaml.server.models._
 
@@ -20,7 +22,7 @@ class PredictionsService {
     algorithm: Algorithm[FeatureType, LabelType]
   ) = algorithm.backend match {
     case local: Local[FeatureType, LabelType] =>
-      local.compute(features)
+      IO(local.compute(features))
   }
 
   def predict[FeatureType, LabelType](

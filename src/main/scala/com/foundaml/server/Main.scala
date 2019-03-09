@@ -71,7 +71,7 @@ object Main extends App {
       transactor = PostgresqlService(
         "127.0.0.1",
         "5432",
-        "test",
+        "postgres",
         "postgres",
         "postgres"
       )

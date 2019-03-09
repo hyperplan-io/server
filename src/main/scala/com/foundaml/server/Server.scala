@@ -15,7 +15,7 @@ import scalaz.zio.interop.catz.taskEffectInstances
 import org.http4s.server.blaze.BlazeBuilder
 import scala.concurrent.duration.{FiniteDuration, NANOSECONDS, TimeUnit}
 import scala.util.Properties.envOrNone
-import services.http.PredictionService
+import services.http.PredictionsHttpService
 import scala.concurrent.ExecutionContext
 
 import services.serialization.CirceEncoders._
@@ -37,7 +37,7 @@ object Server {
       zioClock.sleep(Duration.fromScala(duration))
   }
 
-  def predictionService = new PredictionService[Task].service
+  def predictionService = new PredictionsHttpService[Task].service
 
   def stream(implicit ec: ExecutionContext) =
     BlazeBuilder[Task]
