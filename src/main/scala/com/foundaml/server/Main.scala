@@ -42,14 +42,23 @@ object Main extends App {
 
   import services.serialization.CirceEncoders._
   def run(args: List[String]): ZIO[Environment, Nothing, Int] =
-    program().either.map(_.fold(_ => 1, _ => 0))
+    program().either.map(_.fold(err => {
+      println(err)
+      1
+    }, _ => 0))
 
   def program(): Task[Unit] =
     for {
       _ <- printLine("Starting Foundaml server")
       jsonService = new JsonService()
-      kinesisService = new KinesisService(jsonService)
-      _ <- kinesisService.put(Prediction("test id"))
+      kinesisService <- KinesisService("us-east-2", jsonService)
+      _ <- printLine("Services have been correctly instanciated")
+      predictionId = "test-id"
+      _ <- kinesisService.put(
+        Prediction(predictionId),
+        "test",
+        predictionId
+      )
       _ <- Server.stream.compile.drain
     } yield ()
 
