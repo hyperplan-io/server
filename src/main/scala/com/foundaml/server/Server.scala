@@ -18,25 +18,28 @@ import scala.util.Properties.envOrNone
 import services.http.PredictionService
 import scala.concurrent.ExecutionContext
 
+import services.serialization.CirceEncoders._
+
 object Server {
   val port: Int = envOrNone("HTTP_PORT").fold(9090)(_.toInt)
-
 
   implicit val timer: Timer[Task] = new Timer[Task] {
     val zioClock = Clock.Live.clock
 
     override def clock: effect.Clock[Task] = new effect.Clock[Task] {
-      override def realTime(unit: TimeUnit) = zioClock.nanoTime.map(unit.convert(_, NANOSECONDS))
+      override def realTime(unit: TimeUnit) =
+        zioClock.nanoTime.map(unit.convert(_, NANOSECONDS))
 
       override def monotonic(unit: TimeUnit) = zioClock.currentTime(unit)
     }
 
-    override def sleep(duration: FiniteDuration): Task[Unit] = zioClock.sleep(Duration.fromScala(duration))
+    override def sleep(duration: FiniteDuration): Task[Unit] =
+      zioClock.sleep(Duration.fromScala(duration))
   }
 
   def predictionService = new PredictionService[Task].service
 
-  def stream(implicit ec: ExecutionContext) = 
+  def stream(implicit ec: ExecutionContext) =
     BlazeBuilder[Task]
       .bindHttp(8080, "0.0.0.0")
       .mountService(predictionService, "/predictions")
