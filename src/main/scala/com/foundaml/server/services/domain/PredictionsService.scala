@@ -22,7 +22,7 @@ class PredictionsService {
       algorithm: Algorithm
   ) = algorithm.backend match {
     case local: Local =>
-      IO(local.compute(features))
+      IO(local.computed)
   }
 
   def predict(

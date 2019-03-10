@@ -16,7 +16,7 @@ import scalaz.zio.Task
 import scalaz.zio.interop.catz._
 
 import com.foundaml.server.services.infrastructure.http.requests._
-import com.foundaml.server.services.serialization.CirceEncoders._
+import com.foundaml.server.services.infrastructure.serialization.CirceEncoders._
 
 import com.foundaml.server.services.domain.PredictionsService
 
@@ -43,8 +43,8 @@ class PredictionsHttpService(predictionsService: PredictionsService)
   }
 
   def predict(request: PredictionRequest) = {
-    def compute(features: Features): Labels =
-      TensorFlowClassificationLabels(
+
+    val computed = TensorFlowClassificationLabels(
         List(
           TensorFlowClassicationLabel(
             List(1, 2, 3),
@@ -58,7 +58,7 @@ class PredictionsHttpService(predictionsService: PredictionsService)
     val projectId = "projectId"
     val defaultAlgorithm = Algorithm(
       "algorithm id",
-      Local(compute),
+      Local(computed),
       projectId
     )
 

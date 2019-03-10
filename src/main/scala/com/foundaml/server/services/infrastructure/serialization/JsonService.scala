@@ -1,4 +1,4 @@
-package com.foundaml.server.services.serialization
+package com.foundaml.server.services.infrastructure.serialization
 
 import io.circe._, io.circe.generic.auto._, io.circe.parser._, io.circe.syntax._
 import scalaz.zio.{IO}

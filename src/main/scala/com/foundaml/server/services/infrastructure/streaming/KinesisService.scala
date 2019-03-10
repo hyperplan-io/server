@@ -1,6 +1,6 @@
-package com.foundaml.server.services.streaming
+package com.foundaml.server.services.infrastructure.streaming
 
-import com.foundaml.server.services.serialization.JsonService
+import com.foundaml.server.services.infrastructure.serialization._
 
 import io.circe.Json
 import scalaz.zio.{IO, Task}

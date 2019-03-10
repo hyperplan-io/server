@@ -1,4 +1,4 @@
-package com.foundaml.server.services.serialization
+package com.foundaml.server.services.infrastructure.serialization
 
 import io.circe._
 import io.circe.generic.semiauto._
@@ -10,6 +10,8 @@ import com.foundaml.server.models.features._
 import cats.syntax.functor._
 import io.circe.{Decoder, Encoder}, io.circe.generic.auto._
 import io.circe.syntax._
+import io.circe.generic.extras.auto._
+import io.circe.generic.extras.Configuration
 
 import org.http4s._
 import org.http4s.circe._
@@ -19,6 +21,8 @@ import scalaz.zio.Task
 import scalaz.zio.interop.catz._
 
 object CirceEncoders {
+
+  val discriminator: Configuration = Configuration.default.withDiscriminator("class")
 
   implicit val oneToManyDecoder: Decoder[OneToMany] =
     deriveDecoder[OneToMany]

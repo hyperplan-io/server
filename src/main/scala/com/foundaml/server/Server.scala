@@ -20,7 +20,7 @@ import scala.concurrent.ExecutionContext
 
 import com.foundaml.server.services.domain._
 
-import services.serialization.CirceEncoders._
+import services.infrastructure.serialization.CirceEncoders._
 
 object Server {
   val port: Int = envOrNone("HTTP_PORT").fold(9090)(_.toInt)

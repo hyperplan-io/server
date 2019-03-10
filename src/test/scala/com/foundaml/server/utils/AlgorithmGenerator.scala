@@ -9,10 +9,7 @@ import java.util.UUID
 
 object AlgorithmGenerator {
 
-  def compute(
-      features: Features
-  ): Labels =
-    TensorFlowClassificationLabels(
+  val computed = TensorFlowClassificationLabels(
       List(
         TensorFlowClassicationLabel(
           List(1, 2, 3),
@@ -23,16 +20,16 @@ object AlgorithmGenerator {
       )
     )
 
-  val defaultAlgorithm = Algorithm(
+   val defaultAlgorithm = Algorithm(
     "algorithm id",
-    Local(compute),
+    Local(computed),
     "test project id"
   )
 
   def withLocalBackend() =
     Algorithm(
       UUID.randomUUID().toString,
-      Local(compute),
+      Local(computed),
       UUID.randomUUID().toString
     )
 

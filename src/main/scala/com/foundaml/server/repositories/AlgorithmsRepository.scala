@@ -10,8 +10,21 @@ import scalaz.zio.Task
 import scalaz.zio.interop.catz._
 
 import com.foundaml.server.models.Algorithm
+import com.foundaml.server.models.backends._
+
+import com.foundaml.server.services.infrastructure.serialization._
+
+import io.circe.generic.extras.auto._
+import io.circe.parser.decode
+import io.circe.syntax._
+import io.circe.generic.extras.Configuration, io.circe.generic.extras.auto._
 
 class AlgorithmsRepository(implicit xa: Transactor[Task]) {
+  
+    implicit val discriminator: Configuration = CirceEncoders.discriminator 
+
+    implicit val backendGet: Get[Backend] = Get[String].map(BackendSerializer.fromString)
+    implicit val backendPut: Put[Backend] = Put[String].contramap(BackendSerializer.toString)
 
   def insert(algorithm: Algorithm) =
     sql"""INSERT INTO algorithms(
@@ -20,7 +33,7 @@ class AlgorithmsRepository(implicit xa: Transactor[Task]) {
       project_id
     ) VALUES(
       ${algorithm.id},
-      ${algorithm.backend.toString},
+      ${algorithm.backend},
       ${algorithm.projectId}
     )""".update
 
@@ -30,7 +43,7 @@ class AlgorithmsRepository(implicit xa: Transactor[Task]) {
       FROM algorithms 
       WHERE id=${algorithmId}
       """
-      .query[(String, String, String)]
+      .query[Algorithm]
 
   def readForProject(projectId: String) =
     sql"""
@@ -38,13 +51,13 @@ class AlgorithmsRepository(implicit xa: Transactor[Task]) {
       FROM algorithms 
       WHERE project_id=${projectId}
       """
-      .query[(String, String, String)]
+      .query[Algorithm]
 
   def readAll() =
     sql"""
       SELECT id, backend, project_id 
       FROM algorithms 
       """
-      .query[(String, String, String)]
+      .query[Algorithm]
 
 }
