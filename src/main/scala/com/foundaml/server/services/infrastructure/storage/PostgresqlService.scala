@@ -7,6 +7,7 @@ import doobie.util.ExecutionContexts
 import scalaz.zio.Task
 import scalaz.zio.interop.catz._
 import cats.implicits._
+import cats.effect.{Resource}
 
 object PostgresqlService {
 
@@ -19,7 +20,7 @@ object PostgresqlService {
       database: String,
       username: String,
       password: String
-  ) = {
+  ): Resource[Task, HikariTransactor[Task]] = {
     for {
       ce <- ExecutionContexts.fixedThreadPool[Task](32) // our connect EC
       te <- ExecutionContexts.cachedThreadPool[Task]

@@ -19,8 +19,8 @@ class PredictionsServiceSpec extends FlatSpec {
     )
 
     def compute(
-        features: TensorFlowClassificationFeatures
-    ): TensorFlowClassificationLabels =
+        features: Features 
+    ): Labels =
       TensorFlowClassificationLabels(
         List(
           TensorFlowClassicationLabel(
@@ -32,20 +32,18 @@ class PredictionsServiceSpec extends FlatSpec {
         )
       )
 
-    val defaultAlgorithm = Algorithm[
-      TensorFlowClassificationFeatures,
-      TensorFlowClassificationLabels
-    ](
+    val defaultAlgorithm = Algorithm(
       "algorithm id",
       Local(compute)
     )
-
     val project = Project(
       "id",
       "example project",
       Classification,
+      "tf.cl",
+      "tf.cl",
       Map.empty,
-      DefaultAlgorithm(defaultAlgorithm)
+      DefaultAlgorithm(defaultAlgorithm) 
     )
 
     val prediction = predictionsService.predict(
