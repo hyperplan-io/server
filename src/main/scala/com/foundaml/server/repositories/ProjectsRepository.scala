@@ -38,4 +38,11 @@ class ProjectsRepository(implicit xa: Transactor[Task]) {
       """
       .query[(String, String, String, String, String, String)]
 
+  def readAll() =
+    sql"""
+      SELECT id, name, problem, algorithm_policy, feature_class, label_class
+      FROM projects
+      """
+      .query[(String, String, String, String, String, String)]
+
 }
