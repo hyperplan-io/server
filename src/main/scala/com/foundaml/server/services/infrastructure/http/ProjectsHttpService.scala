@@ -44,19 +44,36 @@ class ProjectsHttpService(
       case req @ POST -> Root =>
         Ok(for {
           request <- req.as[PostProjectRequest]
-          _ <- projectsRepository.insert(
-              Project(
+          project = Project(
                 UUID.randomUUID().toString,
                 request.name,
-                Classification,
+                Classification(),
                 request.featureType,
                 request.labelType,
                 Map.empty,
                 NoAlgorithm()
               )
+          _ <- projectsRepository.insert(project)
+        } yield project.asJson)
+      case GET -> Root / projectId =>
+        (for {
+          project <- projectsRepository.read(projectId)
+        } yield project).flatMap {
+          case (id, name, Right(problem), Right(algorithmPolicy), featureClass, labelClass) =>
+            Ok(
+              Project(
+                id,
+                name,
+                problem,
+                featureClass,
+                labelClass,
+                Map.empty,
+                algorithmPolicy
+              ).asJson
             )
-          _ = println(request)
-        } yield Json.fromString(""))
+          case _ =>
+            BadRequest("there is an error with this project")
+        }
     }
   }
 

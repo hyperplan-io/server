@@ -19,18 +19,15 @@ import com.foundaml.server.models._
 
 import io.circe._, io.circe.generic.semiauto._
 import io.circe.parser.decode, io.circe.syntax._
-import io.circe.parser.decode
 import io.circe.syntax._
 
 object ProblemTypeSerializer {
 
-  val discriminator: Configuration = Configuration.default.withDiscriminator("problem")
-
-  def toString(labels: ProblemType)(implicit encoder: Encoder[ProblemType]): String = {
-   labels.asJson.noSpaces 
+  def toString(problem: ProblemType)(implicit encoder: Encoder[ProblemType]): String = {
+   problem.asJson.noSpaces 
   }
 
-  def fromString(n: String)(implicit decoder: Decoder[ProblemType]): ProblemType = {
-    decode[ProblemType](n).right.get
+  def fromString(n: String)(implicit decoder: Decoder[ProblemType]): Either[io.circe.Error, ProblemType] = {
+    decode[ProblemType](n)
   }
 }
