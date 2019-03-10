@@ -26,6 +26,8 @@ import services.infrastructure.storage._
 
 import models._
 
+import repositories._
+
 object Main extends App {
 
   implicit val timer: Timer[Task] = new Timer[Task] {
@@ -50,11 +52,13 @@ object Main extends App {
       1
     }, _ => 0))
 
-  def databaseConnected() =
+  def databaseConnected(implicit xa: doobie.Transactor[Task]) =
     for {
       _ <- printLine("Connected to database")
       jsonService = new JsonService()
       predictionsService = new PredictionsService()
+      projectsRepository = new ProjectsRepository
+      algorithmsRepository = new AlgorithmsRepository
       kinesisService <- KinesisService("us-east-2", jsonService)
       _ <- printLine("Services have been correctly instanciated")
       predictionId = "test-id"
@@ -63,7 +67,11 @@ object Main extends App {
         "test",
         predictionId
       )
-      _ <- Server.stream(predictionsService).compile.drain
+      _ <- Server.stream(
+        predictionsService,
+        projectsRepository,
+        algorithmsRepository
+      ).compile.drain
     } yield ()
 
   def program(): Task[Unit] =
@@ -81,7 +89,7 @@ object Main extends App {
         PostgresqlService.testConnection.flatMap {
           _.toEither match {
             case Right(ret) =>
-              databaseConnected()
+              databaseConnected
             case Left(err) =>
               printLine(s"Could not connect to the database: $err")
           }

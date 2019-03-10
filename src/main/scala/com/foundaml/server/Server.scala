@@ -19,6 +19,7 @@ import services.infrastructure.http.PredictionsHttpService
 import scala.concurrent.ExecutionContext
 
 import com.foundaml.server.services.domain._
+import repositories._
 
 import services.infrastructure.serialization.CirceEncoders._
 
@@ -40,12 +41,18 @@ object Server {
   }
 
   def stream(
-      predictionsService: PredictionsService
+      predictionsService: PredictionsService,
+      projectsRepository: ProjectsRepository,
+      algorithmsRepository: AlgorithmsRepository
   )(implicit ec: ExecutionContext) =
     BlazeBuilder[Task]
       .bindHttp(8080, "0.0.0.0")
       .mountService(
-        new PredictionsHttpService(predictionsService).service,
+        new PredictionsHttpService(
+          predictionsService,
+          projectsRepository,
+          algorithmsRepository
+        ).service,
         "/predictions"
       )
       .serve
