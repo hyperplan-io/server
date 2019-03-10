@@ -2,8 +2,8 @@ val Http4sVersion = "0.20.0-M5"
 val Specs2Version = "4.1.0"
 val LogbackVersion = "1.2.3"
 val ScalazZIOVersion = "1.0-RC1"
-val circeVersion = "0.10.0"
-val DoobieVersion = "0.6.0"
+val circeVersion = "0.11.1"
+val DoobieVersion = "0.7.0-M3"
 
 fork in run := true
 
