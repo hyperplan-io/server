@@ -18,8 +18,9 @@ import scalaz.zio.{IO, App, ZIO, Promise, Task}
 
 import services._
 import services.domain._
-import services.serialization._
-import services.streaming._
+import services.infrastructure.serialization._
+import services.infrastructure.serialization.CirceEncoders._
+import services.infrastructure.streaming._
 import services.infrastructure.http._
 import services.infrastructure.storage._
 
@@ -43,7 +44,6 @@ object Main extends App {
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  import services.serialization.CirceEncoders._
   def run(args: List[String]): ZIO[Environment, Nothing, Int] =
     program().either.map(_.fold(err => {
       println(err)

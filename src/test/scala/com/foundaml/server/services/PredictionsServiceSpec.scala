@@ -10,7 +10,9 @@ import com.foundaml.server.models._
 
 import com.foundaml.server.utils._
 
-class PredictionsServiceSpec extends FlatSpec {
+import scalaz.zio.DefaultRuntime
+
+class PredictionsServiceSpec extends FlatSpec with DefaultRuntime {
 
   val predictionsService = new PredictionsService()
 
@@ -21,12 +23,12 @@ class PredictionsServiceSpec extends FlatSpec {
     )
 
     val project = ProjectGenerator.withLocalBackend()
-    val prediction = predictionsService.predict(
+    unsafeRun(predictionsService.predict(
       features,
       project,
       Some("algorithm id")
-    )
-
-    assert(prediction == ProjectGenerator.compute(features))
+      ).map(prediction => 
+        assert(prediction == ProjectGenerator.computed)
+      ))
   }
 }

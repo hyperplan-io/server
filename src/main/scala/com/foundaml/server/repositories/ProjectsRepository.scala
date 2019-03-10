@@ -9,9 +9,23 @@ import doobie.hikari.HikariTransactor
 import scalaz.zio.Task
 import scalaz.zio.interop.catz._
 
-import com.foundaml.server.models.Project
+import io.circe.generic.extras.Configuration, io.circe.generic.extras.auto._
+
+import com.foundaml.server.models._
+import com.foundaml.server.models.backends._
+
+import com.foundaml.server.services.infrastructure.serialization._
 
 class ProjectsRepository(implicit xa: Transactor[Task]) {
+
+    implicit val discriminator: Configuration = CirceEncoders.discriminator 
+
+    implicit val problemTypeGet: Get[ProblemType] = Get[String].map(ProblemTypeSerializer.fromString)
+    implicit val problemTypePut: Put[ProblemType] = Put[String].contramap(ProblemTypeSerializer.toString)
+
+    implicit val algorithmPolicyTypeGet: Get[AlgorithmPolicy] = Get[String].map(AlgorithmPolicySerializer.fromString)
+    implicit val algorithmPolicyTypePut: Put[AlgorithmPolicy] = Put[String].contramap(AlgorithmPolicySerializer.toString)
+
 
   def insert(project: Project) =
     sql"""INSERT INTO projects(
@@ -36,13 +50,13 @@ class ProjectsRepository(implicit xa: Transactor[Task]) {
       FROM projects
       WHERE id=${projectId}
       """
-      .query[(String, String, String, String, String, String)]
+        .query[(String, String, ProblemType, AlgorithmPolicy, String, String)]
 
   def readAll() =
     sql"""
-      SELECT id, name, problem, algorithm_policy, feature_class, label_class
+        SELECT id, name, problem, algorithm_policy, feature_class, label_class
       FROM projects
       """
-      .query[(String, String, String, String, String, String)]
+      .query[(String, String, ProblemType, AlgorithmPolicy, String, String)]
 
 }

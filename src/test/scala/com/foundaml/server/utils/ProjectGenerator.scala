@@ -8,11 +8,9 @@ import com.foundaml.server.models.backends._
 import java.util.UUID
 
 object ProjectGenerator {
-
-  def compute(
-      features: Features
-  ): Labels =
-    TensorFlowClassificationLabels(
+  
+  
+  val computed = TensorFlowClassificationLabels(
       List(
         TensorFlowClassicationLabel(
           List(1, 2, 3),
@@ -25,7 +23,7 @@ object ProjectGenerator {
   val projectId = UUID.randomUUID().toString
   val defaultAlgorithm = Algorithm(
     "algorithm id",
-    Local(compute),
+    Local(computed),
     projectId
   )
 
