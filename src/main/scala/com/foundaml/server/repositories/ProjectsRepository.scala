@@ -45,5 +45,4 @@ class ProjectsRepository(implicit xa: Transactor[Task]) {
       """
       .query[(String, String, String, String, String, String)]
 
-
 }

@@ -47,5 +47,4 @@ class AlgorithmsRepository(implicit xa: Transactor[Task]) {
       """
       .query[(String, String, String)]
 
-
 }

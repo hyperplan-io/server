@@ -9,26 +9,25 @@ import java.util.UUID
 
 object ProjectGenerator {
 
-    def compute(
-        features: Features 
-    ): Labels =
-      TensorFlowClassificationLabels(
-        List(
-          TensorFlowClassicationLabel(
-            List(1, 2, 3),
-            List(0.0f, 0.1f, 0.2f),
-            List("class1", "class2", "class3"),
-            List(0.0f, 0.0f, 0.0f)
-          )
+  def compute(
+      features: Features
+  ): Labels =
+    TensorFlowClassificationLabels(
+      List(
+        TensorFlowClassicationLabel(
+          List(1, 2, 3),
+          List(0.0f, 0.1f, 0.2f),
+          List("class1", "class2", "class3"),
+          List(0.0f, 0.0f, 0.0f)
         )
-   )
-    val projectId = UUID.randomUUID().toString
-    val defaultAlgorithm = Algorithm(
-      "algorithm id",
-      Local(compute),
-      projectId
+      )
     )
-
+  val projectId = UUID.randomUUID().toString
+  val defaultAlgorithm = Algorithm(
+    "algorithm id",
+    Local(compute),
+    projectId
+  )
 
   def withLocalBackend() = Project(
     projectId,
@@ -37,6 +36,6 @@ object ProjectGenerator {
     "tf.cl",
     "tf.cl",
     Map.empty,
-    DefaultAlgorithm(defaultAlgorithm) 
+    DefaultAlgorithm(defaultAlgorithm)
   )
 }

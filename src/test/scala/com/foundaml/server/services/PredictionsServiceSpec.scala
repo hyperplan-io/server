@@ -8,7 +8,6 @@ import com.foundaml.server.models.labels._
 import com.foundaml.server.models.backends._
 import com.foundaml.server.models._
 
-
 import com.foundaml.server.utils._
 
 class PredictionsServiceSpec extends FlatSpec {
