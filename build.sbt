@@ -24,6 +24,7 @@ lazy val root = (project in file("."))
       "org.scalaz"      %% "scalaz-zio-interop-future" % ScalazZIOVersion,
       "io.circe" %% "circe-core" % circeVersion,
       "io.circe" %% "circe-generic" % circeVersion,
+      "io.circe" %% "circe-generic-extras" % circeVersion,
       "io.circe" %% "circe-parser" % circeVersion,
       "com.amazonaws" % "aws-java-sdk-kinesis" % "1.11.514",
       "org.tpolecat"    %% "doobie-core"                % DoobieVersion,
