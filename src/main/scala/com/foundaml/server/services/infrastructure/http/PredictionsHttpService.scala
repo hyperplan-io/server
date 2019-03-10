@@ -26,26 +26,24 @@ import com.foundaml.server.models.labels._
 import com.foundaml.server.models.backends._
 import com.foundaml.server.models._
 
+class PredictionsHttpService(predictionsService: PredictionsService)
+    extends Http4sDsl[Task] {
 
-class PredictionsHttpService(predictionsService: PredictionsService) extends Http4sDsl[Task] {
-
-  implicit val requestDecoder: EntityDecoder[Task, PredictionRequest] = jsonOf[Task, PredictionRequest]
+  implicit val requestDecoder: EntityDecoder[Task, PredictionRequest] =
+    jsonOf[Task, PredictionRequest]
   val service: HttpService[Task] = {
     HttpService[Task] {
       case req @ POST -> Root =>
-
-
-          Ok(for {
+        Ok(for {
           predictionRequest <- req.as[PredictionRequest]
           prediction <- predict(predictionRequest)
           _ = println(prediction)
-        } yield Json.fromString(prediction.toString)) 
+        } yield Json.fromString(prediction.toString))
     }
   }
 
-
-  def predict(request: PredictionRequest) ={
-    def compute(features: TensorFlowClassificationFeatures): TensorFlowClassificationLabels =
+  def predict(request: PredictionRequest) = {
+    def compute(features: Features): Labels =
       TensorFlowClassificationLabels(
         List(
           TensorFlowClassicationLabel(
@@ -55,24 +53,22 @@ class PredictionsHttpService(predictionsService: PredictionsService) extends Htt
             List(0.0f, 0.0f, 0.0f)
           )
         )
-       ) 
-        
-       val defaultAlgorithm = Algorithm[TensorFlowClassificationFeatures, TensorFlowClassificationLabels](
-        "algorithm id",
-        Local(compute)
-        )
-      
-        val project = Project[
-          TensorFlowClassificationFeatures,
-          TensorFlowClassificationLabels
-        ](
-          "id",
-          "example project",
-          Classification,
-          Map.empty,
-          DefaultAlgorithm(defaultAlgorithm) 
-        )
+      )
 
+    val defaultAlgorithm = Algorithm(
+      "algorithm id",
+      Local(compute)
+    )
+
+    val project = Project(
+      "id",
+      "example project",
+      Classification,
+      "tf.cl",
+      "tf.cl",
+      Map.empty,
+      DefaultAlgorithm(defaultAlgorithm)
+    )
     request.features match {
       case f: TensorFlowClassificationFeatures =>
         predictionsService.predict(

@@ -29,7 +29,7 @@ lazy val root = (project in file("."))
       "org.tpolecat"    %% "doobie-core"                % DoobieVersion,
       "org.tpolecat"    %% "doobie-hikari"              % DoobieVersion,
       "org.tpolecat"    %% "doobie-postgres"            % DoobieVersion,
-      "org.tpolecat"    %% "doobie-scalatest"           % DoobieVersion,
+      "org.tpolecat"    %% "doobie-scalatest"           % DoobieVersion % "test",
     ),
     addCompilerPlugin("org.spire-math" %% "kind-projector"     % "0.9.6"),
     addCompilerPlugin("com.olegpy"     %% "better-monadic-for" % "0.2.4")
