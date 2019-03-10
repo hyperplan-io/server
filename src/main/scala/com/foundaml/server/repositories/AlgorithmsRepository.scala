@@ -9,18 +9,18 @@ import doobie.hikari.HikariTransactor
 import scalaz.zio.Task
 import scalaz.zio.interop.catz._
 
-import com.foundaml.server.models.Project
+import com.foundaml.server.models.Algorithm
 
 class AlgorithmsRepository(implicit xa: Transactor[Task]) {
 
-  def insert(algorith: Algorithm) =
+  def insert(algorithm: Algorithm) =
     sql"""INSERT INTO algorithms(
       id, 
       backend, 
       project_id
     ) VALUES(
       ${algorithm.id},
-      ${algorithm.backend},
+      ${algorithm.backend.toString},
       ${algorithm.projectId}
     )""".update
 
@@ -36,11 +36,11 @@ class AlgorithmsRepository(implicit xa: Transactor[Task]) {
     sql"""
       SELECT id, backend, project_id 
       FROM algorithms 
-      WHERE project_id=${algorithmId}
+      WHERE project_id=${projectId}
       """
       .query[(String, String, String)]
 
-  def readAll(projectId: String) =
+  def readAll() =
     sql"""
       SELECT id, backend, project_id 
       FROM algorithms 
