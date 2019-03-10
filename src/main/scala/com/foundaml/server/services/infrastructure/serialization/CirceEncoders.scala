@@ -20,6 +20,8 @@ import org.http4s.dsl.io._
 import scalaz.zio.Task
 import scalaz.zio.interop.catz._
 
+import ProblemTypeSerializer._
+
 object CirceEncoders {
 
   val discriminator: Configuration = Configuration.default.withDiscriminator("class")
@@ -54,5 +56,10 @@ object CirceEncoders {
     deriveDecoder[PredictionRequest]
   implicit val predictionRequestEncoder: Encoder[PredictionRequest] =
     deriveEncoder[PredictionRequest]
+
+  //implicit val postProjectRequestDecoder: Decoder[PostProjectRequest] =
+   // deriveDecoder[PostProjectRequest]
+  //implicit val postProjectRequestEncoder: Encoder[PostProjectRequest] =
+    //deriveEncoder[PostProjectRequest]
 
 }

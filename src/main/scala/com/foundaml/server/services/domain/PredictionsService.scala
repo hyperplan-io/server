@@ -1,6 +1,6 @@
 package com.foundaml.server.services.domain
 
-import scalaz.zio.IO
+import scalaz.zio. { IO, Task }
 
 import com.foundaml.server.models.backends._
 import com.foundaml.server.models._
@@ -12,10 +12,13 @@ class PredictionsService {
       features: Features,
       project: Project
   ) =
-    predictWithAlgorithm(
-      features,
-      project.policy.take()
-    )
+    project.policy.take().fold(
+      ??? //IO.fail(new IllegalStateException(""))
+      )(algorithm =>predictWithAlgorithm(
+        features,
+        algorithm
+      )
+  )
 
   def predictWithAlgorithm(
       features: Features,

@@ -3,9 +3,12 @@ package com.foundaml.server.models
 import java.util.UUID
 
 sealed trait AlgorithmPolicy {
-  def take(): Algorithm
+  def take(): Option[Algorithm]
+}
+case class NoAlgorithm() extends AlgorithmPolicy {
+  override def take() = None
 }
 
 case class DefaultAlgorithm(algorithm: Algorithm) extends AlgorithmPolicy {
-  override def take() = algorithm
+  override def take() = Some(algorithm)
 }

@@ -15,7 +15,7 @@ import scalaz.zio.interop.catz.taskEffectInstances
 import org.http4s.server.blaze.BlazeBuilder
 import scala.concurrent.duration.{FiniteDuration, NANOSECONDS, TimeUnit}
 import scala.util.Properties.envOrNone
-import services.infrastructure.http.PredictionsHttpService
+import services.infrastructure.http._
 import scala.concurrent.ExecutionContext
 
 import com.foundaml.server.services.domain._
@@ -54,6 +54,13 @@ object Server {
           algorithmsRepository
         ).service,
         "/predictions"
+      ).mountService(
+        new ProjectsHttpService(
+          predictionsService,
+          projectsRepository,
+          algorithmsRepository
+        ).service,
+        "/projects"
       )
       .serve
 

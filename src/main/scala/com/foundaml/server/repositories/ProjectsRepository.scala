@@ -27,7 +27,7 @@ class ProjectsRepository(implicit xa: Transactor[Task]) {
     implicit val algorithmPolicyTypePut: Put[AlgorithmPolicy] = Put[String].contramap(AlgorithmPolicySerializer.toString)
 
 
-  def insert(project: Project) =
+  def insertQuery(project: Project) =
     sql"""INSERT INTO projects(
       id, 
       name, 
@@ -43,6 +43,8 @@ class ProjectsRepository(implicit xa: Transactor[Task]) {
       ${project.featureType.toString},
       ${project.labelType.toString}
     )""".update
+    
+  def insert(project: Project) = insertQuery(project: Project).run.transact(xa)
 
   def read(projectId: String) =
     sql"""
