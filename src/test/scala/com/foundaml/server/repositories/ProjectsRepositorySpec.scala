@@ -22,14 +22,15 @@ class ProjectsRepositorySpec extends FlatSpec with Matchers with TaskChecker {
   def transactor = xa
 
   val projectRepository = new ProjectsRepository()(xa)
-  
 
   it should "insert project correctly" in {
     val project = ProjectGenerator.withLocalBackend() 
     val insertIO = projectRepository.insert(project)
     val readIO = projectRepository.read(project.id)
+    val readAllIO = projectRepository.readAll()
     check(insertIO)
     check(readIO)
+    check(readAllIO)
   }
 
 }

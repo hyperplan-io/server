@@ -5,6 +5,8 @@ import com.foundaml.server.models.features._
 import com.foundaml.server.models.labels._
 import com.foundaml.server.models.backends._
 
+import java.util.UUID
+
 object ProjectGenerator {
 
     def compute(
@@ -20,15 +22,16 @@ object ProjectGenerator {
           )
         )
    )
-
+    val projectId = UUID.randomUUID().toString
     val defaultAlgorithm = Algorithm(
       "algorithm id",
-      Local(compute)
+      Local(compute),
+      projectId
     )
 
 
   def withLocalBackend() = Project(
-    "id",
+    projectId,
     "example project",
     Classification,
     "tf.cl",
