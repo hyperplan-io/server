@@ -30,7 +30,7 @@ object ProjectGenerator {
   def withLocalBackend() = Project(
     projectId,
     "example project",
-    Classification,
+    Classification(),
     "tf.cl",
     "tf.cl",
     Map.empty,
