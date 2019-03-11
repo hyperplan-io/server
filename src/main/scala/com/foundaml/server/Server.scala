@@ -15,10 +15,11 @@ import scalaz.zio.interop.catz.taskEffectInstances
 import org.http4s.server.blaze.BlazeBuilder
 import scala.concurrent.duration.{FiniteDuration, NANOSECONDS, TimeUnit}
 import scala.util.Properties.envOrNone
-import services.infrastructure.http.PredictionsHttpService
+import services.infrastructure.http._
 import scala.concurrent.ExecutionContext
 
 import com.foundaml.server.services.domain._
+import repositories._
 
 import services.infrastructure.serialization.CirceEncoders._
 
@@ -40,13 +41,26 @@ object Server {
   }
 
   def stream(
-      predictionsService: PredictionsService
+      predictionsService: PredictionsService,
+      projectsRepository: ProjectsRepository,
+      algorithmsRepository: AlgorithmsRepository
   )(implicit ec: ExecutionContext) =
     BlazeBuilder[Task]
       .bindHttp(8080, "0.0.0.0")
       .mountService(
-        new PredictionsHttpService(predictionsService).service,
+        new PredictionsHttpService(
+          predictionsService,
+          projectsRepository,
+          algorithmsRepository
+        ).service,
         "/predictions"
+      ).mountService(
+        new ProjectsHttpService(
+          predictionsService,
+          projectsRepository,
+          algorithmsRepository
+        ).service,
+        "/projects"
       )
       .serve
 

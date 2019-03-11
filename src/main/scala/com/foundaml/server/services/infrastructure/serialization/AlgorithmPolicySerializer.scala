@@ -28,7 +28,7 @@ object AlgorithmPolicySerializer {
    labels.asJson.noSpaces 
   }
 
-  def fromString(n: String)(implicit decoder: Decoder[AlgorithmPolicy]): AlgorithmPolicy = {
-    decode[AlgorithmPolicy](n).right.get
+  def fromString(n: String)(implicit decoder: Decoder[AlgorithmPolicy]): Either[Error, AlgorithmPolicy] = {
+    decode[AlgorithmPolicy](n)
   }
 }

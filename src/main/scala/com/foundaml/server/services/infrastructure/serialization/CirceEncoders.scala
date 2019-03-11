@@ -20,9 +20,15 @@ import org.http4s.dsl.io._
 import scalaz.zio.Task
 import scalaz.zio.interop.catz._
 
+import io.circe._, io.circe.generic.semiauto._
+import io.circe.parser.decode, io.circe.syntax._
+import io.circe.syntax._
+
+import ProblemTypeSerializer._
+
 object CirceEncoders {
 
-  val discriminator: Configuration = Configuration.default.withDiscriminator("class")
+  implicit val discriminator: Configuration = Configuration.default.withDiscriminator("class")
 
   implicit val oneToManyDecoder: Decoder[OneToMany] =
     deriveDecoder[OneToMany]

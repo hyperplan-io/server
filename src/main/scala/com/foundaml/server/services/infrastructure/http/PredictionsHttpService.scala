@@ -26,7 +26,13 @@ import com.foundaml.server.models.labels._
 import com.foundaml.server.models.backends._
 import com.foundaml.server.models._
 
-class PredictionsHttpService(predictionsService: PredictionsService)
+import com.foundaml.server.repositories._
+
+class PredictionsHttpService(
+  predictionsService: PredictionsService,
+  projectsRepository: ProjectsRepository,
+  algorithmsRepository: AlgorithmsRepository
+)
     extends Http4sDsl[Task] {
 
   implicit val requestDecoder: EntityDecoder[Task, PredictionRequest] =
@@ -65,7 +71,7 @@ class PredictionsHttpService(predictionsService: PredictionsService)
     val project = Project(
       projectId,
       "example project",
-      Classification,
+      Classification(),
       "tf.cl",
       "tf.cl",
       Map.empty,
