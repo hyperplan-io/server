@@ -4,10 +4,6 @@ import io.circe.Json
 import org.http4s.HttpService
 import org.http4s.dsl.Http4sDsl
 
-import io.circe._
-import io.circe.generic.auto._
-import io.circe.syntax._
-
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl.io._
@@ -27,7 +23,13 @@ import com.foundaml.server.models.labels._
 import com.foundaml.server.models.backends._
 import com.foundaml.server.models._
 import com.foundaml.server.services.infrastructure.http.requests._
+import com.foundaml.server.services.infrastructure.serialization._
+import com.foundaml.server.services.infrastructure.serialization.CirceEncoders._
 import com.foundaml.server.repositories._
+
+import io.circe.parser.decode, io.circe.syntax._
+import io.circe.generic.extras.auto._
+import io.circe.generic.extras.Configuration
 
 import java.util.UUID
 
@@ -38,23 +40,28 @@ class ProjectsHttpService(
 )
     extends Http4sDsl[Task] {
 
+    
+    implicit val discriminator = CirceEncoders.discriminator
     implicit val requestDecoder: EntityDecoder[Task, PostProjectRequest] = jsonOf[Task, PostProjectRequest]
   val service: HttpService[Task] = {
     HttpService[Task] {
       case req @ POST -> Root =>
-        Ok(for {
+        (for {
           request <- req.as[PostProjectRequest]
           project = Project(
                 UUID.randomUUID().toString,
                 request.name,
-                Classification(),
+                request.problem,
                 request.featureType,
                 request.labelType,
                 Map.empty,
                 NoAlgorithm()
               )
           _ <- projectsRepository.insert(project)
-        } yield project.asJson)
+        } yield project.asJson).flatMap {
+          case project =>
+            Ok(project.asJson)
+        }
       case GET -> Root / projectId =>
         (for {
           project <- projectsRepository.read(projectId)
