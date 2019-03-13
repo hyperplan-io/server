@@ -7,6 +7,11 @@ import com.foundaml.server.models._
 import com.foundaml.server.models.features._
 import com.foundaml.server.models.labels._
 
+import io.circe._
+import io.circe.generic.auto._
+import io.circe.syntax._
+
+
 class PredictionsService {
 
   def noAlgorithm(): Task[Labels] = Task.fail(new Exception("No algorithms are setup"))
@@ -30,6 +35,9 @@ class PredictionsService {
   ): Task[Labels] = algorithm.backend match {
     case local: Local =>
       IO(local.computed)
+    case TensorFlowBackend(host, port, transformer) =>
+      val tfFeatures = transformer.transform(features)
+      ??? 
   }
 
   def predict(

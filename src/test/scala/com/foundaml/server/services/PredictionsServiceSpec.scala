@@ -17,9 +17,12 @@ class PredictionsServiceSpec extends FlatSpec with DefaultRuntime {
   val predictionsService = new PredictionsService()
 
   it should "execute predictions correctly on local backend" in {
-    val features = TensorFlowClassificationFeatures(
-      "test instance",
-      Nil
+    val features = Features(
+      List(
+        StringFeature("test instance"),
+        IntFeature(1),
+        FloatFeature(0.5f)
+      )
     )
 
     val project = ProjectGenerator.withLocalBackend()

@@ -30,18 +30,23 @@ object CirceEncoders {
 
   implicit val discriminator: Configuration = Configuration.default.withDiscriminator("class")
 
+  /*
   implicit val oneToManyDecoder: Decoder[OneToMany] =
     deriveDecoder[OneToMany]
   implicit val oneToManyEncoder: Encoder[OneToMany] =
     deriveEncoder[OneToMany]
+   */
 
+  /*
   implicit val tfClassificationFeaturesDecoder
       : Decoder[TensorFlowClassificationFeatures] =
     deriveDecoder[TensorFlowClassificationFeatures]
   implicit val tfClassificationFeaturesEncoder
       : Encoder[TensorFlowClassificationFeatures] =
     deriveEncoder[TensorFlowClassificationFeatures]
+    */
 
+ /* 
   implicit val encodeEvent: Encoder[Features] = Encoder.instance {
     case foo @ TensorFlowClassificationFeatures(_, _) => foo.asJson
   }
@@ -50,15 +55,16 @@ object CirceEncoders {
     List[Decoder[Features]](
       Decoder[TensorFlowClassificationFeatures].widen
     ).reduceLeft(_ or _)
+  */
 
   implicit val predictionDecoder: Decoder[Prediction] =
     deriveDecoder[Prediction]
   implicit val predictionEncoder: Encoder[Prediction] =
     deriveEncoder[Prediction]
-
+/*
   implicit val predictionRequestDecoder: Decoder[PredictionRequest] =
     deriveDecoder[PredictionRequest]
   implicit val predictionRequestEncoder: Encoder[PredictionRequest] =
     deriveEncoder[PredictionRequest]
-
+    */
 }
