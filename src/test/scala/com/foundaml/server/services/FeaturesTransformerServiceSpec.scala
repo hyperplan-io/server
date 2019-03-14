@@ -1,6 +1,7 @@
 package com.foundaml.server.services
 
 import org.scalatest._
+import org.scalatest.Inside.inside
 
 import com.foundaml.server.services.domain._
 import com.foundaml.server.models.features._
@@ -10,6 +11,10 @@ import com.foundaml.server.models.backends._
 import com.foundaml.server.models._
 
 import com.foundaml.server.utils._
+
+import io.circe._
+import io.circe.syntax._
+import io.circe.parser._
 
 import scalaz.zio.DefaultRuntime
 
@@ -37,7 +42,7 @@ class FeaturesTransformerServiceSpec extends FlatSpec with DefaultRuntime {
 
   val predictionsService = new PredictionsService()
 
-  it should "transforme features to a tensorflow classify compatible format" in {
+  it should "transform features to a tensorflow classify compatible format" in {
     val features = Features(
       List(
         StringFeature("test instance"),
@@ -48,15 +53,37 @@ class FeaturesTransformerServiceSpec extends FlatSpec with DefaultRuntime {
 
 
     val transformer = new TensorFlowFeaturesTransformer(
+      "my_signature_name",
       List(
         "test",
-        "toto"
+        "toto",
+        "titi"
       )
     )
 
     val transformedFeatures = transformer.transform(
       features
     )
-    print(transformer.toJson(transformedFeatures).noSpaces)
+    val expectedJson = parse(
+        """
+        {
+          "signature_name": "my_signature_name",
+          "examples": [
+            { 
+              "test": "test instance",
+              "toto": 1,
+              "titi": 0.5
+            }
+          ]
+        }
+        """
+    ).getOrElse(Json.Null)
+
+    inside(transformedFeatures) {
+      case Right(tfFeatures) =>
+        assert(
+          Json.eqJson.eqv(transformer.toJson(tfFeatures), expectedJson)
+        )   
+    }
   }
 }

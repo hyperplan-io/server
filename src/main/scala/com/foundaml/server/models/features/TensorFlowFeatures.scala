@@ -1,6 +1,8 @@
 package com.foundaml.server.models.features
 
-sealed trait TensorFlowFeature
+sealed trait TensorFlowFeature {
+  def key(): String
+}
 case class TensorFlowDoubleFeature(key: String, value: Double) extends TensorFlowFeature
 case class TensorFlowFloatFeature(key: String, value: Float) extends TensorFlowFeature
 case class TensorFlowIntFeature(key: String, value: Int) extends TensorFlowFeature
