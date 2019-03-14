@@ -1,13 +1,11 @@
 package com.foundaml.server.models.features
 
-sealed trait Features
 
-case class OneToMany(
-    key: String,
-    values: List[Double]
-)
+case class Features(features: List[Feature])
 
-case class TensorFlowClassificationFeatures(
-    signatureName: String,
-    instances: List[OneToMany]
-) extends Features
+sealed trait Feature
+
+case class DoubleFeature(value: Double) extends Feature
+case class FloatFeature(value: Float) extends Feature
+case class IntFeature(value: Int) extends Feature
+case class StringFeature(value: String) extends Feature

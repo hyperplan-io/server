@@ -1,4 +1,8 @@
 .bloop
 target
 project/target
+target
 .metals
+*.class
+*.xml
+.idea

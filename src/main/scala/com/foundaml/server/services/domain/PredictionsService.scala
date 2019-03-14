@@ -30,6 +30,9 @@ class PredictionsService {
   ): Task[Labels] = algorithm.backend match {
     case local: Local =>
       IO(local.computed)
+    case tfBackend @ TensorFlowBackend(host, port, fTransormer) =>
+      ???
+
   }
 
   def predict(

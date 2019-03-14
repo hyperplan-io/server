@@ -20,7 +20,6 @@ import com.foundaml.server.services.infrastructure.serialization.CirceEncoders._
 
 import com.foundaml.server.services.domain.PredictionsService
 
-import com.foundaml.server.services.domain._
 import com.foundaml.server.models.features._
 import com.foundaml.server.models.labels._
 import com.foundaml.server.models.backends._
