@@ -9,14 +9,17 @@ import com.foundaml.server.models.features.transformers._
 import com.foundaml.server.models.labels._
 import com.foundaml.server.models.backends._
 import com.foundaml.server.models._
-
+import com.foundaml.server.models.features.transformers.TensorFlowFeaturesTransformer
 import com.foundaml.server.utils._
+
+import com.foundaml.server.services.infrastructure.serialization.FeaturesSerializer
 
 import io.circe._
 import io.circe.syntax._
 import io.circe.parser._
 
 import scalaz.zio.DefaultRuntime
+
 
 class FeaturesTransformerServiceSpec extends FlatSpec with DefaultRuntime {
 
@@ -108,7 +111,7 @@ class FeaturesTransformerServiceSpec extends FlatSpec with DefaultRuntime {
     inside(transformedFeatures) {
       case Right(tfFeatures) =>
         assert(
-          Json.eqJson.eqv(transformer.toJson(tfFeatures), expectedJson)
+          Json.eqJson.eqv(FeaturesSerializer.encode(tfFeatures), expectedJson)
         )   
     }
   }

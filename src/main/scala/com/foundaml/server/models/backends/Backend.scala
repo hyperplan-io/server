@@ -1,7 +1,7 @@
 package com.foundaml.server.models.backends
 
-import com.foundaml.server.models.features.transformers._
 import com.foundaml.server.models.labels._
+import com.foundaml.server.models.features.transformers.TensorFlowFeaturesTransformer
 
 sealed trait Backend
 
