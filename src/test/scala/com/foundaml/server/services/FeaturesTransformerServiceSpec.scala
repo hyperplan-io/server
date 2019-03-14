@@ -111,7 +111,7 @@ class FeaturesTransformerServiceSpec extends FlatSpec with DefaultRuntime {
     inside(transformedFeatures) {
       case Right(tfFeatures) =>
         assert(
-          Json.eqJson.eqv(FeaturesSerializer.encode(tfFeatures), expectedJson)
+          Json.eqJson.eqv(FeaturesSerializer.encodeJson(tfFeatures), expectedJson)
         )   
     }
   }

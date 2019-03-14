@@ -1,31 +1,21 @@
-package com.foundaml.server.services.infrastructure.http
+package com.foundaml.server.controllers
 
-import io.circe.Json
-import org.http4s.HttpService
-import org.http4s.dsl.Http4sDsl
-
-import io.circe._
-import io.circe.generic.auto._
-import io.circe.syntax._
-
-import org.http4s._
 import org.http4s.circe._
-import org.http4s.dsl.io._
-
+import org.http4s.dsl.Http4sDsl
+import org.http4s.{HttpService, _}
+import org.http4s.circe._
+import org.http4s.dsl.Http4sDsl
 import scalaz.zio.Task
 import scalaz.zio.interop.catz._
-
-import com.foundaml.server.services.infrastructure.http.requests._
-import com.foundaml.server.services.infrastructure.serialization.CirceEncoders._
-
-import com.foundaml.server.services.domain.PredictionsService
-
+import com.foundaml.server.controllers.requests._
+import com.foundaml.server.models._
+import com.foundaml.server.models.backends._
 import com.foundaml.server.models.features._
 import com.foundaml.server.models.labels._
-import com.foundaml.server.models.backends._
-import com.foundaml.server.models._
-
 import com.foundaml.server.repositories._
+import com.foundaml.server.services.domain.PredictionsService
+import com.foundaml.server.services.infrastructure.serialization.{LabelsSerializer, PredictionRequestSerializer}
+
 
 class PredictionsHttpService(
   predictionsService: PredictionsService,
@@ -34,16 +24,18 @@ class PredictionsHttpService(
 )
     extends Http4sDsl[Task] {
 
+  implicit val decoder = PredictionRequestSerializer.decoder
   implicit val requestDecoder: EntityDecoder[Task, PredictionRequest] =
     jsonOf[Task, PredictionRequest]
+
   val service: HttpService[Task] = {
     HttpService[Task] {
       case req @ POST -> Root =>
         Ok(for {
           predictionRequest <- req.as[PredictionRequest]
-          prediction <- predict(predictionRequest)
-          _ = println(prediction)
-        } yield Json.fromString(prediction.toString))
+          labels <- predict(predictionRequest)
+          _ = println(labels)
+        } yield LabelsSerializer.encodeJson(labels))
     }
   }
 
@@ -76,16 +68,11 @@ class PredictionsHttpService(
       Map.empty,
       DefaultAlgorithm(defaultAlgorithm)
     )
-    request.features match {
-      case f: TensorFlowClassificationFeatures =>
-        predictionsService.predict(
-          f,
-          project,
-          request.algorithmId
-        )
-      case _ =>
-        Task.fail(new IllegalStateException("Unhandled features"))
-    }
+    predictionsService.predict(
+      request.features,
+      project,
+      request.algorithmId
+    )
   }
 
 }

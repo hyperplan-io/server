@@ -1,37 +1,19 @@
-package com.foundaml.server.services.infrastructure.http
-
-import io.circe.Json
-import org.http4s.HttpService
-import org.http4s.dsl.Http4sDsl
-
-import org.http4s._
-import org.http4s.circe._
-import org.http4s.dsl.io._
-
-import scalaz.zio.Task
-import scalaz.zio.interop.catz._
-
-import com.foundaml.server.services.infrastructure.http.requests._
-import com.foundaml.server.services.infrastructure.serialization.CirceEncoders._
-import com.foundaml.server.services.infrastructure.serialization.ProblemTypeSerializer._
-
-import com.foundaml.server.services.domain.PredictionsService
-
-import com.foundaml.server.services.domain._
-import com.foundaml.server.models.features._
-import com.foundaml.server.models.labels._
-import com.foundaml.server.models.backends._
-import com.foundaml.server.models._
-import com.foundaml.server.services.infrastructure.http.requests._
-import com.foundaml.server.services.infrastructure.serialization._
-import com.foundaml.server.services.infrastructure.serialization.CirceEncoders._
-import com.foundaml.server.repositories._
-
-import io.circe.parser.decode, io.circe.syntax._
-import io.circe.generic.extras.auto._
-import io.circe.generic.extras.Configuration
+package com.foundaml.server.controllers
 
 import java.util.UUID
+
+import com.foundaml.server.controllers.requests._
+import com.foundaml.server.models._
+import com.foundaml.server.repositories._
+import com.foundaml.server.services.domain.PredictionsService
+import com.foundaml.server.services.infrastructure.serialization._
+import io.circe.generic.extras.auto._
+import io.circe.syntax._
+import org.http4s.{HttpService, _}
+import org.http4s.circe._
+import org.http4s.dsl.Http4sDsl
+import scalaz.zio.Task
+import scalaz.zio.interop.catz._
 
 class ProjectsHttpService(
   predictionsService: PredictionsService,
@@ -58,9 +40,8 @@ class ProjectsHttpService(
                 NoAlgorithm()
               )
           _ <- projectsRepository.insert(project)
-        } yield project.asJson).flatMap {
-          case project =>
-            Ok(project.asJson)
+        } yield project).flatMap { project =>
+            Ok(ProjectSerializer.encodeJson(project))
         }
       case GET -> Root / projectId =>
         (for {
@@ -68,7 +49,7 @@ class ProjectsHttpService(
         } yield project).flatMap {
           case (id, name, Right(problem), Right(algorithmPolicy), featureClass, labelClass) =>
             Ok(
-              Project(
+              ProjectSerializer.encodeJson(Project(
                 id,
                 name,
                 problem,
@@ -76,7 +57,7 @@ class ProjectsHttpService(
                 labelClass,
                 Map.empty,
                 algorithmPolicy
-              ).asJson
+              ))
             )
           case _ =>
             BadRequest("there is an error with this project")

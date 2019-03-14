@@ -1,27 +1,22 @@
 package com.foundaml.server
 
-import cats.data.Kleisli
 import cats.effect
 import cats.effect.Timer
-import org.http4s.implicits._
-import org.http4s.server.Router
-import org.http4s.server.blaze._
-import org.http4s.{Request, Response}
+
+import com.foundaml.server.services.domain._
+import com.foundaml.server.controllers.{PredictionsHttpService, ProjectsHttpService}
+import repositories._
+
 import scalaz.zio.Task
 import scalaz.zio.clock.Clock
 import scalaz.zio.duration.Duration
 import scalaz.zio.interop.catz.taskEffectInstances
 
 import org.http4s.server.blaze.BlazeBuilder
+
 import scala.concurrent.duration.{FiniteDuration, NANOSECONDS, TimeUnit}
 import scala.util.Properties.envOrNone
-import services.infrastructure.http._
 import scala.concurrent.ExecutionContext
-
-import com.foundaml.server.services.domain._
-import repositories._
-
-import services.infrastructure.serialization.CirceEncoders._
 
 object Server {
   val port: Int = envOrNone("HTTP_PORT").fold(9090)(_.toInt)

@@ -23,6 +23,6 @@ object FeaturesSerializer {
     )))
   )
 
-  def encode(features: TensorFlowClassificationFeatures): Json = features.asJson
+  def encodeJson(features: TensorFlowClassificationFeatures): Json = features.asJson
 
 }

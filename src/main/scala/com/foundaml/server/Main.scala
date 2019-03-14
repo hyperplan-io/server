@@ -18,10 +18,10 @@ import scalaz.zio.{IO, App, ZIO, Promise, Task}
 
 import services._
 import services.domain._
+import controllers._
 import services.infrastructure.serialization._
 import services.infrastructure.serialization.CirceEncoders._
 import services.infrastructure.streaming._
-import services.infrastructure.http._
 import services.infrastructure.storage._
 
 import models._

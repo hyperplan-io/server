@@ -4,7 +4,7 @@ import io.circe._
 import io.circe.generic.semiauto._
 
 import com.foundaml.server.models._
-import com.foundaml.server.services.infrastructure.http.requests._
+import com.foundaml.server.controllers.requests._
 import com.foundaml.server.models.features._
 
 import cats.syntax.functor._

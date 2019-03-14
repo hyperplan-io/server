@@ -1,7 +1,5 @@
 package com.foundaml.server.models
 
-import java.util.UUID
-
 sealed trait AlgorithmPolicy {
   def take(): Option[Algorithm]
 }
