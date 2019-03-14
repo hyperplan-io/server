@@ -20,28 +20,6 @@ import scalaz.zio.DefaultRuntime
 
 class FeaturesTransformerServiceSpec extends FlatSpec with DefaultRuntime {
 
-  val tfFakeJson = """
-    {
-      "signature_name": <string>,
-      "context": {
-        "<feature_name3>": <value>|<list>
-        "<feature_name4>": <value>|<list>
-      },
-
-      "examples": [
-        {
-          "test1": 10,
-          "test2": "toto",
-        },
-      ]
-    }
-
-"""
-
-
-
-  val predictionsService = new PredictionsService()
-
   it should "transform features to a tensorflow classify compatible format" in {
     val features = Features(
       List(
