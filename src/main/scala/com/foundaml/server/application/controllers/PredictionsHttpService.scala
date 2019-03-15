@@ -12,7 +12,10 @@ import com.foundaml.server.domain.models.backends._
 import com.foundaml.server.domain.models.labels._
 import com.foundaml.server.domain.repositories._
 import com.foundaml.server.domain.services.PredictionsService
-import com.foundaml.server.infrastructure.serialization.{LabelsSerializer, PredictionRequestEntitySerializer}
+import com.foundaml.server.infrastructure.serialization.{
+  LabelsSerializer,
+  PredictionRequestEntitySerializer
+}
 
 class PredictionsHttpService(
     predictionsService: PredictionsService,
@@ -24,7 +27,11 @@ class PredictionsHttpService(
     HttpService[Task] {
       case req @ POST -> Root =>
         Ok(for {
-          predictionRequest <- req.attemptAs[PredictionRequest](PredictionRequestEntitySerializer.requestDecoder).fold(throw _, identity)
+          predictionRequest <- req
+            .attemptAs[PredictionRequest](
+              PredictionRequestEntitySerializer.requestDecoder
+            )
+            .fold(throw _, identity)
           labels <- predict(predictionRequest)
           _ = println(labels)
         } yield LabelsSerializer.encodeJson(labels))
@@ -34,7 +41,7 @@ class PredictionsHttpService(
   def predict(request: PredictionRequest): Task[Labels] = {
 
     val computed = Labels(
-      List(
+      Set(
         ClassificationLabel(
           "toto",
           0.5f

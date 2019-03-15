@@ -1,7 +1,6 @@
 package com.foundaml.server.domain.models.labels
 
-
-case class Labels(labels: List[Label])
+case class Labels(labels: Set[Label])
 
 sealed trait Label
 

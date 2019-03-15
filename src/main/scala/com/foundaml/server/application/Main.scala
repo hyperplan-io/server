@@ -11,7 +11,10 @@ import scala.concurrent.duration.{FiniteDuration, NANOSECONDS, TimeUnit}
 import scala.util.{Left, Right}
 import com.foundaml.server.infrastructure.serialization.PredictionSerializer
 import com.foundaml.server.infrastructure.storage.PostgresqlService
-import com.foundaml.server.domain.repositories.{AlgorithmsRepository, ProjectsRepository}
+import com.foundaml.server.domain.repositories.{
+  AlgorithmsRepository,
+  ProjectsRepository
+}
 import com.foundaml.server.domain.services.PredictionsService
 import com.foundaml.server.domain.models.Prediction
 import com.foundaml.server.infrastructure.streaming.KinesisService

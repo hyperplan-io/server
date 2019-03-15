@@ -11,7 +11,9 @@ import cats.effect.Resource
 
 object PostgresqlService {
 
-  def testConnection(implicit xa: HikariTransactor[Task]): ZIO[Any, Nothing, Exit[Throwable, Double]] =
+  def testConnection(
+      implicit xa: HikariTransactor[Task]
+  ): ZIO[Any, Nothing, Exit[Throwable, Double]] =
     sql"select random()".query[Double].unique.transact(xa).run
 
   def apply(
