@@ -1,24 +1,16 @@
 package com.foundaml.server.infrastructure.streaming
 
-import com.foundaml.server.infrastructure.serialization._
-
-import io.circe.Json
-import scalaz.zio.{IO, Task}
-
+import scalaz.zio.{IO, Task, ZIO}
 import com.amazonaws.auth.AWSCredentialsProvider
-import com.amazonaws.auth.AWSCredentials
 import com.amazonaws.services.kinesis.AmazonKinesis
 import com.amazonaws.services.kinesis.AmazonKinesisClientBuilder
 import com.amazonaws.services.kinesis.model.PutRecordRequest
 import com.amazonaws.auth.profile.ProfileCredentialsProvider
-
-import scala.util.Try
-
 import java.nio.ByteBuffer
 
 case class KinesisPutError(message: String) extends Throwable
 
-class KinesisService(kinesisClient: AmazonKinesis, jsonService: JsonService) {
+class KinesisService(kinesisClient: AmazonKinesis) {
 
   import io.circe._, io.circe.generic.auto._, io.circe.parser._,
   io.circe.syntax._
@@ -28,7 +20,7 @@ class KinesisService(kinesisClient: AmazonKinesis, jsonService: JsonService) {
       streamName: String,
       partitionKey: String
   )(implicit circeEncoder: io.circe.Encoder[Data]): Task[Unit] = {
-    val dataJson = jsonService.toJson(data)
+    val dataJson = data.asJson.noSpaces
     for {
       jsonBytes <- IO(dataJson.getBytes)
       request <- IO(new PutRecordRequest())
@@ -45,18 +37,17 @@ object KinesisService {
 
   def apply(
       region: String,
-      jsonService: JsonService
   ): Task[KinesisService] =
     for {
-      credentialsProvider <- getProfileCredentialsProvider()
+      credentialsProvider <- getProfileCredentialsProvider
       kinesisClient <- buildKinesisClient(credentialsProvider, region)
-      kinesisService <- IO(new KinesisService(kinesisClient, jsonService))
+      kinesisService <- IO(new KinesisService(kinesisClient))
     } yield kinesisService
 
   def buildKinesisClient(
       credentialsProvider: AWSCredentialsProvider,
       region: String
-  ) =
+  ): ZIO[Any, Throwable, AmazonKinesis] =
     for {
       builder <- IO(AmazonKinesisClientBuilder.standard())
       builderWithCredentials <- IO(builder.withCredentials(credentialsProvider))
@@ -64,6 +55,6 @@ object KinesisService {
       amazonKinesis <- IO(builderWithRegion.build())
     } yield amazonKinesis
 
-  def getProfileCredentialsProvider() = IO(new ProfileCredentialsProvider())
+  def getProfileCredentialsProvider = IO(new ProfileCredentialsProvider())
 
 }

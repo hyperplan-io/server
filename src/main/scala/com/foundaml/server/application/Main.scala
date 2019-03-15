@@ -2,31 +2,19 @@ package com.foundaml.server.application
 
 import cats.effect
 import cats.effect.Timer
-
 import scalaz.zio.clock.Clock
 import scalaz.zio.duration.Duration
 import scalaz.zio.{App, IO, Task, ZIO}
 import scalaz.zio.interop.catz._
 
-
-
 import scala.concurrent.duration.{FiniteDuration, NANOSECONDS, TimeUnit}
 import scala.util.{Left, Right}
-
-
-import com.foundaml.server.infrastructure.serialization.{
-  JsonService,
-  PredictionSerializer
-}
+import com.foundaml.server.infrastructure.serialization.PredictionSerializer
 import com.foundaml.server.infrastructure.storage.PostgresqlService
-import com.foundaml.server.infrastructure.streaming.KinesisService
-
-import com.foundaml.server.domain.repositories.{
-  AlgorithmsRepository,
-  ProjectsRepository
-}
+import com.foundaml.server.domain.repositories.{AlgorithmsRepository, ProjectsRepository}
 import com.foundaml.server.domain.services.PredictionsService
 import com.foundaml.server.domain.models.Prediction
+import com.foundaml.server.infrastructure.streaming.KinesisService
 
 object Main extends App {
 
@@ -55,11 +43,10 @@ object Main extends App {
   def databaseConnected(implicit xa: doobie.Transactor[Task]) =
     for {
       _ <- printLine("Connected to database")
-      jsonService = new JsonService()
       predictionsService = new PredictionsService()
       projectsRepository = new ProjectsRepository
       algorithmsRepository = new AlgorithmsRepository
-      kinesisService <- KinesisService("us-east-2", jsonService)
+      kinesisService <- KinesisService("us-east-2")
       _ <- printLine("Services have been correctly instanciated")
       predictionId = "test-id"
       _ <- kinesisService.put(

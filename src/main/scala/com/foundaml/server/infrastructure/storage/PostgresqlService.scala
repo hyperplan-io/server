@@ -4,14 +4,14 @@ import doobie._
 import doobie.implicits._
 import doobie.hikari.HikariTransactor
 import doobie.util.ExecutionContexts
-import scalaz.zio.Task
+import scalaz.zio.{Exit, Task, ZIO}
 import scalaz.zio.interop.catz._
 import cats.implicits._
-import cats.effect.{Resource}
+import cats.effect.Resource
 
 object PostgresqlService {
 
-  def testConnection(implicit xa: HikariTransactor[Task]) =
+  def testConnection(implicit xa: HikariTransactor[Task]): ZIO[Any, Nothing, Exit[Throwable, Double]] =
     sql"select random()".query[Double].unique.transact(xa).run
 
   def apply(
