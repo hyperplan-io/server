@@ -2,15 +2,7 @@ package com.foundaml.server.application
 
 import cats.effect
 import cats.effect.Timer
-import com.foundaml.server.application.controllers.{
-  PredictionsHttpService,
-  ProjectsHttpService
-}
-import com.foundaml.server.domain.repositories.{
-  AlgorithmsRepository,
-  ProjectsRepository
-}
-import com.foundaml.server.domain.services.PredictionsService
+
 import org.http4s.server.blaze.BlazeBuilder
 import scalaz.zio.Task
 import scalaz.zio.interop.catz._
@@ -20,6 +12,16 @@ import scalaz.zio.duration.Duration
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.{FiniteDuration, NANOSECONDS, TimeUnit}
 import scala.util.Properties.envOrNone
+
+import com.foundaml.server.application.controllers.{
+  PredictionsHttpService,
+  ProjectsHttpService
+}
+import com.foundaml.server.domain.repositories.{
+  AlgorithmsRepository,
+  ProjectsRepository
+}
+import com.foundaml.server.domain.services.PredictionsService
 
 object Server {
   val port: Int = envOrNone("HTTP_PORT").fold(9090)(_.toInt)

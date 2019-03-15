@@ -1,5 +1,14 @@
 package com.foundaml.server.application.controllers
 
+import io.circe.generic.extras.auto._
+import org.http4s.circe._
+
+import org.http4s.{HttpService, _}
+import org.http4s.dsl.Http4sDsl
+
+import scalaz.zio.Task
+import scalaz.zio.interop.catz._
+
 import java.util.UUID
 
 import com.foundaml.server.application.controllers.requests._
@@ -7,12 +16,6 @@ import com.foundaml.server.domain.models._
 import com.foundaml.server.domain.repositories._
 import com.foundaml.server.domain.services.PredictionsService
 import com.foundaml.server.infrastructure.serialization._
-import io.circe.generic.extras.auto._
-import org.http4s.{HttpService, _}
-import org.http4s.circe._
-import org.http4s.dsl.Http4sDsl
-import scalaz.zio.Task
-import scalaz.zio.interop.catz._
 
 class ProjectsHttpService(
     predictionsService: PredictionsService,

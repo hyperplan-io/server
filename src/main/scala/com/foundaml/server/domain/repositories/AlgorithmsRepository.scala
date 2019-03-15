@@ -4,7 +4,6 @@ import doobie._
 import doobie.implicits._
 
 import scalaz.zio.Task
-import scalaz.zio.interop.catz._
 
 import com.foundaml.server.domain.models.Algorithm
 import com.foundaml.server.domain.models.backends._

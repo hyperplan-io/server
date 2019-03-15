@@ -3,8 +3,6 @@ package com.foundaml.server.domain.repositories
 import doobie._
 import doobie.implicits._
 
-import io.circe.generic.extras.auto._
-
 import scalaz.zio.Task
 import scalaz.zio.interop.catz._
 
@@ -47,7 +45,7 @@ class ProjectsRepository(implicit xa: Transactor[Task]) {
     sql"""
       SELECT id, name, problem, algorithm_policy, feature_class, label_class
       FROM projects
-      WHERE id=${projectId}
+      WHERE id=$projectId
       """
       .query[
         (

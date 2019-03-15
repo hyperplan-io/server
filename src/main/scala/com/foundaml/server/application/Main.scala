@@ -2,25 +2,31 @@ package com.foundaml.server.application
 
 import cats.effect
 import cats.effect.Timer
-import com.foundaml.server.domain.models.Prediction
-import com.foundaml.server.domain.repositories.{
-  AlgorithmsRepository,
-  ProjectsRepository
-}
-import com.foundaml.server.domain.services.PredictionsService
+
+import scalaz.zio.clock.Clock
+import scalaz.zio.duration.Duration
+import scalaz.zio.{App, IO, Task, ZIO}
+import scalaz.zio.interop.catz._
+
+
+
+import scala.concurrent.duration.{FiniteDuration, NANOSECONDS, TimeUnit}
+import scala.util.{Left, Right}
+
+
 import com.foundaml.server.infrastructure.serialization.{
   JsonService,
   PredictionSerializer
 }
 import com.foundaml.server.infrastructure.storage.PostgresqlService
 import com.foundaml.server.infrastructure.streaming.KinesisService
-import scalaz.zio.clock.Clock
-import scalaz.zio.duration.Duration
-import scalaz.zio.{App, IO, Task, ZIO}
-import scalaz.zio.interop.catz._
 
-import scala.concurrent.duration.{FiniteDuration, NANOSECONDS, TimeUnit}
-import scala.util.{Left, Right}
+import com.foundaml.server.domain.repositories.{
+  AlgorithmsRepository,
+  ProjectsRepository
+}
+import com.foundaml.server.domain.services.PredictionsService
+import com.foundaml.server.domain.models.Prediction
 
 object Main extends App {
 

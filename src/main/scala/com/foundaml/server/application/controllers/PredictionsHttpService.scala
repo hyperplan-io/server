@@ -1,10 +1,13 @@
 package com.foundaml.server.application.controllers
 
-import org.http4s.{HttpService, _}
 import org.http4s.circe._
+
+import org.http4s.{HttpService, _}
 import org.http4s.dsl.Http4sDsl
+
 import scalaz.zio.Task
 import scalaz.zio.interop.catz._
+
 import com.foundaml.server.application.controllers.requests._
 import com.foundaml.server.domain.models._
 import com.foundaml.server.domain.models.backends._

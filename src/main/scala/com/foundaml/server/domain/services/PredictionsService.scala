@@ -1,10 +1,11 @@
 package com.foundaml.server.domain.services
 
+import scalaz.zio.{IO, Task}
+
 import com.foundaml.server.domain.models._
 import com.foundaml.server.domain.models.backends._
 import com.foundaml.server.domain.models.features._
 import com.foundaml.server.domain.models.labels._
-import scalaz.zio.{IO, Task}
 
 class PredictionsService {
 
