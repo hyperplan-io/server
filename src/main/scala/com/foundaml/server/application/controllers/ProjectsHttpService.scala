@@ -1,8 +1,5 @@
 package com.foundaml.server.application.controllers
 
-import io.circe.generic.extras.auto._
-import org.http4s.circe._
-
 import org.http4s.{HttpService, _}
 import org.http4s.dsl.Http4sDsl
 
@@ -23,14 +20,12 @@ class ProjectsHttpService(
     algorithmsRepository: AlgorithmsRepository
 ) extends Http4sDsl[Task] {
 
-  implicit val discriminator = CirceEncoders.discriminator
-  implicit val requestDecoder: EntityDecoder[Task, PostProjectRequest] =
-    jsonOf[Task, PostProjectRequest]
+
   val service: HttpService[Task] = {
     HttpService[Task] {
       case req @ POST -> Root =>
         (for {
-          request <- req.as[PostProjectRequest]
+          request <- req.attemptAs[PostProjectRequest](PostProjectRequestEntitySerializer.entityDecoder).fold(throw _, identity)
           project = Project(
             UUID.randomUUID().toString,
             request.name,

@@ -1,7 +1,5 @@
 package com.foundaml.server.application.controllers
 
-import org.http4s.circe._
-
 import org.http4s.{HttpService, _}
 import org.http4s.dsl.Http4sDsl
 
@@ -14,10 +12,7 @@ import com.foundaml.server.domain.models.backends._
 import com.foundaml.server.domain.models.labels._
 import com.foundaml.server.domain.repositories._
 import com.foundaml.server.domain.services.PredictionsService
-import com.foundaml.server.infrastructure.serialization.{
-  LabelsSerializer,
-  PredictionRequestSerializer
-}
+import com.foundaml.server.infrastructure.serialization.{LabelsSerializer, PredictionRequestEntitySerializer}
 
 class PredictionsHttpService(
     predictionsService: PredictionsService,
@@ -25,22 +20,18 @@ class PredictionsHttpService(
     algorithmsRepository: AlgorithmsRepository
 ) extends Http4sDsl[Task] {
 
-  implicit val decoder = PredictionRequestSerializer.decoder
-  implicit val requestDecoder: EntityDecoder[Task, PredictionRequest] =
-    jsonOf[Task, PredictionRequest]
-
   val service: HttpService[Task] = {
     HttpService[Task] {
       case req @ POST -> Root =>
         Ok(for {
-          predictionRequest <- req.as[PredictionRequest]
+          predictionRequest <- req.attemptAs[PredictionRequest](PredictionRequestEntitySerializer.requestDecoder).fold(throw _, identity)
           labels <- predict(predictionRequest)
           _ = println(labels)
         } yield LabelsSerializer.encodeJson(labels))
     }
   }
 
-  def predict(request: PredictionRequest) = {
+  def predict(request: PredictionRequest): Task[Labels] = {
 
     val computed = TensorFlowClassificationLabels(
       List(
