@@ -3,23 +3,21 @@ package com.foundaml.server.services
 import org.scalatest._
 import org.scalatest.Inside.inside
 
-import com.foundaml.server.services.domain._
-import com.foundaml.server.models.features._
-import com.foundaml.server.models.features.transformers._
-import com.foundaml.server.models.labels._
-import com.foundaml.server.models.backends._
-import com.foundaml.server.models._
-import com.foundaml.server.models.features.transformers.TensorFlowFeaturesTransformer
+import com.foundaml.server.domain.models.features._
+import com.foundaml.server.domain.models.features.transformers._
+import com.foundaml.server.domain.models.labels._
+import com.foundaml.server.domain.models.backends._
+import com.foundaml.server.domain.models._
+import com.foundaml.server.domain.models.features.transformers.TensorFlowFeaturesTransformer
 import com.foundaml.server.utils._
 
-import com.foundaml.server.services.infrastructure.serialization.FeaturesSerializer
+import com.foundaml.server.infrastructure.serialization.FeaturesSerializer
 
 import io.circe._
 import io.circe.syntax._
 import io.circe.parser._
 
 import scalaz.zio.DefaultRuntime
-
 
 class FeaturesTransformerServiceSpec extends FlatSpec with DefaultRuntime {
 
@@ -32,22 +30,22 @@ class FeaturesTransformerServiceSpec extends FlatSpec with DefaultRuntime {
       )
     )
 
-
     val transformer2 = new TensorFlowFeaturesTransformer(
       "my_signature_name",
       List(
         "test",
-        "toto",
+        "toto"
       )
     )
 
-    inside(transformer2.transform(
-      features3
-    )) {
+    inside(
+      transformer2.transform(
+        features3
+      )
+    ) {
       case Left(err) =>
-
     }
-    
+
     val features2 = Features(
       List(
         StringFeature("test instance"),
@@ -63,11 +61,12 @@ class FeaturesTransformerServiceSpec extends FlatSpec with DefaultRuntime {
       )
     )
 
-    inside(transformer3.transform(
-      features2
-    )) {
+    inside(
+      transformer3.transform(
+        features2
+      )
+    ) {
       case Left(err) =>
-
     }
   }
 
@@ -79,7 +78,6 @@ class FeaturesTransformerServiceSpec extends FlatSpec with DefaultRuntime {
         FloatFeature(0.5f)
       )
     )
-
 
     val transformer = new TensorFlowFeaturesTransformer(
       "my_signature_name",
@@ -94,7 +92,7 @@ class FeaturesTransformerServiceSpec extends FlatSpec with DefaultRuntime {
       features
     )
     val expectedJson = parse(
-        """
+      """
         {
           "signature_name": "my_signature_name",
           "examples": [
@@ -111,8 +109,9 @@ class FeaturesTransformerServiceSpec extends FlatSpec with DefaultRuntime {
     inside(transformedFeatures) {
       case Right(tfFeatures) =>
         assert(
-          Json.eqJson.eqv(FeaturesSerializer.encodeJson(tfFeatures), expectedJson)
-        )   
+          Json.eqJson
+            .eqv(FeaturesSerializer.encodeJson(tfFeatures), expectedJson)
+        )
     }
   }
 }

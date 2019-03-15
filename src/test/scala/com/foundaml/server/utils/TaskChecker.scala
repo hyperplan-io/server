@@ -3,7 +3,7 @@ package com.foundaml.server.utils
 import doobie.scalatest.imports._
 import doobie.imports._
 
-import cats.effect.{Effect}
+import cats.effect.Effect
 
 import org.scalatest._
 
