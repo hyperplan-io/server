@@ -33,13 +33,11 @@ class PredictionsHttpService(
 
   def predict(request: PredictionRequest): Task[Labels] = {
 
-    val computed = TensorFlowClassificationLabels(
+    val computed = Labels(
       List(
-        TensorFlowClassicationLabel(
-          List(1, 2, 3),
-          List(0.0f, 0.1f, 0.2f),
-          List("class1", "class2", "class3"),
-          List(0.0f, 0.0f, 0.0f)
+        ClassificationLabel(
+          "toto",
+          0.5f
         )
       )
     )
