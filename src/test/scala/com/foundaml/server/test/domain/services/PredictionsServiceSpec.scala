@@ -4,12 +4,14 @@ import com.foundaml.server.domain.services.PredictionsService
 import org.scalatest._
 import org.scalatest.Inside.inside
 import com.foundaml.server.domain.models.features._
-import com.foundaml.server.test.ProjectGenerator
+import com.foundaml.server.domain.repositories.ProjectsRepository
+import com.foundaml.server.test.{ProjectGenerator, TestDatabase}
 import scalaz.zio.DefaultRuntime
 
-class PredictionsServiceSpec extends FlatSpec with DefaultRuntime {
+class PredictionsServiceSpec extends FlatSpec with DefaultRuntime with TestDatabase {
 
-  val predictionsService = new PredictionsService()
+  val projectRepository = new ProjectsRepository()(xa)
+  val predictionsService = new PredictionsService(projectRepository)
 
   it should "execute predictions correctly on local backend" in {
     val features = CustomFeatures(
