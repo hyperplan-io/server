@@ -25,9 +25,9 @@ class FeaturesTransformerServiceSpec extends FlatSpec with DefaultRuntime {
       )
     )
 
-    val transformer2 = new TensorFlowFeaturesTransformer(
+    val transformer2 = TensorFlowFeaturesTransformer(
       "my_signature_name",
-      List(
+      Set(
         "test",
         "toto"
       )
@@ -47,9 +47,9 @@ class FeaturesTransformerServiceSpec extends FlatSpec with DefaultRuntime {
         IntFeature(1)
       )
     )
-    val transformer3 = new TensorFlowFeaturesTransformer(
+    val transformer3 = TensorFlowFeaturesTransformer(
       "my_signature_name",
-      List(
+      Set(
         "test",
         "toto",
         "titi"
@@ -74,9 +74,9 @@ class FeaturesTransformerServiceSpec extends FlatSpec with DefaultRuntime {
       )
     )
 
-    val transformer = new TensorFlowFeaturesTransformer(
+    val transformer = TensorFlowFeaturesTransformer(
       "my_signature_name",
-      List(
+      Set(
         "test",
         "toto",
         "titi"

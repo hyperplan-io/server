@@ -2,15 +2,15 @@ package com.foundaml.server.domain.models.features.transformers
 
 import com.foundaml.server.domain.models.features._
 
-class TensorFlowFeaturesTransformer(
+case class TensorFlowFeaturesTransformer(
     signatureName: String,
-    fields: List[String]
+    fields: Set[String]
 ) {
 
   def transform(
       features: Features
   ): Either[Throwable, TensorFlowClassificationFeatures] = {
-    if (features.features.length == fields.length) {
+    if (features.features.size == fields.size) {
       val examples = features.features.zip(fields).map {
         case (DoubleFeature(value), field) =>
           TensorFlowDoubleFeature(field, value)

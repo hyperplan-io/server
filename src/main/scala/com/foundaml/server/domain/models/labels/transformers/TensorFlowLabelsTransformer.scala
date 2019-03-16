@@ -13,7 +13,7 @@ case class TensorFlowLabel(label: String, probability: Float) {
   override def hashCode: Int = label.toUpperCase.hashCode
 }
 
-class TensorFlowLabelsTransformer(fields: Set[String]) {
+case class TensorFlowLabelsTransformer(fields: Set[String]) {
 
   def transform(
       tfLabels: TensorFlowLabels
