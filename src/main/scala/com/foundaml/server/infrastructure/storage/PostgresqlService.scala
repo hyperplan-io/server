@@ -12,9 +12,14 @@ import cats.effect.Resource
 object PostgresqlService {
 
   def testConnection(
-      implicit xa: HikariTransactor[Task]
+      implicit xa: doobie.Transactor[Task]
   ): ZIO[Any, Nothing, Exit[Throwable, Double]] =
     sql"select random()".query[Double].unique.transact(xa).run
+
+  def initSchema(implicit xa: doobie.Transactor[Task]) =
+    (createProjectsTable, createAlgorithmsTable, createPredictionsTable)
+      .mapN(_ + _ + _)
+      .transact(xa)
 
   def apply(
       host: String,
@@ -22,7 +27,7 @@ object PostgresqlService {
       database: String,
       username: String,
       password: String
-  ): Resource[Task, HikariTransactor[Task]] = {
+  ): Resource[Task, doobie.Transactor[Task]] = {
     for {
       ce <- ExecutionContexts.fixedThreadPool[Task](32) // our connect EC
       te <- ExecutionContexts.cachedThreadPool[Task]
@@ -36,4 +41,33 @@ object PostgresqlService {
       )
     } yield xa
   }
+
+  val createProjectsTable: doobie.ConnectionIO[Int] = sql"""
+      CREATE TABLE IF NOT EXISTS projects(
+        id VARCHAR(36) PRIMARY KEY,
+        name VARCHAR NOT NULL,
+        problem VARCHAR NOT NULL,
+        algorithm_policy VARCHAR(36) NOT NULL,
+        feature_class VARCHAR NOT NULL,
+        label_class VARCHAR NOT NULL
+      )
+    """.update.run
+
+  val createAlgorithmsTable: doobie.ConnectionIO[Int] = sql"""
+      CREATE TABLE IF NOT EXISTS algorithms(
+        id VARCHAR(36) PRIMARY KEY,
+        backend VARCHAR NOT NULL ,
+        project_id VARCHAR(36) NOT NULL,
+        FOREIGN KEY (project_id) references projects(id)
+      );
+    """.update.run
+
+  val createPredictionsTable: doobie.ConnectionIO[Int] = sql"""
+      CREATE TABLE IF NOT EXISTS predictions(
+        id VARCHAR(36),
+        features VARCHAR NOT NULL,
+        predicted_labels TEXT NOT NULL,
+        true_labels VARCHAR
+      )
+    """.update.run
 }

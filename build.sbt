@@ -30,6 +30,7 @@ lazy val root = (project in file("."))
       "org.tpolecat"    %% "doobie-core"                % DoobieVersion,
       "org.tpolecat"    %% "doobie-hikari"              % DoobieVersion,
       "org.tpolecat"    %% "doobie-postgres"            % DoobieVersion,
+      "org.tpolecat"    %% "doobie-h2"                  % DoobieVersion % "test",
       "org.tpolecat"    %% "doobie-scalatest"           % DoobieVersion % "test",
     ),
     addCompilerPlugin("org.spire-math" %% "kind-projector"     % "0.9.6"),
