@@ -35,8 +35,11 @@ object ProjectGenerator {
       Classification(),
       CustomFeatures.featuresClass,
       10,
-      "tf.cl",
-      5
+      Set(
+        "class1",
+        "class2",
+        "class3"
+      )
     ),
     Nil,
     DefaultAlgorithm(defaultAlgorithmId)

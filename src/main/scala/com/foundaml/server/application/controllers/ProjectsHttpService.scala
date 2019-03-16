@@ -37,8 +37,7 @@ class ProjectsHttpService(
               request.configuration.problem,
               request.configuration.featureClass,
               request.configuration.featuresSize,
-              request.configuration.labelsClass,
-              request.configuration.labelsSize
+              request.configuration.labels
             ),
             Nil,
             NoAlgorithm()
@@ -58,8 +57,7 @@ class ProjectsHttpService(
               Right(problem),
               featuresClass,
               featuresSize,
-              labelsClass,
-              labelsSize
+              labels
               ) =>
             Ok(
               ProjectSerializer.encodeJson(
@@ -70,8 +68,7 @@ class ProjectsHttpService(
                     problem,
                     featuresClass,
                     featuresSize,
-                    labelsClass,
-                    labelsSize
+                    labels
                   ),
                   Nil,
                   algorithmPolicy

@@ -6,8 +6,7 @@ case class PostProjectConfiguration(
     problem: ProblemType,
     featureClass: String,
     featuresSize: Int,
-    labelsClass: String,
-    labelsSize: Int
+    labels: Set[String]
 )
 
 case class PostProjectRequest(

@@ -6,3 +6,4 @@ sealed trait PredictionError {
 
 case class NoAlgorithmAvailable(message: String) extends PredictionError
 case class FeaturesValidationFailed(message: String) extends PredictionError
+case class LabelsValidationFailed(message: String) extends PredictionError

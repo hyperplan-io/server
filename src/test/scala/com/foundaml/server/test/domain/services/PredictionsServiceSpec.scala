@@ -1,5 +1,6 @@
 package com.foundaml.server.test.domain.services
 
+import com.foundaml.server.domain.models.errors.FeaturesValidationFailed
 import com.foundaml.server.domain.services.PredictionsService
 import org.scalatest._
 import org.scalatest.Inside.inside
@@ -13,7 +14,7 @@ class PredictionsServiceSpec extends FlatSpec with DefaultRuntime with TestDatab
   val projectRepository = new ProjectsRepository()(xa)
   val predictionsService = new PredictionsService(projectRepository)
 
-  it should "execute predictions correctly on local backend" in {
+  it should "fail to execute predictions for an incorrect configuration" in {
     val features = CustomFeatures(
       List(
         StringFeature("test instance"),
@@ -33,11 +34,8 @@ class PredictionsServiceSpec extends FlatSpec with DefaultRuntime with TestDatab
         )
         .map { prediction =>
           inside(prediction) {
-            case Left(
-                com.foundaml.server.domain.models.errors
-                  .NoAlgorithmAvailable(message)
-                ) =>
-              assert(message == "No algorithms are setup")
+            case Left(FeaturesValidationFailed(message)) =>
+              assert(message == "The features are not correct for this project")
           }
         }
     )

@@ -69,8 +69,11 @@ class PredictionsHttpService(
         Classification(),
         DoubleFeatures.featuresClass,
         10,
-        "labelClass",
-        5
+        Set(
+          "label1",
+          "label2",
+          "label3"
+        )
       ),
       Nil,
       DefaultAlgorithm(defaultAlgorithmId)

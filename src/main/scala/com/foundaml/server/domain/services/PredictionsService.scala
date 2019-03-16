@@ -3,7 +3,7 @@ package com.foundaml.server.domain.services
 import scalaz.zio.{IO, Task}
 import com.foundaml.server.domain.models._
 import com.foundaml.server.domain.models.backends._
-import com.foundaml.server.domain.models.errors.{FeaturesValidationFailed, NoAlgorithmAvailable, PredictionError}
+import com.foundaml.server.domain.models.errors.{FeaturesValidationFailed, LabelsValidationFailed, NoAlgorithmAvailable, PredictionError}
 import com.foundaml.server.domain.models.features._
 import com.foundaml.server.domain.models.labels._
 import com.foundaml.server.domain.repositories.ProjectsRepository
@@ -47,8 +47,8 @@ class PredictionsService(projectsRepository: ProjectsRepository) {
       )
   }
 
-  def validateFeatures(expectedFeaturesClass: String, features: Features): Boolean = {
-    expectedFeaturesClass match {
+  def validateFeatures(expectedFeaturesClass: String, expectedFeaturesSize: Int, features: Features): Boolean = {
+    lazy val typeCheck = expectedFeaturesClass match {
       case DoubleFeatures.featuresClass =>
         features.features.count(_.isInstanceOf[DoubleFeature]) == features.features.size
       case FloatFeatures.featuresClass =>
@@ -61,6 +61,13 @@ class PredictionsService(projectsRepository: ProjectsRepository) {
         // custom features does not guarantee the features to be correct
         true
     }
+    lazy val sizeCheck = features.features.size == expectedFeaturesSize
+
+    sizeCheck && typeCheck
+  }
+
+  def validateLabels(expectedLabelsClass: Set[String], labels: Labels): Boolean = {
+    expectedLabelsClass == labels.labels.map(_.label)
   }
 
   def predict(
@@ -68,7 +75,7 @@ class PredictionsService(projectsRepository: ProjectsRepository) {
       project: Project,
       optionalAlgoritmId: Option[String]
   ): Task[Either[PredictionError, Labels]] = {
-    if(validateFeatures(project.configuration.featureClass, features)) {
+    if(validateFeatures(project.configuration.featureClass, project.configuration.featuresSize, features)) {
       optionalAlgoritmId.fold(
         predictWithProjectPolicy(features, project)
       )(
@@ -77,7 +84,17 @@ class PredictionsService(projectsRepository: ProjectsRepository) {
             .get(algorithmId)
             .fold(
               predictWithProjectPolicy(features, project)
-            )(algorithm => predictWithAlgorithm(features, algorithm))
+            )(algorithm =>
+              predictWithAlgorithm(features, algorithm).map { predictionResults =>
+                predictionResults.flatMap { labels =>
+                  if(validateLabels(project.configuration.labels, labels)) {
+                    Right(labels)
+                  } else {
+                    Left(LabelsValidationFailed("The labels do not match the project configuration"))
+                  }
+                }
+              }
+            )
       )
     } else {
       Task(
@@ -89,5 +106,4 @@ class PredictionsService(projectsRepository: ProjectsRepository) {
       )
     }
   }
-
 }
