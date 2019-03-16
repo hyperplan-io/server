@@ -1,7 +1,8 @@
 package com.foundaml.server.test.domain.repositories
 
 import com.foundaml.server.domain.repositories.AlgorithmsRepository
-import com.foundaml.server.test.utils.{AlgorithmGenerator, TaskChecker, TestDatabase}
+import com.foundaml.server.test.{AlgorithmGenerator, TaskChecker, TestDatabase}
+import com.foundaml.server.test.{TaskChecker, TestDatabase}
 import org.scalatest._
 
 class AlgorithmsRepositorySpec

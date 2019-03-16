@@ -3,7 +3,7 @@ package com.foundaml.server.test.domain.services
 import com.foundaml.server.domain.services.PredictionsService
 import org.scalatest._
 import com.foundaml.server.domain.models.features._
-import com.foundaml.server.test.utils.ProjectGenerator
+import com.foundaml.server.test.ProjectGenerator
 import scalaz.zio.DefaultRuntime
 
 class PredictionsServiceSpec extends FlatSpec with DefaultRuntime {

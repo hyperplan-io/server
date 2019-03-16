@@ -1,13 +1,9 @@
-package com.foundaml.server.test.utils
-
-import doobie.scalatest.imports._
-import doobie.imports._
+package com.foundaml.server.test
 
 import cats.effect.Effect
-
-import org.scalatest._
-
-import scalaz.zio.{IO, Task}
+import doobie.scalatest.imports.Checker
+import org.scalatest.Assertions
+import scalaz.zio.Task
 import scalaz.zio.interop.catz._
 
 trait TaskChecker extends Checker[Task] {

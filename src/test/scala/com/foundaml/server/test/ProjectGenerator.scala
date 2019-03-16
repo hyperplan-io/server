@@ -1,10 +1,10 @@
-package com.foundaml.server.test.utils
-
-import com.foundaml.server.domain.models._
-import com.foundaml.server.domain.models.labels._
-import com.foundaml.server.domain.models.backends._
+package com.foundaml.server.test
 
 import java.util.UUID
+
+import com.foundaml.server.domain.models._
+import com.foundaml.server.domain.models.backends.Local
+import com.foundaml.server.domain.models.labels.Labels
 
 object ProjectGenerator {
 

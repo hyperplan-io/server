@@ -1,7 +1,8 @@
 package com.foundaml.server.test.domain.repositories
 
 import com.foundaml.server.domain.repositories._
-import com.foundaml.server.test.utils.{ProjectGenerator, TaskChecker, TestDatabase}
+import com.foundaml.server.test.{ProjectGenerator, TaskChecker, TestDatabase}
+import com.foundaml.server.test.{TaskChecker, TestDatabase}
 import org.scalatest._
 
 class ProjectsRepositorySpec

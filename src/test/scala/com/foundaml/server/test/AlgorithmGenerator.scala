@@ -1,9 +1,10 @@
-package com.foundaml.server.test.utils
+package com.foundaml.server.test
 
-import com.foundaml.server.domain.models.{labels, _}
-import com.foundaml.server.domain.models.labels._
-import com.foundaml.server.domain.models.backends._
 import java.util.UUID
+
+import com.foundaml.server.domain.models.backends.Local
+import com.foundaml.server.domain.models.labels.Labels
+import com.foundaml.server.domain.models.{Algorithm, labels}
 
 object AlgorithmGenerator {
 
