@@ -22,12 +22,12 @@ class ProjectsRepository(implicit xa: Transactor[Task]) {
   implicit val algorithmPolicyTypePut: Put[AlgorithmPolicy] =
     Put[String].contramap(AlgorithmPolicySerializer.encodeJson)
 
-  val separator = ","
+  val separator = ";"
   implicit val labelsTypeGet
   : Get[Set[String]] =
     Get[String].map(_.split(separator).toSet)
   implicit val labelsTypePut: Put[Set[String]] =
-    Put[String].contramap(_.mkString(separator))
+    Put[String].contramap(labels => s"${labels.mkString(separator)}")
 
   def insertQuery(project: Project) =
     sql"""INSERT INTO projects(
@@ -37,7 +37,7 @@ class ProjectsRepository(implicit xa: Transactor[Task]) {
       problem,
       features_class,
       features_size,
-      labels,
+      labels
     ) VALUES(
       ${project.id},
       ${project.name},
@@ -45,7 +45,7 @@ class ProjectsRepository(implicit xa: Transactor[Task]) {
       ${project.configuration.problem},
       ${project.configuration.featureClass},
       ${project.configuration.featuresSize},
-      ${project.configuration.labels},
+      ${project.configuration.labels}
     )""".update
 
   def insert(project: Project) = insertQuery(project: Project).run.transact(xa)

@@ -35,7 +35,7 @@ class ProjectsHttpService(
             request.name,
             ProjectConfiguration(
               request.configuration.problem,
-              request.configuration.featureClass,
+              request.configuration.featuresClass,
               request.configuration.featuresSize,
               request.configuration.labels
             ),

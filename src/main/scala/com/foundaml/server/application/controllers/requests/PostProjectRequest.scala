@@ -4,12 +4,12 @@ import com.foundaml.server.domain.models._
 
 case class PostProjectConfiguration(
     problem: ProblemType,
-    featureClass: String,
+    featuresClass: String,
     featuresSize: Int,
     labels: Set[String]
 )
 
 case class PostProjectRequest(
-    name: String,
-    configuration: PostProjectConfiguration
+    name: String
+    ,configuration: PostProjectConfiguration
 )
