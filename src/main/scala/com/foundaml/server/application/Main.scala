@@ -46,6 +46,9 @@ object Main extends App {
   def databaseConnected(implicit xa: doobie.Transactor[Task]) =
     for {
       _ <- printLine("Connected to database")
+      _ <- printLine("Running SQL scripts")
+      _ <- PostgresqlService.initSchema
+      _ <- printLine("SQL scripts have been runned successfully")
       predictionsService = new PredictionsService()
       projectsRepository = new ProjectsRepository
       algorithmsRepository = new AlgorithmsRepository

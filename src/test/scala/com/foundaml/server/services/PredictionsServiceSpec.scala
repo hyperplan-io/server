@@ -3,9 +3,6 @@ package com.foundaml.server.services
 import com.foundaml.server.domain.services.PredictionsService
 import org.scalatest._
 import com.foundaml.server.domain.models.features._
-import com.foundaml.server.domain.models.labels._
-import com.foundaml.server.domain.models.backends._
-import com.foundaml.server.domain.models._
 import com.foundaml.server.utils._
 import scalaz.zio.DefaultRuntime
 
