@@ -20,8 +20,8 @@ object LabelsSerializer {
   implicit val encoder: Encoder[Labels] = deriveEncoder[Labels]
   implicit val decoder: Decoder[Labels] = deriveDecoder[Labels]
 
-  def encodeJson(labels: Labels): String = {
-    labels.asJson.noSpaces
+  def encodeJson(labels: Labels): Json = {
+    labels.asJson
   }
 
   def decodeJson(n: String): Labels = {

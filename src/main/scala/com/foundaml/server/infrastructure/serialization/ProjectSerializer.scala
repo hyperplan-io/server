@@ -31,8 +31,8 @@ object ProjectSerializer {
   implicit val encoder: Encoder[Project] = deriveEncoder
   implicit val decoder: Decoder[Project] = deriveDecoder
 
-  def encodeJson(project: Project): String = {
-    project.asJson.noSpaces
+  def encodeJson(project: Project): Json = {
+    project.asJson
   }
 
   def decodeJson(n: String): Project = {
