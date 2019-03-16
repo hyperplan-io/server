@@ -8,7 +8,10 @@ import com.foundaml.server.test.SerializerTester
 import io.circe.{Decoder, Encoder}
 import org.scalatest.{FlatSpec, Matchers}
 
-class PredictionSerializerSpec extends FlatSpec with SerializerTester with Matchers {
+class PredictionSerializerSpec
+    extends FlatSpec
+    with SerializerTester
+    with Matchers {
 
   val encoder: Encoder[Prediction] = PredictionSerializer.encoder
   val decoder: Decoder[Prediction] = PredictionSerializer.decoder
@@ -20,7 +23,7 @@ class PredictionSerializerSpec extends FlatSpec with SerializerTester with Match
 
     testEncoder(prediction) { json =>
       val expectedJson = s"""{"id":"$predictionId"}"""
-      json.noSpaces should be (expectedJson)
+      json.noSpaces should be(expectedJson)
     }(encoder)
   }
 
@@ -29,7 +32,7 @@ class PredictionSerializerSpec extends FlatSpec with SerializerTester with Match
     val predictionId = UUID.randomUUID().toString
     val predictionJson = s"""{"id":"$predictionId"}"""
     testDecoder[Prediction](predictionJson) { prediction =>
-      prediction.id should be (predictionId)
+      prediction.id should be(predictionId)
     }(decoder)
   }
 }

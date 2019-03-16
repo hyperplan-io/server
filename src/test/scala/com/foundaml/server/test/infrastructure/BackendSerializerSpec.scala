@@ -6,16 +6,22 @@ import com.foundaml.server.domain.models.Prediction
 import com.foundaml.server.domain.models.backends.{Backend, TensorFlowBackend}
 import com.foundaml.server.domain.models.features.transformers.TensorFlowFeaturesTransformer
 import com.foundaml.server.domain.models.labels.transformers.TensorFlowLabelsTransformer
-import com.foundaml.server.infrastructure.serialization.{BackendSerializer, PredictionSerializer}
+import com.foundaml.server.infrastructure.serialization.{
+  BackendSerializer,
+  PredictionSerializer
+}
 import com.foundaml.server.test.SerializerTester
 import io.circe.{Decoder, Encoder}
 import org.scalatest.{FlatSpec, Matchers}
 import org.scalatest.Inside.inside
 
-class BackendSerializerSpec extends FlatSpec with SerializerTester with Matchers {
+class BackendSerializerSpec
+    extends FlatSpec
+    with SerializerTester
+    with Matchers {
 
-  val encoder: Encoder[Backend] = BackendSerializer.encoder
-  val decoder: Decoder[Backend] = BackendSerializer.decoder
+  val encoder: Encoder[Backend] = BackendSerializer.Implicits.encoder
+  val decoder: Decoder[Backend] = BackendSerializer.Implicits.decoder
 
   val doubleQuote = "\""
 
@@ -48,15 +54,20 @@ class BackendSerializerSpec extends FlatSpec with SerializerTester with Matchers
       labelFields
     )
 
-    val backend = TensorFlowBackend(host, port, featuresTransformer, labelsTransformer)
+    val backend =
+      TensorFlowBackend(host, port, featuresTransformer, labelsTransformer)
 
     testEncoder(backend: Backend) { json =>
-      val featuresJson = featureFields.map(field => s"$doubleQuote$field$doubleQuote").mkString(",")
-      val labelsJson = labelFields.map(field => s"$doubleQuote$field$doubleQuote").mkString(",")
+      val featuresJson = featureFields
+        .map(field => s"$doubleQuote$field$doubleQuote")
+        .mkString(",")
+      val labelsJson = labelFields
+        .map(field => s"$doubleQuote$field$doubleQuote")
+        .mkString(",")
 
       val expectedJson =
         s"""{"host":"$host","port":$port,"featuresTransformer":{"signatureName":"$signatureName","fields":[$featuresJson]},"labelsTransformer":{"fields":[$labelsJson]},"class":"TensorFlowBackend"}"""
-      json.noSpaces should be (expectedJson)
+      json.noSpaces should be(expectedJson)
     }(encoder)
   }
 
@@ -87,19 +98,28 @@ class BackendSerializerSpec extends FlatSpec with SerializerTester with Matchers
     val expectedLabelsTransformer = TensorFlowLabelsTransformer(
       expectedLabelFields
     )
-    val featuresJson = expectedFeatureFields.map(field => s"$doubleQuote$field$doubleQuote").mkString(",")
-    val labelsJson = expectedLabelFields.map(field => s"$doubleQuote$field$doubleQuote").mkString(",")
+    val featuresJson = expectedFeatureFields
+      .map(field => s"$doubleQuote$field$doubleQuote")
+      .mkString(",")
+    val labelsJson = expectedLabelFields
+      .map(field => s"$doubleQuote$field$doubleQuote")
+      .mkString(",")
 
     val backendJson =
       s"""{"host":"$expectedHost","port":$expectedPort,"featuresTransformer":{"signatureName":"$expectedSignatureName","fields":[$featuresJson]},"labelsTransformer":{"fields":[$labelsJson]},"class":"TensorFlowBackend"}"""
 
     testDecoder[Backend](backendJson) { backend =>
       inside(backend) {
-        case TensorFlowBackend(host, port, featuresTransformer, labelsTransformer) =>
-          host should be (expectedHost)
-          port should be (expectedPort)
-          featuresTransformer should be (expectedFeaturesTransformer)
-          labelsTransformer should be (expectedLabelsTransformer)
+        case TensorFlowBackend(
+            host,
+            port,
+            featuresTransformer,
+            labelsTransformer
+            ) =>
+          host should be(expectedHost)
+          port should be(expectedPort)
+          featuresTransformer should be(expectedFeaturesTransformer)
+          labelsTransformer should be(expectedLabelsTransformer)
       }
     }(decoder)
   }

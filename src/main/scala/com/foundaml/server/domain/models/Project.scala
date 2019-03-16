@@ -9,5 +9,6 @@ case class Project(
     algorithms: List[Algorithm],
     policy: AlgorithmPolicy
 ) {
-  lazy val algorithmsMap: Map[String, Algorithm] = algorithms.map(algorithm => algorithm.id -> algorithm).toMap
+  lazy val algorithmsMap: Map[String, Algorithm] =
+    algorithms.map(algorithm => algorithm.id -> algorithm).toMap
 }

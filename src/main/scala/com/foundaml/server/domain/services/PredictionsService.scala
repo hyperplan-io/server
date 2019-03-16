@@ -1,44 +1,52 @@
 package com.foundaml.server.domain.services
 
 import scalaz.zio.{IO, Task}
-
 import com.foundaml.server.domain.models._
 import com.foundaml.server.domain.models.backends._
+import com.foundaml.server.domain.models.errors.{
+  NoAlgorithmAvailable,
+  PredictionError
+}
 import com.foundaml.server.domain.models.features._
 import com.foundaml.server.domain.models.labels._
 
 class PredictionsService {
 
-  def noAlgorithm(): Task[Labels] =
-    Task.fail(new Exception("No algorithms are setup"))
+  def noAlgorithm(): Task[Either[PredictionError, Labels]] =
+    Task(Left(NoAlgorithmAvailable("No algorithms are setup")))
 
   def predictWithProjectPolicy(
       features: Features,
       project: Project
-  ): Task[Labels] =
+  ): Task[Either[PredictionError, Labels]] =
     project.policy
       .take()
       .fold(
         noAlgorithm()
       ) { algorithmId =>
-        project.algorithmsMap.get(algorithmId).fold(
-          noAlgorithm()
-        )(algorithm =>
-          predictWithAlgorithm(
-            features,
-            algorithm
+        project.algorithmsMap
+          .get(algorithmId)
+          .fold(
+            noAlgorithm()
+          )(
+            algorithm =>
+              predictWithAlgorithm(
+                features,
+                algorithm
+              )
           )
-        )
       }
 
   def predictWithAlgorithm(
       features: Features,
       algorithm: Algorithm
-  ): Task[Labels] = algorithm.backend match {
+  ): Task[Either[PredictionError, Labels]] = algorithm.backend match {
     case local: Local =>
-      IO(local.computed)
+      Task(Right(local.computed))
     case tfBackend @ TensorFlowBackend(host, port, fTransormer, lTransformer) =>
-      ???
+      Task(
+        Left(NoAlgorithmAvailable("Tensorflow backend is not implemented yet"))
+      )
 
   }
 
@@ -46,7 +54,7 @@ class PredictionsService {
       features: Features,
       project: Project,
       optionalAlgoritmId: Option[String]
-  ): Task[Labels] =
+  ): Task[Either[PredictionError, Labels]] =
     optionalAlgoritmId.fold(
       predictWithProjectPolicy(features, project)
     )(

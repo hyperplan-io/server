@@ -4,22 +4,22 @@ import io.circe.{Decoder, Encoder}
 import io.circe.generic.extras.Configuration
 import io.circe.parser.decode
 import io.circe.syntax._
-
 import com.foundaml.server.domain.models._
+import io.circe.generic.extras.semiauto.{deriveDecoder, deriveEncoder}
 
 object AlgorithmPolicySerializer {
 
   object Implicits {
+    implicit val discriminator: Configuration =
+      Configuration.default.withDiscriminator("class")
+
+    implicit val encoder: Encoder[AlgorithmPolicy] = deriveEncoder
+    implicit val decoder: Decoder[AlgorithmPolicy] = deriveDecoder
 
   }
 
   import io.circe.generic.extras.semiauto._
-
-  implicit val discriminator: Configuration =
-    Configuration.default.withDiscriminator("class")
-
-  implicit val encoder: Encoder[AlgorithmPolicy] = deriveEncoder
-  implicit val decoder: Decoder[AlgorithmPolicy] = deriveDecoder
+  import Implicits._
 
   def encodeJson(policy: AlgorithmPolicy): String = {
     policy.asJson.noSpaces

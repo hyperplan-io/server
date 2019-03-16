@@ -8,11 +8,12 @@ import com.foundaml.server.domain.models.features.{Feature, Features}
 
 object PredictionRequestSerializer {
 
-  import io.circe.generic.extras.semiauto._
-  import FeaturesSerializer.Implicits._
+  import io.circe.generic.semiauto._
 
-  implicit val encoder2: Encoder[Features] = FeaturesSerializer.encoder
-  implicit val decoder2: Decoder[Features] = FeaturesSerializer.decoder
+  implicit val featuresEncoder: Encoder[Features] =
+    FeaturesSerializer.Implicits.encoder
+  implicit val featuresDecoder: Decoder[Features] =
+    FeaturesSerializer.Implicits.decoder
 
   implicit val encoder: Encoder[PredictionRequest] = deriveEncoder
   implicit val decoder: Decoder[PredictionRequest] = deriveDecoder

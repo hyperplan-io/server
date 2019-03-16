@@ -6,11 +6,13 @@ import io.circe.parser.decode
 import io.circe.syntax._
 import com.foundaml.server.domain.models.features._
 import io.circe.generic.extras.Configuration
-import io.circe.generic.extras.semiauto.{deriveDecoder, deriveEncoder}
 
 object FeaturesSerializer {
 
+  import io.circe.generic.extras.semiauto._
+
   object Implicits {
+
     implicit val discriminator: Configuration =
       Configuration.default.withDiscriminator("class")
 
@@ -29,14 +31,11 @@ object FeaturesSerializer {
     implicit val featureEncoder: Encoder[Feature] = deriveEncoder
     implicit val featureDecoder: Decoder[Feature] = deriveDecoder
 
+    implicit val encoder: Encoder[Features] = deriveEncoder
+    implicit val decoder: Decoder[Features] = deriveDecoder
   }
 
-  import io.circe.generic.extras.semiauto._
   import Implicits._
-
-  implicit val encoder: Encoder[Features] = deriveEncoder
-  implicit val decoder: Decoder[Features] = deriveDecoder
-
 
   def encodeJson(labels: Features): String = {
     labels.asJson.noSpaces
@@ -46,25 +45,4 @@ object FeaturesSerializer {
     decode[Features](n).right.get
   }
 
-/*
-  implicit val encodeTFClassificationFeatures
-      : Encoder[TensorFlowClassificationFeatures] =
-    (features: TensorFlowClassificationFeatures) =>
-      Json.obj(
-        ("signature_name", Json.fromString(features.signatureName)),
-        ("examples", Json.arr(Json.fromFields(features.examples.flatMap {
-          case TensorFlowDoubleFeature(key, value) =>
-            Json.fromDouble(value).map(json => key -> json)
-          case TensorFlowFloatFeature(key, value) =>
-            Json.fromFloat(value).map(json => key -> json)
-          case TensorFlowIntFeature(key, value) =>
-            Some(key -> Json.fromInt(value))
-          case TensorFlowStringFeature(key, value) =>
-            Some(key -> Json.fromString(value))
-        })))
-      )
-
-  def encodeJson(features: TensorFlowClassificationFeatures): Json =
-    features.asJson
-*/
 }

@@ -26,11 +26,7 @@ object ProjectGenerator {
   )
 
   val projectId = UUID.randomUUID().toString
-  val defaultAlgorithm = Algorithm(
-    "algorithm id",
-    Local(computed),
-    projectId
-  )
+  val defaultAlgorithmId = "algorithm id"
 
   def withLocalBackend() = Project(
     projectId,
@@ -38,7 +34,7 @@ object ProjectGenerator {
     Classification(),
     "tf.cl",
     "tf.cl",
-    Map.empty,
-    DefaultAlgorithm(defaultAlgorithm)
+    Nil,
+    DefaultAlgorithm(defaultAlgorithmId)
   )
 }

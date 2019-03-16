@@ -20,8 +20,6 @@ object LabelsSerializer {
   implicit val encoder: Encoder[Labels] = deriveEncoder[Labels]
   implicit val decoder: Decoder[Labels] = deriveDecoder[Labels]
 
-
-
   def encodeJson(labels: Labels): String = {
     labels.asJson.noSpaces
   }
@@ -30,7 +28,6 @@ object LabelsSerializer {
     decode[Labels](n).right.get
   }
 }
-
 
 object LabelSerializer {
   import io.circe.generic.extras.Configuration
@@ -41,7 +38,6 @@ object LabelSerializer {
 
   implicit val encoder: Encoder[Label] = deriveEncoder
   implicit val decoder: Decoder[Label] = deriveDecoder
-
 
   def encodeJson(labels: Label): String = {
     labels.asJson.noSpaces
