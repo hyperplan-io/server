@@ -46,10 +46,12 @@ object PostgresqlService {
       CREATE TABLE IF NOT EXISTS projects(
         id VARCHAR(36) PRIMARY KEY,
         name VARCHAR NOT NULL,
-        problem VARCHAR NOT NULL,
         algorithm_policy VARCHAR(36) NOT NULL,
-        feature_class VARCHAR NOT NULL,
-        label_class VARCHAR NOT NULL
+        problem VARCHAR NOT NULL,
+        features_class VARCHAR NOT NULL,
+        features_size INTEGER NOT NULL,
+        labels_class VARCHAR NOT NULL,
+        labels_size INTEGER NOT NULL,
       )
     """.update.run
 

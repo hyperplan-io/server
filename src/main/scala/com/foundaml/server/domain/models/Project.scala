@@ -1,11 +1,17 @@
 package com.foundaml.server.domain.models
 
+case class ProjectConfiguration(
+    problem: ProblemType,
+    featureClass: String,
+    featuresSize: Int,
+    labelsClass: String,
+    labelsSize: Int
+)
+
 case class Project(
     id: String,
     name: String,
-    problem: ProblemType,
-    featureType: String,
-    labelType: String,
+    configuration: ProjectConfiguration,
     algorithms: List[Algorithm],
     policy: AlgorithmPolicy
 ) {

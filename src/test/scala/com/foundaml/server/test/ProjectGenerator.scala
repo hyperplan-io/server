@@ -3,7 +3,7 @@ package com.foundaml.server.test
 import java.util.UUID
 
 import com.foundaml.server.domain.models._
-import com.foundaml.server.domain.models.backends.Local
+import com.foundaml.server.domain.models.features.CustomFeatures
 import com.foundaml.server.domain.models.labels.Labels
 
 object ProjectGenerator {
@@ -31,9 +31,13 @@ object ProjectGenerator {
   def withLocalBackend() = Project(
     projectId,
     "example project",
-    Classification(),
-    "tf.cl",
-    "tf.cl",
+    ProjectConfiguration(
+      Classification(),
+      CustomFeatures.featuresClass,
+      10,
+      "tf.cl",
+      5
+    ),
     Nil,
     DefaultAlgorithm(defaultAlgorithmId)
   )

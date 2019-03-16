@@ -12,7 +12,7 @@ class PredictionsServiceSpec extends FlatSpec with DefaultRuntime {
   val predictionsService = new PredictionsService()
 
   it should "execute predictions correctly on local backend" in {
-    val features = Features(
+    val features = CustomFeatures(
       List(
         StringFeature("test instance"),
         IntFeature(1),
