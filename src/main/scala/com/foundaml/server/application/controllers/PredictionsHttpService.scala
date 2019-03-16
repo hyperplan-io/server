@@ -26,15 +26,15 @@ class PredictionsHttpService(
   val service: HttpService[Task] = {
     HttpService[Task] {
       case req @ POST -> Root =>
-        Ok(for {
+        (for {
           predictionRequest <- req
             .attemptAs[PredictionRequest](
               PredictionRequestEntitySerializer.requestDecoder
             )
             .fold(throw _, identity)
           labels <- predict(predictionRequest)
-          _ = println(labels)
-        } yield LabelsSerializer.encodeJson(labels))
+          labelsJson = LabelsSerializer.encodeJson(labels)
+        } yield labelsJson).flatMap(Ok(_))
     }
   }
 
