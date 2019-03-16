@@ -2,6 +2,7 @@ package com.foundaml.server.application.controllers
 
 import org.http4s.{HttpService, _}
 import org.http4s.dsl.Http4sDsl
+import org.http4s.circe._
 
 import scalaz.zio.Task
 import scalaz.zio.interop.catz._
@@ -35,7 +36,7 @@ class ProjectsHttpService(
             request.problem,
             request.featureType,
             request.labelType,
-            Map.empty,
+            Nil,
             NoAlgorithm()
           )
           _ <- projectsRepository.insert(project)
@@ -62,7 +63,7 @@ class ProjectsHttpService(
                   problem,
                   featureClass,
                   labelClass,
-                  Map.empty,
+                  Nil,
                   algorithmPolicy
                 )
               )

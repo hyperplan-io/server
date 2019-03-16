@@ -12,7 +12,7 @@ case class Local(
 
 case class TensorFlowBackend(
     host: String,
-    port: String,
+    port: Int,
     featuresTransformer: TensorFlowFeaturesTransformer,
     labelsTransformer: TensorFlowLabelsTransformer
 ) extends Backend

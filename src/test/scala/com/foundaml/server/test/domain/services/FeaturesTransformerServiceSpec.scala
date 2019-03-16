@@ -1,17 +1,16 @@
-package com.foundaml.server.services
+package com.foundaml.server.test.domain.services
 
 import org.scalatest._
 import org.scalatest.Inside.inside
-
 import com.foundaml.server.domain.models.features._
 import com.foundaml.server.domain.models.features.transformers.TensorFlowFeaturesTransformer
-
-import com.foundaml.server.infrastructure.serialization.FeaturesSerializer
-
+import com.foundaml.server.infrastructure.serialization.{
+  FeaturesSerializer,
+  TensorFlowFeaturesSerializer
+}
 import io.circe._
 import io.circe.syntax._
 import io.circe.parser._
-
 import scalaz.zio.DefaultRuntime
 
 class FeaturesTransformerServiceSpec extends FlatSpec with DefaultRuntime {
@@ -25,9 +24,9 @@ class FeaturesTransformerServiceSpec extends FlatSpec with DefaultRuntime {
       )
     )
 
-    val transformer2 = new TensorFlowFeaturesTransformer(
+    val transformer2 = TensorFlowFeaturesTransformer(
       "my_signature_name",
-      List(
+      Set(
         "test",
         "toto"
       )
@@ -47,9 +46,9 @@ class FeaturesTransformerServiceSpec extends FlatSpec with DefaultRuntime {
         IntFeature(1)
       )
     )
-    val transformer3 = new TensorFlowFeaturesTransformer(
+    val transformer3 = TensorFlowFeaturesTransformer(
       "my_signature_name",
-      List(
+      Set(
         "test",
         "toto",
         "titi"
@@ -74,9 +73,9 @@ class FeaturesTransformerServiceSpec extends FlatSpec with DefaultRuntime {
       )
     )
 
-    val transformer = new TensorFlowFeaturesTransformer(
+    val transformer = TensorFlowFeaturesTransformer(
       "my_signature_name",
-      List(
+      Set(
         "test",
         "toto",
         "titi"
@@ -105,7 +104,10 @@ class FeaturesTransformerServiceSpec extends FlatSpec with DefaultRuntime {
       case Right(tfFeatures) =>
         assert(
           Json.eqJson
-            .eqv(FeaturesSerializer.encodeJson(tfFeatures), expectedJson)
+            .eqv(
+              TensorFlowFeaturesSerializer.encodeJson(tfFeatures),
+              expectedJson
+            )
         )
     }
   }

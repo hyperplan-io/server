@@ -2,13 +2,14 @@ package com.foundaml.server.application.controllers
 
 import org.http4s.{HttpService, _}
 import org.http4s.dsl.Http4sDsl
+import org.http4s.circe._
 
 import scalaz.zio.Task
 import scalaz.zio.interop.catz._
-
 import com.foundaml.server.application.controllers.requests._
 import com.foundaml.server.domain.models._
 import com.foundaml.server.domain.models.backends._
+import com.foundaml.server.domain.models.errors.PredictionError
 import com.foundaml.server.domain.models.labels._
 import com.foundaml.server.domain.repositories._
 import com.foundaml.server.domain.services.PredictionsService
@@ -33,12 +34,21 @@ class PredictionsHttpService(
             )
             .fold(throw _, identity)
           labels <- predict(predictionRequest)
-          labelsJson = LabelsSerializer.encodeJson(labels)
-        } yield labelsJson).flatMap(Ok(_))
+        } yield labels).flatMap { labels =>
+          labels.fold(
+            _ =>
+              InternalServerError(
+                "An error occurred while computing this prediction, check your logs"
+              ),
+            labels => Ok(LabelsSerializer.encodeJson(labels))
+          )
+        }
     }
   }
 
-  def predict(request: PredictionRequest): Task[Labels] = {
+  def predict(
+      request: PredictionRequest
+  ): Task[Either[PredictionError, Labels]] = {
 
     val computed = Labels(
       Set(
@@ -50,11 +60,7 @@ class PredictionsHttpService(
     )
 
     val projectId = "projectId"
-    val defaultAlgorithm = Algorithm(
-      "algorithm id",
-      Local(computed),
-      projectId
-    )
+    val defaultAlgorithmId = "algorithm id"
 
     val project = Project(
       projectId,
@@ -62,8 +68,8 @@ class PredictionsHttpService(
       Classification(),
       "tf.cl",
       "tf.cl",
-      Map.empty,
-      DefaultAlgorithm(defaultAlgorithm)
+      Nil,
+      DefaultAlgorithm(defaultAlgorithmId)
     )
     predictionsService.predict(
       request.features,

@@ -12,15 +12,12 @@ case class KinesisPutError(message: String) extends Throwable
 
 class KinesisService(kinesisClient: AmazonKinesis) {
 
-  import io.circe._, io.circe.generic.auto._, io.circe.parser._,
-  io.circe.syntax._
-
   def put[Data](
       data: Data,
       streamName: String,
       partitionKey: String
   )(implicit circeEncoder: io.circe.Encoder[Data]): Task[Unit] = {
-    val dataJson = data.asJson.noSpaces
+    val dataJson = circeEncoder.apply(data).noSpaces
     for {
       jsonBytes <- IO(dataJson.getBytes)
       request <- IO(new PutRecordRequest())

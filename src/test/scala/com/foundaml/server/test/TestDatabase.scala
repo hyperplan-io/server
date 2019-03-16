@@ -1,8 +1,7 @@
-package com.foundaml.server.utils
+package com.foundaml.server.test
 
 import com.foundaml.server.infrastructure.storage.PostgresqlService
 import doobie.imports.Transactor
-import org.scalatest.Assertion
 import scalaz.zio.{DefaultRuntime, Task}
 import scalaz.zio.interop.catz._
 

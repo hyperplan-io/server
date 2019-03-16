@@ -1,10 +1,9 @@
-package com.foundaml.server.domain.repositories
+package com.foundaml.server.test.domain.repositories
 
-import com.foundaml.server.utils._
-import doobie.imports._
+import com.foundaml.server.domain.repositories.AlgorithmsRepository
+import com.foundaml.server.test.{AlgorithmGenerator, TaskChecker, TestDatabase}
+import com.foundaml.server.test.{TaskChecker, TestDatabase}
 import org.scalatest._
-import scalaz.zio.Task
-import scalaz.zio.interop.catz._
 
 class AlgorithmsRepositorySpec
     extends FlatSpec

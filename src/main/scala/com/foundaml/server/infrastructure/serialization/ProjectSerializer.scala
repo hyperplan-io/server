@@ -1,19 +1,38 @@
 package com.foundaml.server.infrastructure.serialization
 
 import io.circe.parser.decode
-import io.circe.generic.auto._
 import io.circe.syntax._
-import io.circe.{Decoder, Encoder}
-
-import com.foundaml.server.domain.models.Project
+import com.foundaml.server.domain.models.{
+  Algorithm,
+  AlgorithmPolicy,
+  ProblemType,
+  Project
+}
 
 object ProjectSerializer {
 
-  implicit val encoder: Encoder[Project] = implicitly[Encoder[Project]]
-  implicit val decoder: Decoder[Project] = implicitly[Decoder[Project]]
+  import io.circe._, io.circe.generic.semiauto._
 
-  def encodeJson(project: Project): String = {
-    project.asJson.noSpaces
+  implicit val algorithmPolicyEncoder: Encoder[AlgorithmPolicy] =
+    AlgorithmPolicySerializer.Implicits.encoder
+  implicit val algorithmPolicyDecoder: Decoder[AlgorithmPolicy] =
+    AlgorithmPolicySerializer.Implicits.decoder
+
+  implicit val problemTypeEncoder: Encoder[ProblemType] =
+    ProblemTypeSerializer.encoder
+  implicit val problemTypeDecoder: Decoder[ProblemType] =
+    ProblemTypeSerializer.decoder
+
+  implicit val algorithmEncoder: Encoder[Algorithm] =
+    AlgorithmsSerializer.Implicits.encoder
+  implicit val algorithmDecoder: Decoder[Algorithm] =
+    AlgorithmsSerializer.Implicits.decoder
+
+  implicit val encoder: Encoder[Project] = deriveEncoder
+  implicit val decoder: Decoder[Project] = deriveDecoder
+
+  def encodeJson(project: Project): Json = {
+    project.asJson
   }
 
   def decodeJson(n: String): Project = {

@@ -6,6 +6,9 @@ case class Project(
     problem: ProblemType,
     featureType: String,
     labelType: String,
-    algorithms: Map[String, Algorithm],
+    algorithms: List[Algorithm],
     policy: AlgorithmPolicy
-)
+) {
+  lazy val algorithmsMap: Map[String, Algorithm] =
+    algorithms.map(algorithm => algorithm.id -> algorithm).toMap
+}

@@ -1,10 +1,10 @@
-package com.foundaml.server.utils
-
-import com.foundaml.server.domain.models._
-import com.foundaml.server.domain.models.labels._
-import com.foundaml.server.domain.models.backends._
+package com.foundaml.server.test
 
 import java.util.UUID
+
+import com.foundaml.server.domain.models._
+import com.foundaml.server.domain.models.backends.Local
+import com.foundaml.server.domain.models.labels.Labels
 
 object ProjectGenerator {
 
@@ -26,11 +26,7 @@ object ProjectGenerator {
   )
 
   val projectId = UUID.randomUUID().toString
-  val defaultAlgorithm = Algorithm(
-    "algorithm id",
-    Local(computed),
-    projectId
-  )
+  val defaultAlgorithmId = "algorithm id"
 
   def withLocalBackend() = Project(
     projectId,
@@ -38,7 +34,7 @@ object ProjectGenerator {
     Classification(),
     "tf.cl",
     "tf.cl",
-    Map.empty,
-    DefaultAlgorithm(defaultAlgorithm)
+    Nil,
+    DefaultAlgorithm(defaultAlgorithmId)
   )
 }
