@@ -1,6 +1,12 @@
 package com.foundaml.server.domain.models.features
 
-case class Features(features: List[Feature])
+sealed trait Features {
+  def features: List[Feature]
+}
+case class DoubleFeatures(features: List[DoubleFeature]) extends Features
+case class FloatFeatures(features: List[FloatFeature]) extends Features
+case class IntFeatures(features: List[IntFeature]) extends Features
+case class StringFeatures(features: List[StringFeature]) extends Features
 
 sealed trait Feature
 
