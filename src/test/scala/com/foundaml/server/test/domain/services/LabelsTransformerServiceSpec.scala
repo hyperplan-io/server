@@ -1,4 +1,4 @@
-package com.foundaml.server.services
+package com.foundaml.server.test.domain.services
 
 import com.foundaml.server.domain.models.labels.ClassificationLabel
 import scalaz.zio.DefaultRuntime

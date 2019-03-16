@@ -1,4 +1,4 @@
-package com.foundaml.server.utils
+package com.foundaml.server.test.utils
 
 import com.foundaml.server.infrastructure.storage.PostgresqlService
 import doobie.imports.Transactor

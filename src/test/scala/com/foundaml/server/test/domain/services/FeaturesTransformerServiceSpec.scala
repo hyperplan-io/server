@@ -1,4 +1,4 @@
-package com.foundaml.server.services
+package com.foundaml.server.test.domain.services
 
 import org.scalatest._
 import org.scalatest.Inside.inside

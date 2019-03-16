@@ -1,4 +1,4 @@
-package com.foundaml.server.utils
+package com.foundaml.server.test.utils
 
 import doobie.scalatest.imports._
 import doobie.imports._

@@ -1,17 +1,8 @@
-package com.foundaml.server.domain.repositories
+package com.foundaml.server.test.domain.repositories
 
-import scalaz.zio.{IO, Task}
-import scalaz.zio.interop.catz._
-
-import doobie.scalatest.imports._
-import org.scalatest._
-import org.scalatest.Inside.inside
-
-import com.foundaml.server.infrastructure.storage._
 import com.foundaml.server.domain.repositories._
-import doobie.imports._
-
-import com.foundaml.server.utils._
+import com.foundaml.server.test.utils.{ProjectGenerator, TaskChecker, TestDatabase}
+import org.scalatest._
 
 class ProjectsRepositorySpec
     extends FlatSpec
