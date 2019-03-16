@@ -9,28 +9,33 @@ import com.foundaml.server.domain.models.backends.Backend
 import com.foundaml.server.domain.models.features.transformers.TensorFlowFeaturesTransformer
 import com.foundaml.server.domain.models.labels.Labels
 import com.foundaml.server.domain.models.labels.transformers.{TensorFlowLabel, TensorFlowLabelsTransformer}
+import io.circe.generic.extras.semiauto.{deriveDecoder, deriveEncoder}
 
 object BackendSerializer {
 
+  object Implicits {
+    implicit val discriminator: Configuration =
+      Configuration.default.withDiscriminator("class")
+
+    implicit val encoder: Encoder[Backend] = deriveEncoder[Backend]
+    implicit val decoder: Decoder[Backend] = deriveDecoder[Backend]
+
+    implicit val ftTransformerEncoder: Encoder[TensorFlowFeaturesTransformer] = deriveEncoder[TensorFlowFeaturesTransformer]
+    implicit val ftTransformerDecoder: Decoder[TensorFlowFeaturesTransformer] = deriveDecoder[TensorFlowFeaturesTransformer]
+
+    implicit val labelsTransformerEncoder: Encoder[TensorFlowLabelsTransformer] = deriveEncoder[TensorFlowLabelsTransformer]
+    implicit val labelsTransformerDecoder: Decoder[TensorFlowLabelsTransformer] = deriveDecoder[TensorFlowLabelsTransformer]
+
+    implicit val tfLabelTransformerEncoder: Encoder[TensorFlowLabel] = deriveEncoder[TensorFlowLabel]
+    implicit val tfLabelTransformerDecoder: Decoder[TensorFlowLabel] = deriveDecoder[TensorFlowLabel]
+
+    implicit val labelsEncoder: Encoder[Labels] = LabelsSerializer.encoder
+    implicit val labelsDecoder: Decoder[Labels] = LabelsSerializer.decoder
+  }
+
   import io.circe.generic.extras.semiauto._
+  import Implicits._
 
-  implicit val discriminator: Configuration =
-    Configuration.default.withDiscriminator("class")
-
-  implicit val encoder: Encoder[Backend] = deriveEncoder[Backend]
-  implicit val decoder: Decoder[Backend] = deriveDecoder[Backend]
-
-  implicit val ftTransformerEncoder: Encoder[TensorFlowFeaturesTransformer] = deriveEncoder[TensorFlowFeaturesTransformer]
-  implicit val ftTransformerDecoder: Decoder[TensorFlowFeaturesTransformer] = deriveDecoder[TensorFlowFeaturesTransformer]
-
-  implicit val labelsTransformerEncoder: Encoder[TensorFlowLabelsTransformer] = deriveEncoder[TensorFlowLabelsTransformer]
-  implicit val labelsTransformerDecoder: Decoder[TensorFlowLabelsTransformer] = deriveDecoder[TensorFlowLabelsTransformer]
-
-  implicit val tfLabelTransformerEncoder: Encoder[TensorFlowLabel] = deriveEncoder[TensorFlowLabel]
-  implicit val tfLabelTransformerDecoder: Decoder[TensorFlowLabel] = deriveDecoder[TensorFlowLabel]
-
-  implicit val labelsEncoder: Encoder[Labels] = LabelsSerializer.encoder
-  implicit val labelsDecoder: Decoder[Labels] = LabelsSerializer.decoder
 
   def encodeJson(backend: Backend): String = {
     backend.asJson.noSpaces

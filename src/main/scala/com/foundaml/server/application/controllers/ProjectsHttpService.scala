@@ -35,7 +35,7 @@ class ProjectsHttpService(
             request.problem,
             request.featureType,
             request.labelType,
-            Map.empty,
+            Nil,
             NoAlgorithm()
           )
           _ <- projectsRepository.insert(project)
@@ -62,7 +62,7 @@ class ProjectsHttpService(
                   problem,
                   featureClass,
                   labelClass,
-                  Map.empty,
+                  Nil,
                   algorithmPolicy
                 )
               )

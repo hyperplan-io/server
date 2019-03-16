@@ -20,10 +20,14 @@ class PredictionsService {
       .take()
       .fold(
         noAlgorithm()
-      ) { algorithm =>
-        predictWithAlgorithm(
-          features,
-          algorithm
+      ) { algorithmId =>
+        project.algorithmsMap.get(algorithmId).fold(
+          noAlgorithm()
+        )(algorithm =>
+          predictWithAlgorithm(
+            features,
+            algorithm
+          )
         )
       }
 
@@ -47,7 +51,7 @@ class PredictionsService {
       predictWithProjectPolicy(features, project)
     )(
       algorithmId =>
-        project.algorithms
+        project.algorithmsMap
           .get(algorithmId)
           .fold(
             predictWithProjectPolicy(features, project)

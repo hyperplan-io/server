@@ -50,11 +50,7 @@ class PredictionsHttpService(
     )
 
     val projectId = "projectId"
-    val defaultAlgorithm = Algorithm(
-      "algorithm id",
-      Local(computed),
-      projectId
-    )
+    val defaultAlgorithmId = "algorithm id"
 
     val project = Project(
       projectId,
@@ -62,8 +58,8 @@ class PredictionsHttpService(
       Classification(),
       "tf.cl",
       "tf.cl",
-      Map.empty,
-      DefaultAlgorithm(defaultAlgorithm)
+      Nil,
+      DefaultAlgorithm(defaultAlgorithmId)
     )
     predictionsService.predict(
       request.features,
