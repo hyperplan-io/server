@@ -11,7 +11,8 @@ import scalaz.zio.interop.catz._
 import com.foundaml.server.application.controllers.requests.PredictionRequest
 
 object PredictionRequestEntitySerializer {
-  implicit val decoder: Decoder[PredictionRequest] = PredictionRequestSerializer.decoder
+  implicit val decoder: Decoder[PredictionRequest] =
+    PredictionRequestSerializer.decoder
   val requestDecoder: EntityDecoder[Task, PredictionRequest] =
     jsonOf[Task, PredictionRequest]
 

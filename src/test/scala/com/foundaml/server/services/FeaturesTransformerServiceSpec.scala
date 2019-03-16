@@ -4,12 +4,7 @@ import org.scalatest._
 import org.scalatest.Inside.inside
 
 import com.foundaml.server.domain.models.features._
-import com.foundaml.server.domain.models.features.transformers._
-import com.foundaml.server.domain.models.labels._
-import com.foundaml.server.domain.models.backends._
-import com.foundaml.server.domain.models._
 import com.foundaml.server.domain.models.features.transformers.TensorFlowFeaturesTransformer
-import com.foundaml.server.utils._
 
 import com.foundaml.server.infrastructure.serialization.FeaturesSerializer
 

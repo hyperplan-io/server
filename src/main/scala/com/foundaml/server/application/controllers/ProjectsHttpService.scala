@@ -20,12 +20,15 @@ class ProjectsHttpService(
     algorithmsRepository: AlgorithmsRepository
 ) extends Http4sDsl[Task] {
 
-
   val service: HttpService[Task] = {
     HttpService[Task] {
       case req @ POST -> Root =>
         (for {
-          request <- req.attemptAs[PostProjectRequest](PostProjectRequestEntitySerializer.entityDecoder).fold(throw _, identity)
+          request <- req
+            .attemptAs[PostProjectRequest](
+              PostProjectRequestEntitySerializer.entityDecoder
+            )
+            .fold(throw _, identity)
           project = Project(
             UUID.randomUUID().toString,
             request.name,

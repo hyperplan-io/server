@@ -1,14 +1,7 @@
 package com.foundaml.server.domain.models.labels
 
-sealed trait Labels
+case class Labels(labels: Set[Label])
 
-case class TensorFlowClassicationLabel(
-    classIds: List[Int],
-    probabilities: List[Float],
-    classes: List[String],
-    logits: List[Float]
-)
+sealed trait Label
 
-case class TensorFlowClassificationLabels(
-    predictions: List[TensorFlowClassicationLabel]
-) extends Labels
+case class ClassificationLabel(label: String, probability: Float) extends Label

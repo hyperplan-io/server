@@ -1,7 +1,6 @@
 package com.foundaml.server.utils
 
 import com.foundaml.server.domain.models._
-import com.foundaml.server.domain.models.features._
 import com.foundaml.server.domain.models.labels._
 import com.foundaml.server.domain.models.backends._
 
@@ -9,16 +8,23 @@ import java.util.UUID
 
 object ProjectGenerator {
 
-  val computed = TensorFlowClassificationLabels(
-    List(
-      TensorFlowClassicationLabel(
-        List(1, 2, 3),
-        List(0.0f, 0.1f, 0.2f),
-        List("class1", "class2", "class3"),
-        List(0.0f, 0.0f, 0.0f)
+  val computed = Labels(
+    Set(
+      labels.ClassificationLabel(
+        "class1",
+        0.1f
+      ),
+      labels.ClassificationLabel(
+        "class2",
+        0.2f
+      ),
+      labels.ClassificationLabel(
+        "class3",
+        0.3f
       )
     )
   )
+
   val projectId = UUID.randomUUID().toString
   val defaultAlgorithm = Algorithm(
     "algorithm id",

@@ -36,7 +36,7 @@ class KinesisService(kinesisClient: AmazonKinesis) {
 object KinesisService {
 
   def apply(
-      region: String,
+      region: String
   ): Task[KinesisService] =
     for {
       credentialsProvider <- getProfileCredentialsProvider
