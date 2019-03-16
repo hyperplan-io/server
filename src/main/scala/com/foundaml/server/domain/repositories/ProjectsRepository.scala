@@ -22,28 +22,37 @@ class ProjectsRepository(implicit xa: Transactor[Task]) {
   implicit val algorithmPolicyTypePut: Put[AlgorithmPolicy] =
     Put[String].contramap(AlgorithmPolicySerializer.encodeJson)
 
+  val separator = ";"
+  implicit val labelsTypeGet
+  : Get[Set[String]] =
+    Get[String].map(_.split(separator).toSet)
+  implicit val labelsTypePut: Put[Set[String]] =
+    Put[String].contramap(labels => s"${labels.mkString(separator)}")
+
   def insertQuery(project: Project) =
     sql"""INSERT INTO projects(
       id, 
       name, 
-      problem, 
-      algorithm_policy, 
-      feature_class, 
-      label_class
+      algorithm_policy,
+      problem,
+      features_class,
+      features_size,
+      labels
     ) VALUES(
       ${project.id},
       ${project.name},
-      ${project.problem},
       ${project.policy},
-      ${project.featureType.toString},
-      ${project.labelType.toString}
+      ${project.configuration.problem},
+      ${project.configuration.featureClass},
+      ${project.configuration.featuresSize},
+      ${project.configuration.labels}
     )""".update
 
   def insert(project: Project) = insertQuery(project: Project).run.transact(xa)
 
   def readQuery(projectId: String) =
     sql"""
-      SELECT id, name, problem, algorithm_policy, feature_class, label_class
+      SELECT id, name, algorithm_policy, problem, features_class, features_size, labels
       FROM projects
       WHERE id=$projectId
       """
@@ -51,10 +60,11 @@ class ProjectsRepository(implicit xa: Transactor[Task]) {
         (
             String,
             String,
-            Either[io.circe.Error, ProblemType],
             Either[io.circe.Error, AlgorithmPolicy],
+            Either[io.circe.Error, ProblemType],
             String,
-            String
+            Int,
+            Set[String]
         )
       ]
 
@@ -62,17 +72,18 @@ class ProjectsRepository(implicit xa: Transactor[Task]) {
 
   def readAll() =
     sql"""
-        SELECT id, name, problem, algorithm_policy, feature_class, label_class
+        SELECT id, name, algorithm_policy, problem, features_class, features_size, labels
       FROM projects
       """
       .query[
         (
             String,
             String,
-            Either[io.circe.Error, ProblemType],
             Either[io.circe.Error, AlgorithmPolicy],
+            Either[io.circe.Error, ProblemType],
             String,
-            String
+            Int,
+            Set[String]
         )
       ]
 

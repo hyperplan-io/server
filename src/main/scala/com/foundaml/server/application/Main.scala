@@ -49,9 +49,9 @@ object Main extends App {
       _ <- printLine("Running SQL scripts")
       _ <- PostgresqlService.initSchema
       _ <- printLine("SQL scripts have been runned successfully")
-      predictionsService = new PredictionsService()
       projectsRepository = new ProjectsRepository
       algorithmsRepository = new AlgorithmsRepository
+      predictionsService = new PredictionsService(projectsRepository)
       kinesisService <- KinesisService("us-east-2")
       _ <- printLine("Services have been correctly instanciated")
       predictionId = "test-id"

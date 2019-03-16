@@ -2,12 +2,7 @@ package com.foundaml.server.infrastructure.serialization
 
 import io.circe.parser.decode
 import io.circe.syntax._
-import com.foundaml.server.domain.models.{
-  Algorithm,
-  AlgorithmPolicy,
-  ProblemType,
-  Project
-}
+import com.foundaml.server.domain.models._
 
 object ProjectSerializer {
 
@@ -27,6 +22,11 @@ object ProjectSerializer {
     AlgorithmsSerializer.Implicits.encoder
   implicit val algorithmDecoder: Decoder[Algorithm] =
     AlgorithmsSerializer.Implicits.decoder
+
+  implicit val projectConfigurationEncoder: Encoder[ProjectConfiguration] =
+    deriveEncoder
+  implicit val projectConfigurationDecoder: Decoder[ProjectConfiguration] =
+    deriveDecoder
 
   implicit val encoder: Encoder[Project] = deriveEncoder
   implicit val decoder: Decoder[Project] = deriveDecoder

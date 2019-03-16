@@ -33,9 +33,12 @@ class ProjectsHttpService(
           project = Project(
             UUID.randomUUID().toString,
             request.name,
-            request.problem,
-            request.featureType,
-            request.labelType,
+            ProjectConfiguration(
+              request.configuration.problem,
+              request.configuration.featuresClass,
+              request.configuration.featuresSize,
+              request.configuration.labels
+            ),
             Nil,
             NoAlgorithm()
           )
@@ -50,19 +53,23 @@ class ProjectsHttpService(
           case (
               id,
               name,
-              Right(problem),
               Right(algorithmPolicy),
-              featureClass,
-              labelClass
+              Right(problem),
+              featuresClass,
+              featuresSize,
+              labels
               ) =>
             Ok(
               ProjectSerializer.encodeJson(
                 Project(
                   id,
                   name,
-                  problem,
-                  featureClass,
-                  labelClass,
+                  ProjectConfiguration(
+                    problem,
+                    featuresClass,
+                    featuresSize,
+                    labels
+                  ),
                   Nil,
                   algorithmPolicy
                 )

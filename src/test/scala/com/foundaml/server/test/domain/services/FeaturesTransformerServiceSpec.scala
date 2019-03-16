@@ -16,7 +16,7 @@ import scalaz.zio.DefaultRuntime
 class FeaturesTransformerServiceSpec extends FlatSpec with DefaultRuntime {
 
   it should "not accept a feature transformer with a different number of arguments than the features" in {
-    val features3 = Features(
+    val features3 = CustomFeatures(
       List(
         StringFeature("test instance"),
         IntFeature(1),
@@ -40,7 +40,7 @@ class FeaturesTransformerServiceSpec extends FlatSpec with DefaultRuntime {
       case Left(err) =>
     }
 
-    val features2 = Features(
+    val features2 = CustomFeatures(
       List(
         StringFeature("test instance"),
         IntFeature(1)
@@ -65,7 +65,7 @@ class FeaturesTransformerServiceSpec extends FlatSpec with DefaultRuntime {
   }
 
   it should "transform features to a tensorflow classify compatible format" in {
-    val features = Features(
+    val features = CustomFeatures(
       List(
         StringFeature("test instance"),
         IntFeature(1),
