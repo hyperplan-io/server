@@ -2,6 +2,7 @@ package com.foundaml.server.application
 
 import cats.effect
 import cats.effect.Timer
+import com.foundaml.server.domain.factories.ProjectFactory
 import scalaz.zio.clock.Clock
 import scalaz.zio.duration.Duration
 import scalaz.zio.{App, IO, Task, ZIO}
@@ -18,6 +19,9 @@ import com.foundaml.server.domain.repositories.{
 import com.foundaml.server.domain.services.PredictionsService
 import com.foundaml.server.domain.models.Prediction
 import com.foundaml.server.infrastructure.streaming.KinesisService
+import org.http4s.client.blaze._
+
+import scala.concurrent.ExecutionContext
 
 object Main extends App {
 
@@ -51,9 +55,13 @@ object Main extends App {
       _ <- printLine("SQL scripts have been runned successfully")
       projectsRepository = new ProjectsRepository
       algorithmsRepository = new AlgorithmsRepository
-      predictionsService = new PredictionsService(projectsRepository)
+      projectFactory = new ProjectFactory(
+        projectsRepository,
+        algorithmsRepository
+      )
       kinesisService <- KinesisService("us-east-2")
-      _ <- printLine("Services have been correctly instanciated")
+      predictionsService = new PredictionsService(projectsRepository)
+      _ <- printLine("Services have been correctly instantiated")
       predictionId = "test-id"
       _ <- kinesisService.put(
         Prediction(predictionId),
@@ -64,7 +72,8 @@ object Main extends App {
         .stream(
           predictionsService,
           projectsRepository,
-          algorithmsRepository
+          algorithmsRepository,
+          projectFactory
         )
         .compile
         .drain

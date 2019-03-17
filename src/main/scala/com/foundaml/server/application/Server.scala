@@ -16,6 +16,7 @@ import com.foundaml.server.application.controllers.{
   PredictionsHttpService,
   ProjectsHttpService
 }
+import com.foundaml.server.domain.factories.ProjectFactory
 import com.foundaml.server.domain.repositories.{
   AlgorithmsRepository,
   ProjectsRepository
@@ -42,7 +43,8 @@ object Server {
   def stream(
       predictionsService: PredictionsService,
       projectsRepository: ProjectsRepository,
-      algorithmsRepository: AlgorithmsRepository
+      algorithmsRepository: AlgorithmsRepository,
+      projectFactory: ProjectFactory
   )(implicit ec: ExecutionContext) =
     BlazeBuilder[Task]
       .bindHttp(8080, "0.0.0.0")
@@ -50,7 +52,8 @@ object Server {
         new PredictionsHttpService(
           predictionsService,
           projectsRepository,
-          algorithmsRepository
+          algorithmsRepository,
+          projectFactory
         ).service,
         "/predictions"
       )
@@ -58,14 +61,16 @@ object Server {
         new ProjectsHttpService(
           predictionsService,
           projectsRepository,
-          algorithmsRepository
+          algorithmsRepository,
+          projectFactory
         ).service,
         "/projects"
       )
       .mountService(
         new AlgorithmsHttpService(
           projectsRepository,
-          algorithmsRepository
+          algorithmsRepository,
+          projectFactory
         ).service,
         "/algorithms"
       )

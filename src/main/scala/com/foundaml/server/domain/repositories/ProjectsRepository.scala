@@ -55,17 +55,7 @@ class ProjectsRepository(implicit xa: Transactor[Task]) {
       FROM projects
       WHERE id=$projectId
       """
-      .query[
-        (
-            String,
-            String,
-            Either[io.circe.Error, AlgorithmPolicy],
-            Either[io.circe.Error, ProblemType],
-            String,
-            Int,
-            Set[String]
-        )
-      ]
+      .query[ProjectsRepository.ProjectData]
 
   def read(projectId: String) = readQuery(projectId).unique.transact(xa)
 
@@ -74,16 +64,18 @@ class ProjectsRepository(implicit xa: Transactor[Task]) {
         SELECT id, name, algorithm_policy, problem, features_class, features_size, labels
       FROM projects
       """
-      .query[
-        (
-            String,
-            String,
-            Either[io.circe.Error, AlgorithmPolicy],
-            Either[io.circe.Error, ProblemType],
-            String,
-            Int,
-            Set[String]
-        )
-      ]
+      .query[ProjectsRepository.ProjectData]
 
+}
+
+object ProjectsRepository {
+  type ProjectData = (
+      String,
+      String,
+      Either[io.circe.Error, AlgorithmPolicy],
+      Either[io.circe.Error, ProblemType],
+      String,
+      Int,
+      Set[String]
+  )
 }

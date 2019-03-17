@@ -17,15 +17,14 @@ class LabelsTransformerServiceSpec
 
   it should "not accept a label transformer with a different number of arguments than the labels" in {
     val labels1 = TensorFlowLabels(
-      Set(
-        TensorFlowLabel(
-          "toto",
-          0.5f
+      List(
+        List(
+          "toto" -> 0.5f
         )
       )
     )
 
-    val transformer2 = new TensorFlowLabelsTransformer(
+    val transformer2 = TensorFlowLabelsTransformer(
       Set(
         "toto",
         "toto3"
@@ -44,19 +43,17 @@ class LabelsTransformerServiceSpec
     }
 
     val labels2 = TensorFlowLabels(
-      Set(
-        TensorFlowLabel(
-          "toto",
-          0.5f
+      List(
+        List(
+          "toto" -> 0.5f
         ),
-        TensorFlowLabel(
-          "toto2",
-          0.3f
+        List(
+          "toto2" -> 0.3f
         )
       )
     )
 
-    val transformer1 = new TensorFlowLabelsTransformer(
+    val transformer1 = TensorFlowLabelsTransformer(
       Set(
         "toto"
       )
@@ -77,19 +74,17 @@ class LabelsTransformerServiceSpec
   it should "transform labels to a foundaml compatible format" in {
 
     val labels = TensorFlowLabels(
-      Set(
-        TensorFlowLabel(
-          "toto",
-          0.5f
+      List(
+        List(
+          "toto" -> 0.5f
         ),
-        TensorFlowLabel(
-          "titi",
-          0.5f
+        List(
+          "titi" -> 0.3f
         )
       )
     )
 
-    val transformer = new TensorFlowLabelsTransformer(
+    val transformer = TensorFlowLabelsTransformer(
       Set(
         "toto",
         "titi"
@@ -109,7 +104,7 @@ class LabelsTransformerServiceSpec
           ),
           ClassificationLabel(
             "titi",
-            0.5f
+            0.3f
           )
         )
         tfLabels.labels should be(expected)

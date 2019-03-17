@@ -8,6 +8,7 @@ import scalaz.zio.interop.catz._
 import java.util.UUID
 
 import com.foundaml.server.application.controllers.requests._
+import com.foundaml.server.domain.factories.ProjectFactory
 import com.foundaml.server.domain.models._
 import com.foundaml.server.domain.models.errors.InvalidArgument
 import com.foundaml.server.domain.repositories._
@@ -17,12 +18,13 @@ import com.foundaml.server.infrastructure.serialization._
 class ProjectsHttpService(
     predictionsService: PredictionsService,
     projectsRepository: ProjectsRepository,
-    algorithmsRepository: AlgorithmsRepository
+    algorithmsRepository: AlgorithmsRepository,
+    projectFactory: ProjectFactory
 ) extends Http4sDsl[Task] {
 
   val regex = "[0-9a-zA-Z-_]*"
   def validateAlphaNumerical(input: String): Option[String] = {
-    if(input.matches(regex)) {
+    if (input.matches(regex)) {
       None
     } else {
       Some(s"The identifier $input is not alphanumerical")
@@ -46,10 +48,16 @@ class ProjectsHttpService(
             )
             .fold(throw _, identity)
           errors = validateRequest(request)
-          _ <- if(errors.isEmpty) {
+          _ <- if (errors.isEmpty) {
             Task(Unit)
           } else {
-            Task.fail(InvalidArgument(errors.mkString(s"The following errors occurred: ${errors.mkString(", ")}")))
+            Task.fail(
+              InvalidArgument(
+                errors.mkString(
+                  s"The following errors occurred: ${errors.mkString(", ")}"
+                )
+              )
+            )
           }
           project = Project(
             request.id,
@@ -68,36 +76,12 @@ class ProjectsHttpService(
           Ok(ProjectSerializer.encodeJson(project))
         }
       case GET -> Root / projectId =>
-        (for {
-          project <- projectsRepository.read(projectId)
-        } yield project).flatMap {
-          case (
-              id,
-              name,
-              Right(algorithmPolicy),
-              Right(problem),
-              featuresClass,
-              featuresSize,
-              labels
-              ) =>
-            Ok(
-              ProjectSerializer.encodeJson(
-                Project(
-                  id,
-                  name,
-                  ProjectConfiguration(
-                    problem,
-                    featuresClass,
-                    featuresSize,
-                    labels
-                  ),
-                  Nil,
-                  algorithmPolicy
-                )
-              )
+        projectFactory.get(projectId).flatMap { project =>
+          Ok(
+            ProjectSerializer.encodeJson(
+              project
             )
-          case _ =>
-            BadRequest("there is an error with this project")
+          )
         }
     }
   }
