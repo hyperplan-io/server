@@ -42,7 +42,11 @@ object FeaturesSerializer {
 
   import Implicits._
 
-  def encodeJson(labels: Features): String = {
+  def encodeJson(labels: Features): Json = {
+    labels.asJson
+  }
+
+  def encodeJsonNoSpaces(labels: Features): String = {
     labels.asJson.noSpaces
   }
 
