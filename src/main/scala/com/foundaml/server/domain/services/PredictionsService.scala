@@ -2,6 +2,7 @@ package com.foundaml.server.domain.services
 
 import java.util.UUID
 
+import com.foundaml.server.domain.FoundaMLConfig
 import org.http4s._
 import scalaz.zio.{IO, Task}
 import scalaz.zio.interop.catz._
@@ -11,22 +12,27 @@ import com.foundaml.server.domain.models.errors._
 import com.foundaml.server.domain.models.features._
 import com.foundaml.server.domain.models.labels._
 import com.foundaml.server.domain.models.labels.transformers.TensorFlowLabels
-import com.foundaml.server.domain.repositories.{
-  PredictionsRepository,
-  ProjectsRepository
-}
-import com.foundaml.server.infrastructure.serialization.{
-  TensorFlowFeaturesSerializer,
-  TensorFlowLabelsSerializer
-}
+import com.foundaml.server.domain.repositories.{PredictionsRepository, ProjectsRepository}
+import com.foundaml.server.infrastructure.serialization.{PredictionSerializer, TensorFlowFeaturesSerializer, TensorFlowLabelsSerializer}
+import com.foundaml.server.infrastructure.streaming.KinesisService
 import org.http4s.client.blaze.BlazeClientBuilder
 
 import scala.concurrent.ExecutionContext
 
 class PredictionsService(
     projectsRepository: ProjectsRepository,
-    predictionsRepository: PredictionsRepository
+    predictionsRepository: PredictionsRepository,
+    kinesisService: KinesisService,
+    config: FoundaMLConfig
 ) {
+
+  def persistPrediction(prediction: Prediction) =
+    predictionsRepository.insert(prediction)
+
+  def publishPredictionToKinesis(prediction: Prediction) = if(config.kinesis.enabled) {
+    kinesisService.put(prediction, config.kinesis.predictionsStream, prediction.projectId)(PredictionSerializer.encoder)
+  } else Task.unit
+
 
   def noAlgorithm(): Task[Prediction] =
     Task(println("No algorithm setup")).flatMap { _ =>
@@ -54,86 +60,103 @@ class PredictionsService(
                 project.id,
                 algorithm,
                 features
-              ).flatMap { prediction =>
-                predictionsRepository.insert(prediction) *> Task
-                  .succeed(prediction)
-              }
+              )
           )
       }
+
+  def predictWithLocalBackend(
+                               projectId: String,
+                               algorithm: Algorithm,
+                               features: Features,
+                               local: Local)= {
+    Task.succeed(
+      Prediction(
+        UUID.randomUUID().toString,
+        projectId,
+        algorithm.id,
+        features,
+        local.computed,
+        Examples(None)
+      )
+    )
+  }
+  def predictWithTensorFlowBackend(projectId: String,
+                                   algorithm: Algorithm,
+                                   features: Features,
+                                   backend: TensorFlowBackend
+  ) = {
+    backend.featuresTransformer
+      .transform(features)
+      .fold(
+        err =>
+          Task(println(err.getMessage)) *>
+            Task.fail(
+              FeaturesTransformerError(
+                "The features could not be transformed to a TensorFlow compatible format"
+              )
+            ),
+        tfFeatures => {
+          implicit val encoder
+          : EntityEncoder[Task, TensorFlowClassificationFeatures] =
+            TensorFlowFeaturesSerializer.entityEncoder
+          val uriString = s"http://${backend.host}:${backend.port}"
+          Uri
+            .fromString(uriString)
+            .fold(
+              _ =>
+                Task.fail(
+                  InvalidArgument(
+                    s"The following uri could not be parsed, check your backend configuration. $uriString"
+                  )
+                ),
+              uri => {
+                val request =
+                  Request[Task](method = Method.POST, uri = uri)
+                    .withBody(tfFeatures)
+                BlazeClientBuilder[Task](ExecutionContext.global).resource
+                  .use(
+                    _.expect[TensorFlowLabels](request)(
+                      TensorFlowLabelsSerializer.entityDecoder
+                    ).flatMap { tfLabels =>
+                      backend.labelsTransformer
+                        .transform(tfLabels)
+                        .fold(
+                          err => Task.fail(err),
+                          labels =>
+                            Task.succeed(
+                              Prediction(
+                                UUID.randomUUID().toString,
+                                projectId,
+                                algorithm.id,
+                                features,
+                                labels,
+                                Examples(None)
+                              )
+                            )
+                        )
+                    }
+                  )
+              }
+            )
+
+        }
+      )
+  }
 
   def predictWithAlgorithm(
       projectId: String,
       algorithm: Algorithm,
       features: Features
-  ): Task[Prediction] = algorithm.backend match {
-    case local: Local =>
-      Task.succeed(
-        Prediction(
-          UUID.randomUUID().toString,
-          projectId,
-          algorithm.id,
-          features,
-          local.computed,
-          Examples(None)
-        )
-      )
-    case tfBackend @ TensorFlowBackend(host, port, fTransormer, lTransformer) =>
-      fTransormer
-        .transform(features)
-        .fold(
-          err =>
-            Task(println(err.getMessage)) *>
-              Task.fail(
-                FeaturesTransformerError(
-                  "The features could not be transformed to a TensorFlow compatible format"
-                )
-              ),
-          tfFeatures => {
-            implicit val encoder
-                : EntityEncoder[Task, TensorFlowClassificationFeatures] =
-              TensorFlowFeaturesSerializer.entityEncoder
-            val uriString = s"http://$host:$port"
-            Uri
-              .fromString(uriString)
-              .fold(
-                _ =>
-                  Task.fail(
-                    InvalidArgument(
-                      s"The following uri could not be parsed, check your backend configuration. $uriString"
-                    )
-                  ),
-                uri => {
-                  val request =
-                    Request[Task](method = Method.POST, uri = uri)
-                      .withBody(tfFeatures)
-                  BlazeClientBuilder[Task](ExecutionContext.global).resource
-                    .use(
-                      _.expect[TensorFlowLabels](request)(
-                        TensorFlowLabelsSerializer.entityDecoder
-                      ).flatMap { tfLabels =>
-                        lTransformer
-                          .transform(tfLabels)
-                          .fold(
-                            err => Task.fail(err),
-                            labels =>
-                              Task.succeed(
-                                Prediction(
-                                  UUID.randomUUID().toString,
-                                  projectId,
-                                  algorithm.id,
-                                  features,
-                                  labels,
-                                  Examples(None)
-                                )
-                              )
-                          )
-                      }
-                    )
-                }
-              )
-
-          }
-        )
+  ): Task[Prediction] = {
+    val predictionTask = algorithm.backend match {
+      case local: Local =>
+        predictWithLocalBackend(projectId, algorithm, features, local)
+      case tfBackend: TensorFlowBackend =>
+        predictWithTensorFlowBackend(projectId, algorithm, features, tfBackend)
+    }
+    predictionTask.flatMap { prediction =>
+      persistPrediction(prediction) *> publishPredictionToKinesis(prediction) *> Task.succeed(prediction)
+    }
   }
 
   def validateFeatures(
@@ -200,8 +223,7 @@ class PredictionsService(
                         project.configuration.labels,
                         prediction.labels
                       )) {
-                      predictionsRepository.insert(prediction) *> Task
-                        .succeed(prediction)
+                      Task.succeed(prediction)
                     } else {
                       Task.fail(
                         LabelsValidationFailed(
