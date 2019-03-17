@@ -33,11 +33,10 @@ class PredictionsHttpService(
               PredictionRequestEntitySerializer.requestDecoder
             )
             .fold(throw _, identity)
-          _ <- Task(println("deserialized features"))
           prediction <- predict(predictionRequest)
           _ <- Task(
             println(
-              s"A prediction has been computed for project ${prediction.projectId} using algorithm ${prediction.algorithmId}"
+              s"Prediction computed for project ${prediction.projectId} using algorithm ${prediction.algorithmId}"
             )
           )
         } yield prediction).flatMap { prediction =>

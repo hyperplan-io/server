@@ -2,6 +2,7 @@ package com.foundaml.server.application
 
 import cats.effect
 import cats.effect.Timer
+import com.foundaml.server.domain.FoundaMLConfig
 import com.foundaml.server.domain.factories.ProjectFactory
 import scalaz.zio.clock.Clock
 import scalaz.zio.duration.Duration
@@ -12,16 +13,12 @@ import scala.concurrent.duration.{FiniteDuration, NANOSECONDS, TimeUnit}
 import scala.util.{Left, Right}
 import com.foundaml.server.infrastructure.serialization.PredictionSerializer
 import com.foundaml.server.infrastructure.storage.PostgresqlService
-import com.foundaml.server.domain.repositories.{
-  AlgorithmsRepository,
-  PredictionsRepository,
-  ProjectsRepository
-}
+import com.foundaml.server.domain.repositories.{AlgorithmsRepository, PredictionsRepository, ProjectsRepository}
 import com.foundaml.server.domain.services.PredictionsService
 import com.foundaml.server.domain.models.Prediction
 import com.foundaml.server.infrastructure.streaming.KinesisService
 import org.http4s.client.blaze._
-
+import pureconfig.generic.auto._
 import scala.concurrent.ExecutionContext
 
 object Main extends App {
@@ -48,7 +45,7 @@ object Main extends App {
       1
     }, _ => 0))
 
-  def databaseConnected(implicit xa: doobie.Transactor[Task]) =
+  def databaseConnected(config: FoundaMLConfig)(implicit xa: doobie.Transactor[Task]) =
     for {
       _ <- printLine("Connected to database")
       _ <- printLine("Running SQL scripts")
@@ -64,7 +61,9 @@ object Main extends App {
       kinesisService <- KinesisService("us-east-2")
       predictionsService = new PredictionsService(
         projectsRepository,
-        predictionsRepository
+        predictionsRepository,
+        kinesisService,
+        config
       )
       _ <- printLine("Services have been correctly instantiated")
       _ <- Server
@@ -92,8 +91,13 @@ object Main extends App {
       _ <- transactor.use { implicit xa =>
         PostgresqlService.testConnection.flatMap {
           _.toEither match {
-            case Right(ret) =>
-              databaseConnected
+            case Right(_) =>
+              pureconfig.loadConfig[FoundaMLConfig].fold(
+                err => printLine(s"Failed to load configuration because $err"),
+                config =>
+                  databaseConnected(config)
+              )
+
             case Left(err) =>
               printLine(s"Could not connect to the database: $err")
           }
