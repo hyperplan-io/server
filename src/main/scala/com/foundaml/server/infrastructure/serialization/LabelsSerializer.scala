@@ -24,6 +24,10 @@ object LabelsSerializer {
     labels.asJson
   }
 
+  def encodeJsonNoSpaces(labels: Labels): String = {
+    labels.asJson.noSpaces
+  }
+
   def decodeJson(n: String): Labels = {
     decode[Labels](n).right.get
   }

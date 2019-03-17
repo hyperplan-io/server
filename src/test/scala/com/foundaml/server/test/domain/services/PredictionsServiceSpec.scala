@@ -5,11 +5,16 @@ import com.foundaml.server.domain.services.PredictionsService
 import org.scalatest._
 import org.scalatest.Inside.inside
 import com.foundaml.server.domain.models.features._
-import com.foundaml.server.domain.repositories.ProjectsRepository
+import com.foundaml.server.domain.repositories.{
+  PredictionsRepository,
+  ProjectsRepository
+}
 import com.foundaml.server.test.{ProjectGenerator, TestDatabase}
 import org.http4s.client.blaze.Http1Client
 import scalaz.zio.{DefaultRuntime, Task}
 import scalaz.zio.interop.catz._
+
+import scala.util.Try
 
 class PredictionsServiceSpec
     extends FlatSpec
@@ -17,8 +22,9 @@ class PredictionsServiceSpec
     with TestDatabase {
 
   val projectRepository = new ProjectsRepository()(xa)
-  val httpClient = unsafeRun(Http1Client.stream[Task]().compile.last).get
-  val predictionsService = new PredictionsService(projectRepository, httpClient)
+  val predictionsRepository = new PredictionsRepository()(xa)
+  val predictionsService =
+    new PredictionsService(projectRepository, predictionsRepository)
 
   it should "fail to execute predictions for an incorrect configuration" in {
     val features = CustomFeatures(
@@ -31,19 +37,23 @@ class PredictionsServiceSpec
 
     val project = ProjectGenerator.withLocalBackend()
 
-    unsafeRun(
-      predictionsService
-        .predict(
-          features,
-          project,
-          Some("algorithm id")
-        )
-        .map { prediction =>
-          inside(prediction) {
-            case Left(FeaturesValidationFailed(message)) =>
-              assert(message == "The features are not correct for this project")
-          }
-        }
+    val shouldThrow = Try(
+      unsafeRun(
+        predictionsService
+          .predict(
+            features,
+            project,
+            Some("algorithm id")
+          )
+      )
     )
+    inside(shouldThrow.toEither) {
+      case Left(err) =>
+        assert(
+          err.getMessage
+            .contains("The features are not correct for this project")
+        )
+    }
+
   }
 }

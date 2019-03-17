@@ -65,10 +65,12 @@ object PostgresqlService {
 
   val createPredictionsTable: doobie.ConnectionIO[Int] = sql"""
       CREATE TABLE IF NOT EXISTS predictions(
-        id VARCHAR(36),
+        id VARCHAR(36) PRIMARY KEY,
+        project_id VARCHAR(36) NOT NULL,
+        algorithm_id VARCHAR(36) NOT NULL,
         features VARCHAR NOT NULL,
-        predicted_labels TEXT NOT NULL,
-        true_labels VARCHAR
+        labels VARCHAR NOT NULL,
+        examples VARCHAR NOT NULL
       )
     """.update.run
 }

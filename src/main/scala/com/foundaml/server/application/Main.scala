@@ -14,6 +14,7 @@ import com.foundaml.server.infrastructure.serialization.PredictionSerializer
 import com.foundaml.server.infrastructure.storage.PostgresqlService
 import com.foundaml.server.domain.repositories.{
   AlgorithmsRepository,
+  PredictionsRepository,
   ProjectsRepository
 }
 import com.foundaml.server.domain.services.PredictionsService
@@ -55,19 +56,17 @@ object Main extends App {
       _ <- printLine("SQL scripts have been runned successfully")
       projectsRepository = new ProjectsRepository
       algorithmsRepository = new AlgorithmsRepository
+      predictionsRepository = new PredictionsRepository
       projectFactory = new ProjectFactory(
         projectsRepository,
         algorithmsRepository
       )
       kinesisService <- KinesisService("us-east-2")
-      predictionsService = new PredictionsService(projectsRepository)
+      predictionsService = new PredictionsService(
+        projectsRepository,
+        predictionsRepository
+      )
       _ <- printLine("Services have been correctly instantiated")
-      predictionId = "test-id"
-      _ <- kinesisService.put(
-        Prediction(predictionId),
-        "test",
-        predictionId
-      )(PredictionSerializer.encoder)
       _ <- Server
         .stream(
           predictionsService,

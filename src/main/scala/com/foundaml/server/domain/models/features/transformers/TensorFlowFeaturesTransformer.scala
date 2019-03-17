@@ -32,6 +32,17 @@ case class TensorFlowFeaturesTransformer(
             case (value, field) =>
               TensorFlowStringFeature(field, value)
           }
+        case CustomFeatures(customFeatures) =>
+          customFeatures.zip(fields).map {
+            case (DoubleFeature(value), field) =>
+              TensorFlowDoubleFeature(field, value)
+            case (FloatFeature(value), field) =>
+              TensorFlowFloatFeature(field, value)
+            case (IntFeature(value), field) =>
+              TensorFlowIntFeature(field, value)
+            case (StringFeature(value), field) =>
+              TensorFlowStringFeature(field, value)
+          }
       }
       Right(TensorFlowClassificationFeatures(signatureName, examples))
     } else {

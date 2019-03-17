@@ -11,7 +11,8 @@ object ProblemTypeSerializer {
 
   import io.circe.generic.extras.semiauto._
 
-  implicit val discriminator: Configuration = CirceEncoders.discriminator
+  implicit val discriminator: Configuration =
+    Configuration.default.withDiscriminator("class")
   implicit val encoder: Encoder[ProblemType] = deriveEncoder
   implicit val decoder: Decoder[ProblemType] = deriveDecoder
 

@@ -1,5 +1,7 @@
 package com.foundaml.server.domain.services
 
+import java.util.UUID
+
 import org.http4s._
 import scalaz.zio.{IO, Task}
 import scalaz.zio.interop.catz._
@@ -9,21 +11,24 @@ import com.foundaml.server.domain.models.errors._
 import com.foundaml.server.domain.models.features._
 import com.foundaml.server.domain.models.labels._
 import com.foundaml.server.domain.models.labels.transformers.TensorFlowLabels
-import com.foundaml.server.domain.repositories.ProjectsRepository
+import com.foundaml.server.domain.repositories.{
+  PredictionsRepository,
+  ProjectsRepository
+}
 import com.foundaml.server.infrastructure.serialization.{
   TensorFlowFeaturesSerializer,
   TensorFlowLabelsSerializer
 }
-
 import org.http4s.client.blaze.BlazeClientBuilder
 
 import scala.concurrent.ExecutionContext
 
 class PredictionsService(
-    projectsRepository: ProjectsRepository
+    projectsRepository: ProjectsRepository,
+    predictionsRepository: PredictionsRepository
 ) {
 
-  def noAlgorithm(): Task[(String, Labels)] =
+  def noAlgorithm(): Task[Prediction] =
     Task(println("No algorithm setup")).flatMap { _ =>
       Task.fail(
         NoAlgorithmAvailable("No algorithms are setup")
@@ -33,7 +38,7 @@ class PredictionsService(
   def predictWithProjectPolicy(
       features: Features,
       project: Project
-  ): Task[(String, Labels)] =
+  ): Task[Prediction] =
     project.policy
       .take()
       .fold(
@@ -46,18 +51,32 @@ class PredictionsService(
           )(
             algorithm =>
               predictWithAlgorithm(
-                features,
-                algorithm
-              )
+                project.id,
+                algorithm,
+                features
+              ).flatMap { prediction =>
+                predictionsRepository.insert(prediction) *> Task
+                  .succeed(prediction)
+              }
           )
       }
 
   def predictWithAlgorithm(
-      features: Features,
-      algorithm: Algorithm
-  ): Task[(String, Labels)] = algorithm.backend match {
+      projectId: String,
+      algorithm: Algorithm,
+      features: Features
+  ): Task[Prediction] = algorithm.backend match {
     case local: Local =>
-      Task.succeed("" -> local.computed)
+      Task.succeed(
+        Prediction(
+          UUID.randomUUID().toString,
+          projectId,
+          algorithm.id,
+          features,
+          local.computed,
+          Examples(None)
+        )
+      )
     case tfBackend @ TensorFlowBackend(host, port, fTransormer, lTransformer) =>
       fTransormer
         .transform(features)
@@ -92,13 +111,23 @@ class PredictionsService(
                       _.expect[TensorFlowLabels](request)(
                         TensorFlowLabelsSerializer.entityDecoder
                       ).flatMap { tfLabels =>
-                          lTransformer
-                            .transform(tfLabels)
-                            .fold(
-                              err => Task.fail(err),
-                              labels => Task.succeed(algorithm.id -> labels)
-                            )
-                        }
+                        lTransformer
+                          .transform(tfLabels)
+                          .fold(
+                            err => Task.fail(err),
+                            labels =>
+                              Task.succeed(
+                                Prediction(
+                                  UUID.randomUUID().toString,
+                                  projectId,
+                                  algorithm.id,
+                                  features,
+                                  labels,
+                                  Examples(None)
+                                )
+                              )
+                          )
+                      }
                     )
                 }
               )
@@ -153,7 +182,7 @@ class PredictionsService(
         algorithmId =>
           project.algorithmsMap
             .get(algorithmId)
-            .fold[Task[(String, Labels)]](
+            .fold[Task[Prediction]](
               Task(
                 println(
                   s"project algorithms: ${project.algorithmsMap.toString()}"
@@ -165,10 +194,14 @@ class PredictionsService(
               )
             )(
               algorithm =>
-                predictWithAlgorithm(features, algorithm).flatMap {
-                  case (_, labels) =>
-                    if (validateLabels(project.configuration.labels, labels)) {
-                      Task.succeed(algorithmId -> labels)
+                predictWithAlgorithm(project.id, algorithm, features).flatMap {
+                  prediction =>
+                    if (validateLabels(
+                        project.configuration.labels,
+                        prediction.labels
+                      )) {
+                      predictionsRepository.insert(prediction) *> Task
+                        .succeed(prediction)
                     } else {
                       Task.fail(
                         LabelsValidationFailed(

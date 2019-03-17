@@ -19,15 +19,15 @@ class LabelsTransformerServiceSpec
     val labels1 = TensorFlowLabels(
       List(
         List(
-          "toto" -> 0.5f
+          "tf_toto" -> 0.5f
         )
       )
     )
 
     val transformer2 = TensorFlowLabelsTransformer(
-      Set(
-        "toto",
-        "toto3"
+      Map(
+        "tf_toto" -> "toto",
+        "tf_toto3" -> "toto3"
       )
     )
 
@@ -45,17 +45,17 @@ class LabelsTransformerServiceSpec
     val labels2 = TensorFlowLabels(
       List(
         List(
-          "toto" -> 0.5f
+          "tf_toto" -> 0.5f
         ),
         List(
-          "toto2" -> 0.3f
+          "tf_toto2" -> 0.3f
         )
       )
     )
 
     val transformer1 = TensorFlowLabelsTransformer(
-      Set(
-        "toto"
+      Map(
+        "tf_toto" -> "toto"
       )
     )
 
@@ -76,18 +76,18 @@ class LabelsTransformerServiceSpec
     val labels = TensorFlowLabels(
       List(
         List(
-          "toto" -> 0.5f
+          "tf_toto" -> 0.5f
         ),
         List(
-          "titi" -> 0.3f
+          "tf_titi" -> 0.3f
         )
       )
     )
 
     val transformer = TensorFlowLabelsTransformer(
-      Set(
-        "toto",
-        "titi"
+      Map(
+        "tf_toto" -> "toto",
+        "tf_titi" -> "titi"
       )
     )
 
