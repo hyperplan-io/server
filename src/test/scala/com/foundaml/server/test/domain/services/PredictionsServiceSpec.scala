@@ -6,7 +6,10 @@ import com.foundaml.server.domain.services.PredictionsService
 import org.scalatest._
 import org.scalatest.Inside.inside
 import com.foundaml.server.domain.models.features._
-import com.foundaml.server.domain.repositories.{PredictionsRepository, ProjectsRepository}
+import com.foundaml.server.domain.repositories.{
+  PredictionsRepository,
+  ProjectsRepository
+}
 import com.foundaml.server.infrastructure.streaming.KinesisService
 import com.foundaml.server.test.{ProjectGenerator, TestDatabase}
 import org.http4s.client.blaze.Http1Client
@@ -27,7 +30,12 @@ class PredictionsServiceSpec
   val projectRepository = new ProjectsRepository()(xa)
   val predictionsRepository = new PredictionsRepository()(xa)
   val predictionsService =
-    new PredictionsService(projectRepository, predictionsRepository, kinesisService, config)
+    new PredictionsService(
+      projectRepository,
+      predictionsRepository,
+      kinesisService,
+      config
+    )
 
   it should "fail to execute predictions for an incorrect configuration" in {
     val features = CustomFeatures(

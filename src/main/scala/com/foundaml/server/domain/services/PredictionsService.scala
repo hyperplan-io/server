@@ -12,8 +12,15 @@ import com.foundaml.server.domain.models.errors._
 import com.foundaml.server.domain.models.features._
 import com.foundaml.server.domain.models.labels._
 import com.foundaml.server.domain.models.labels.transformers.TensorFlowLabels
-import com.foundaml.server.domain.repositories.{PredictionsRepository, ProjectsRepository}
-import com.foundaml.server.infrastructure.serialization.{PredictionSerializer, TensorFlowFeaturesSerializer, TensorFlowLabelsSerializer}
+import com.foundaml.server.domain.repositories.{
+  PredictionsRepository,
+  ProjectsRepository
+}
+import com.foundaml.server.infrastructure.serialization.{
+  PredictionSerializer,
+  TensorFlowFeaturesSerializer,
+  TensorFlowLabelsSerializer
+}
 import com.foundaml.server.infrastructure.streaming.KinesisService
 import org.http4s.client.blaze.BlazeClientBuilder
 
@@ -29,10 +36,14 @@ class PredictionsService(
   def persistPrediction(prediction: Prediction) =
     predictionsRepository.insert(prediction)
 
-  def publishPredictionToKinesis(prediction: Prediction) = if(config.kinesis.enabled) {
-    kinesisService.put(prediction, config.kinesis.predictionsStream, prediction.projectId)(PredictionSerializer.encoder)
-  } else Task.unit
-
+  def publishPredictionToKinesis(prediction: Prediction) =
+    if (config.kinesis.enabled) {
+      kinesisService.put(
+        prediction,
+        config.kinesis.predictionsStream,
+        prediction.projectId
+      )(PredictionSerializer.encoder)
+    } else Task.unit
 
   def noAlgorithm(): Task[Prediction] =
     Task(println("No algorithm setup")).flatMap { _ =>
@@ -65,10 +76,11 @@ class PredictionsService(
       }
 
   def predictWithLocalBackend(
-                               projectId: String,
-                               algorithm: Algorithm,
-                               features: Features,
-                               local: Local)= {
+      projectId: String,
+      algorithm: Algorithm,
+      features: Features,
+      local: Local
+  ) = {
     Task.succeed(
       Prediction(
         UUID.randomUUID().toString,
@@ -80,10 +92,11 @@ class PredictionsService(
       )
     )
   }
-  def predictWithTensorFlowBackend(projectId: String,
-                                   algorithm: Algorithm,
-                                   features: Features,
-                                   backend: TensorFlowBackend
+  def predictWithTensorFlowBackend(
+      projectId: String,
+      algorithm: Algorithm,
+      features: Features,
+      backend: TensorFlowBackend
   ) = {
     backend.featuresTransformer
       .transform(features)
@@ -97,7 +110,7 @@ class PredictionsService(
             ),
         tfFeatures => {
           implicit val encoder
-          : EntityEncoder[Task, TensorFlowClassificationFeatures] =
+              : EntityEncoder[Task, TensorFlowClassificationFeatures] =
             TensorFlowFeaturesSerializer.entityEncoder
           val uriString = s"http://${backend.host}:${backend.port}"
           Uri
@@ -155,7 +168,8 @@ class PredictionsService(
         predictWithTensorFlowBackend(projectId, algorithm, features, tfBackend)
     }
     predictionTask.flatMap { prediction =>
-      persistPrediction(prediction) *> publishPredictionToKinesis(prediction) *> Task.succeed(prediction)
+      persistPrediction(prediction) *> publishPredictionToKinesis(prediction) *> Task
+        .succeed(prediction)
     }
   }
 
