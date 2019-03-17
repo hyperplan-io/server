@@ -32,8 +32,9 @@ class PredictionsHttpService(
             )
             .fold(throw _, identity)
           _ <- Task(println("deserialized features"))
-          labels <- predict(predictionRequest)
-          _ <- Task(println("prediction successful"))
+          prediction <- predict(predictionRequest)
+          (algorithmId, labels) = prediction
+          _ <- Task(println(s"A prediction has been computed for project ${predictionRequest.projectId} using algorithm $algorithmId"))
         } yield labels).flatMap { labels =>
           Ok(LabelsSerializer.encodeJson(labels))
         }
@@ -42,7 +43,7 @@ class PredictionsHttpService(
 
   def predict(
       request: PredictionRequest
-  ): Task[Labels] = {
+  ): Task[(String, Labels)] = {
     projectFactory.get(request.projectId).flatMap { project =>
         predictionsService.predict(
           request.features,

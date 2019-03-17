@@ -54,14 +54,8 @@ object Main extends App {
       algorithmsRepository = new AlgorithmsRepository
       projectFactory = new ProjectFactory(projectsRepository, algorithmsRepository)
       kinesisService <- KinesisService("us-east-2")
-      clientStream <- Http1Client
-        .stream[Task](BlazeClientConfig.defaultConfig)
-        .compile
-        .last
-      predictionsService = clientStream.fold(
-        throw new RuntimeException("Could not instantiate http client")
-      )(httpClient => new PredictionsService(projectsRepository, httpClient))
-      _ <- printLine("Services have been correctly instanciated")
+      predictionsService = new PredictionsService(projectsRepository)
+      _ <- printLine("Services have been correctly instantiated")
       predictionId = "test-id"
       _ <- kinesisService.put(
         Prediction(predictionId),

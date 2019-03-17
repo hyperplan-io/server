@@ -11,16 +11,16 @@ import com.foundaml.server.domain.models.labels._
 import com.foundaml.server.domain.models.labels.transformers.TensorFlowLabels
 import com.foundaml.server.domain.repositories.ProjectsRepository
 import com.foundaml.server.infrastructure.serialization.{TensorFlowFeaturesSerializer, TensorFlowLabelsSerializer}
-import org.http4s.client.Client
-import org.http4s.dsl.io._
-import org.http4s.circe._
+
+import org.http4s.client.blaze.BlazeClientBuilder
+
+import scala.concurrent.ExecutionContext
 
 class PredictionsService(
-    projectsRepository: ProjectsRepository,
-    httpClient: Client[Task]
+    projectsRepository: ProjectsRepository
 ) {
 
-  def noAlgorithm(): Task[Labels] =
+  def noAlgorithm(): Task[(String, Labels)] =
     Task(println("No algorithm setup")).flatMap { _ =>
       Task.fail(
         NoAlgorithmAvailable("No algorithms are setup")
@@ -31,7 +31,7 @@ class PredictionsService(
   def predictWithProjectPolicy(
       features: Features,
       project: Project
-  ): Task[Labels] =
+  ): Task[(String, Labels)] =
     project.policy
       .take()
       .fold(
@@ -53,9 +53,9 @@ class PredictionsService(
   def predictWithAlgorithm(
       features: Features,
       algorithm: Algorithm
-  ): Task[Labels] = algorithm.backend match {
+  ): Task[(String, Labels)] = algorithm.backend match {
     case local: Local =>
-      Task.succeed(local.computed)
+      Task.succeed("" -> local.computed)
     case tfBackend @ TensorFlowBackend(host, port, fTransormer, lTransformer) =>
       fTransormer
         .transform(features)
@@ -71,21 +71,28 @@ class PredictionsService(
             implicit val encoder
                 : EntityEncoder[Task, TensorFlowClassificationFeatures] =
               TensorFlowFeaturesSerializer.entityEncoder
-            val request =
-              Request[Task](method = Method.POST, uri = Uri.uri("/"))
-                .withBody(tfFeatures)
-            httpClient
-              .expect[TensorFlowLabels](request)(
-                TensorFlowLabelsSerializer.entityDecoder
-              )
-              .flatMap { tfLabels =>
-                lTransformer
-                  .transform(tfLabels)
-                  .fold(
-                    err => Task.fail(err),
-                    labels => Task.succeed(labels)
-                  )
+            val uriString = s"http://$host:$port"
+            Uri.fromString(uriString).fold(
+              _ => Task.fail(InvalidArgument(s"The following uri could not be parsed, check your backend configuration. $uriString")),
+              uri => {
+                val request =
+                  Request[Task](method = Method.POST, uri = uri)
+                    .withBody(tfFeatures)
+                BlazeClientBuilder[Task](ExecutionContext.global).resource.use(_.expect[TensorFlowLabels](request)(
+                  TensorFlowLabelsSerializer.entityDecoder
+                )
+                  .flatMap { tfLabels =>
+                    lTransformer
+                      .transform(tfLabels)
+                      .fold(
+                        err => Task.fail(err),
+                        labels => Task.succeed(algorithm.id -> labels)
+                      )
+                  }
+                )
               }
+            )
+
           }
         )
   }
@@ -124,7 +131,7 @@ class PredictionsService(
       features: Features,
       project: Project,
       optionalAlgorithmId: Option[String]
-  ): Task[Labels] = {
+  ) = {
     if (validateFeatures(
         project.configuration.featureClass,
         project.configuration.featuresSize,
@@ -136,16 +143,16 @@ class PredictionsService(
         algorithmId =>
           project.algorithmsMap
             .get(algorithmId)
-            .fold[Task[Labels]](
+            .fold[Task[(String, Labels)]](
             Task(println(s"project algorithms: ${project.algorithmsMap.toString()}")) *> Task.fail(
                 InvalidArgument(s"The algorithm $algorithmId does not exist in the project ${project.id}")
               )
             )(
               algorithm =>
                 predictWithAlgorithm(features, algorithm).flatMap {
-                  labels =>
+                  case (_, labels) =>
                     if (validateLabels(project.configuration.labels, labels)) {
-                      Task.succeed[Labels](labels)
+                      Task.succeed(algorithmId -> labels)
                     } else {
                       Task.fail(
                         LabelsValidationFailed(

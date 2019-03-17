@@ -2,6 +2,7 @@ package com.foundaml.server.domain.models.labels.transformers
 
 import com.foundaml.server.domain.models.errors.LabelsTransformerError
 import com.foundaml.server.domain.models.labels._
+import com.foundaml.server.infrastructure.serialization.TensorFlowLabelsSerializer
 
 case class TensorFlowLabels(result: List[List[(String, Float)]])
 
@@ -13,7 +14,7 @@ case class TensorFlowLabel(label: String, probability: Float) {
   override def hashCode: Int = label.toUpperCase.hashCode
 }
 
-case class TensorFlowLabelsTransformer(fields: Set[String]) {
+case class TensorFlowLabelsTransformer(fields: Map[String, String]) {
 
   def transform(
       tfLabels: TensorFlowLabels
@@ -21,13 +22,21 @@ case class TensorFlowLabelsTransformer(fields: Set[String]) {
 
     val labelsString = tfLabels.result.flatten.map(_._1).toSet
 
-    val labels: Set[Label] = tfLabels.result.flatten.map {
-      case (labelString, probability) =>
-        ClassificationLabel(labelString, probability)
-    }.toSet
+    if (labelsString == fields.keys) {
+      val labels: Set[Label] = tfLabels.result.flatten.flatMap {
+        case (label, probability) =>
+          fields.get(label).map(label => ClassificationLabel(label, probability))
+      }.toSet
 
-    if (labelsString == fields) {
-      Right(Labels(labels))
+      if(labels.size == fields.keys.size) {
+        Right(Labels(labels))
+      } else {
+        Left(
+          LabelsTransformerError(
+            "A label could not be mapped from TensorFlow result"
+          )
+        )
+      }
     } else {
       Left(
         LabelsTransformerError(
@@ -36,4 +45,8 @@ case class TensorFlowLabelsTransformer(fields: Set[String]) {
       )
     }
   }
+}
+
+object TensorFlowLabelsTransformer {
+  def identity(projectLabels: Set[String]) = TensorFlowLabelsTransformer(projectLabels.zip(projectLabels).toMap)
 }
