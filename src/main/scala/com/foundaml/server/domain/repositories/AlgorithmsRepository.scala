@@ -28,7 +28,8 @@ class AlgorithmsRepository(implicit xa: Transactor[Task]) {
       ${algorithm.projectId}
     )""".update
 
-  def insert(algorithm: Algorithm): Task[Int] = insertQuery(algorithm).run.transact(xa)
+  def insert(algorithm: Algorithm): Task[Int] =
+    insertQuery(algorithm).run.transact(xa)
 
   def readQuery(algorithmId: String): doobie.Query0[Algorithm] =
     sql"""
@@ -38,7 +39,8 @@ class AlgorithmsRepository(implicit xa: Transactor[Task]) {
       """
       .query[Algorithm]
 
-  def read(algorithmId: String): Task[Algorithm] = readQuery(algorithmId).unique.transact(xa)
+  def read(algorithmId: String): Task[Algorithm] =
+    readQuery(algorithmId).unique.transact(xa)
 
   def readForProjectQuery(projectId: String): doobie.Query0[Algorithm] =
     sql"""
@@ -48,7 +50,8 @@ class AlgorithmsRepository(implicit xa: Transactor[Task]) {
       """
       .query[Algorithm]
 
-  def readForProject(projectId: String): Task[List[Algorithm]] = readForProjectQuery(projectId).to[List].transact(xa)
+  def readForProject(projectId: String): Task[List[Algorithm]] =
+    readForProjectQuery(projectId).to[List].transact(xa)
 
   def readAllQuery(): doobie.Query0[Algorithm] =
     sql"""

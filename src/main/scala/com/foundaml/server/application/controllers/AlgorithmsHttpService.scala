@@ -14,8 +14,8 @@ import scalaz.zio.Task
 import scalaz.zio.interop.catz._
 
 class AlgorithmsHttpService(
-    algorithmsRepository: AlgorithmsRepository,
-    projectsRepository: ProjectsRepository
+    projectsRepository: ProjectsRepository,
+    algorithmsRepository: AlgorithmsRepository
 ) extends Http4sDsl[Task] {
 
   val service: HttpService[Task] = {
@@ -24,12 +24,12 @@ class AlgorithmsHttpService(
         (for {
           request <- req
             .attemptAs[PostAlgorithmRequest](
-            PostAlgorithmRequestEntitySerializer.entityDecoder
+              PostAlgorithmRequestEntitySerializer.entityDecoder
             )
             .fold(throw _, identity)
           _ <- projectsRepository.read(request.projectId)
           algorithm = Algorithm(
-            UUID.randomUUID().toString,
+            request.id,
             request.backend,
             request.projectId
           )

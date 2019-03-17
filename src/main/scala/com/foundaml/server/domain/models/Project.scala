@@ -4,7 +4,7 @@ case class ProjectConfiguration(
     problem: ProblemType,
     featureClass: String,
     featuresSize: Int,
-    labels: Set[String],
+    labels: Set[String]
 )
 
 case class Project(

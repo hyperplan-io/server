@@ -12,9 +12,11 @@ object PostAlgorithmRequestEntitySerializer {
 
   import io.circe.generic.semiauto._
 
-  implicit val backendDecoder: Decoder[Backend] = BackendSerializer.Implicits.decoder
+  implicit val backendDecoder: Decoder[Backend] =
+    BackendSerializer.Implicits.decoder
 
-  implicit val postAlgorithmDecoder: Decoder[PostAlgorithmRequest] = deriveDecoder
+  implicit val postAlgorithmDecoder: Decoder[PostAlgorithmRequest] =
+    deriveDecoder
 
   implicit val entityDecoder: EntityDecoder[Task, PostAlgorithmRequest] =
     jsonOf[Task, PostAlgorithmRequest]

@@ -23,8 +23,7 @@ class ProjectsRepository(implicit xa: Transactor[Task]) {
     Put[String].contramap(AlgorithmPolicySerializer.encodeJson)
 
   val separator = ";"
-  implicit val labelsTypeGet
-  : Get[Set[String]] =
+  implicit val labelsTypeGet: Get[Set[String]] =
     Get[String].map(_.split(separator).toSet)
   implicit val labelsTypePut: Put[Set[String]] =
     Put[String].contramap(labels => s"${labels.mkString(separator)}")

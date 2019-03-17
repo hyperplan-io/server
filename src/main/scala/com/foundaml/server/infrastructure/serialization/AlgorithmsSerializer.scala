@@ -22,8 +22,8 @@ object AlgorithmsSerializer {
 
   import Implicits._
 
-  def encodeJson(algorithm: Algorithm): String = {
-    algorithm.asJson.noSpaces
+  def encodeJson(algorithm: Algorithm): Json = {
+    algorithm.asJson
   }
 
   def decodeJson(n: String): Either[io.circe.Error, Algorithm] = {
