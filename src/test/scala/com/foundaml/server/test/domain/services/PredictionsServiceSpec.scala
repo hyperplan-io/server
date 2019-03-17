@@ -9,7 +9,10 @@ import com.foundaml.server.domain.repositories.ProjectsRepository
 import com.foundaml.server.test.{ProjectGenerator, TestDatabase}
 import scalaz.zio.DefaultRuntime
 
-class PredictionsServiceSpec extends FlatSpec with DefaultRuntime with TestDatabase {
+class PredictionsServiceSpec
+    extends FlatSpec
+    with DefaultRuntime
+    with TestDatabase {
 
   val projectRepository = new ProjectsRepository()(xa)
   val predictionsService = new PredictionsService(projectRepository)

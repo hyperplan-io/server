@@ -10,6 +10,7 @@ case class PostProjectConfiguration(
 )
 
 case class PostProjectRequest(
-    name: String
-    ,configuration: PostProjectConfiguration
+    id: String,
+    name: String,
+    configuration: PostProjectConfiguration
 )
