@@ -1,6 +1,5 @@
 package com.foundaml.server.application.controllers
 
-
 import org.http4s.HttpService
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
@@ -13,7 +12,10 @@ import com.foundaml.server.domain.factories.ProjectFactory
 import com.foundaml.server.domain.models.labels._
 import com.foundaml.server.domain.repositories._
 import com.foundaml.server.domain.services.PredictionsService
-import com.foundaml.server.infrastructure.serialization.{LabelsSerializer, PredictionRequestEntitySerializer}
+import com.foundaml.server.infrastructure.serialization.{
+  LabelsSerializer,
+  PredictionRequestEntitySerializer
+}
 
 class PredictionsHttpService(
     predictionsService: PredictionsService,
@@ -34,7 +36,11 @@ class PredictionsHttpService(
           _ <- Task(println("deserialized features"))
           prediction <- predict(predictionRequest)
           (algorithmId, labels) = prediction
-          _ <- Task(println(s"A prediction has been computed for project ${predictionRequest.projectId} using algorithm $algorithmId"))
+          _ <- Task(
+            println(
+              s"A prediction has been computed for project ${predictionRequest.projectId} using algorithm $algorithmId"
+            )
+          )
         } yield labels).flatMap { labels =>
           Ok(LabelsSerializer.encodeJson(labels))
         }
@@ -45,12 +51,12 @@ class PredictionsHttpService(
       request: PredictionRequest
   ): Task[(String, Labels)] = {
     projectFactory.get(request.projectId).flatMap { project =>
-        predictionsService.predict(
-          request.features,
-          project,
-          request.algorithmId
-        )
-      }
+      predictionsService.predict(
+        request.features,
+        project,
+        request.algorithmId
+      )
+    }
   }
 
 }

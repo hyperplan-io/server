@@ -10,7 +10,10 @@ import com.foundaml.server.domain.models.features._
 import com.foundaml.server.domain.models.labels._
 import com.foundaml.server.domain.models.labels.transformers.TensorFlowLabels
 import com.foundaml.server.domain.repositories.ProjectsRepository
-import com.foundaml.server.infrastructure.serialization.{TensorFlowFeaturesSerializer, TensorFlowLabelsSerializer}
+import com.foundaml.server.infrastructure.serialization.{
+  TensorFlowFeaturesSerializer,
+  TensorFlowLabelsSerializer
+}
 
 import org.http4s.client.blaze.BlazeClientBuilder
 
@@ -26,7 +29,6 @@ class PredictionsService(
         NoAlgorithmAvailable("No algorithms are setup")
       )
     }
-
 
   def predictWithProjectPolicy(
       features: Features,
@@ -62,36 +64,44 @@ class PredictionsService(
         .fold(
           err =>
             Task(println(err.getMessage)) *>
-            Task.fail(
-              FeaturesTransformerError(
-                "The features could not be transformed to a TensorFlow compatible format"
-              )
-            ),
+              Task.fail(
+                FeaturesTransformerError(
+                  "The features could not be transformed to a TensorFlow compatible format"
+                )
+              ),
           tfFeatures => {
             implicit val encoder
                 : EntityEncoder[Task, TensorFlowClassificationFeatures] =
               TensorFlowFeaturesSerializer.entityEncoder
             val uriString = s"http://$host:$port"
-            Uri.fromString(uriString).fold(
-              _ => Task.fail(InvalidArgument(s"The following uri could not be parsed, check your backend configuration. $uriString")),
-              uri => {
-                val request =
-                  Request[Task](method = Method.POST, uri = uri)
-                    .withBody(tfFeatures)
-                BlazeClientBuilder[Task](ExecutionContext.global).resource.use(_.expect[TensorFlowLabels](request)(
-                  TensorFlowLabelsSerializer.entityDecoder
-                )
-                  .flatMap { tfLabels =>
-                    lTransformer
-                      .transform(tfLabels)
-                      .fold(
-                        err => Task.fail(err),
-                        labels => Task.succeed(algorithm.id -> labels)
-                      )
-                  }
-                )
-              }
-            )
+            Uri
+              .fromString(uriString)
+              .fold(
+                _ =>
+                  Task.fail(
+                    InvalidArgument(
+                      s"The following uri could not be parsed, check your backend configuration. $uriString"
+                    )
+                  ),
+                uri => {
+                  val request =
+                    Request[Task](method = Method.POST, uri = uri)
+                      .withBody(tfFeatures)
+                  BlazeClientBuilder[Task](ExecutionContext.global).resource
+                    .use(
+                      _.expect[TensorFlowLabels](request)(
+                        TensorFlowLabelsSerializer.entityDecoder
+                      ).flatMap { tfLabels =>
+                          lTransformer
+                            .transform(tfLabels)
+                            .fold(
+                              err => Task.fail(err),
+                              labels => Task.succeed(algorithm.id -> labels)
+                            )
+                        }
+                    )
+                }
+              )
 
           }
         )
@@ -144,8 +154,14 @@ class PredictionsService(
           project.algorithmsMap
             .get(algorithmId)
             .fold[Task[(String, Labels)]](
-            Task(println(s"project algorithms: ${project.algorithmsMap.toString()}")) *> Task.fail(
-                InvalidArgument(s"The algorithm $algorithmId does not exist in the project ${project.id}")
+              Task(
+                println(
+                  s"project algorithms: ${project.algorithmsMap.toString()}"
+                )
+              ) *> Task.fail(
+                InvalidArgument(
+                  s"The algorithm $algorithmId does not exist in the project ${project.id}"
+                )
               )
             )(
               algorithm =>

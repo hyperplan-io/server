@@ -25,10 +25,12 @@ case class TensorFlowLabelsTransformer(fields: Map[String, String]) {
     if (labelsString == fields.keys) {
       val labels: Set[Label] = tfLabels.result.flatten.flatMap {
         case (label, probability) =>
-          fields.get(label).map(label => ClassificationLabel(label, probability))
+          fields
+            .get(label)
+            .map(label => ClassificationLabel(label, probability))
       }.toSet
 
-      if(labels.size == fields.keys.size) {
+      if (labels.size == fields.keys.size) {
         Right(Labels(labels))
       } else {
         Left(
@@ -48,5 +50,6 @@ case class TensorFlowLabelsTransformer(fields: Map[String, String]) {
 }
 
 object TensorFlowLabelsTransformer {
-  def identity(projectLabels: Set[String]) = TensorFlowLabelsTransformer(projectLabels.zip(projectLabels).toMap)
+  def identity(projectLabels: Set[String]) =
+    TensorFlowLabelsTransformer(projectLabels.zip(projectLabels).toMap)
 }

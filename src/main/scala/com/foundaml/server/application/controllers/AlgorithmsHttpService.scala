@@ -18,13 +18,17 @@ import scalaz.zio.Task
 import scalaz.zio.interop.catz._
 
 class AlgorithmsHttpService(
-                             projectsRepository: ProjectsRepository,
-                             algorithmsRepository: AlgorithmsRepository,
-                             projectFactory: ProjectFactory,
+    projectsRepository: ProjectsRepository,
+    algorithmsRepository: AlgorithmsRepository,
+    projectFactory: ProjectFactory
 ) extends Http4sDsl[Task] {
 
-  def validateEqualSize(expectedSize: Int, actualSize: Int, featureName: String) =
-    if(expectedSize != actualSize) {
+  def validateEqualSize(
+      expectedSize: Int,
+      actualSize: Int,
+      featureName: String
+  ) =
+    if (expectedSize != actualSize) {
       Some(s"The $featureName size is incorrect for the project")
     } else {
       None
@@ -33,10 +37,23 @@ class AlgorithmsHttpService(
   def validate(request: PostAlgorithmRequest, project: Project) = {
     request.backend match {
       case com.foundaml.server.domain.models.backends.Local(computed) => Nil
-      case com.foundaml.server.domain.models.backends.TensorFlowBackend(_, _, TensorFlowFeaturesTransformer(signatureName, fields), TensorFlowLabelsTransformer(labels)) =>
+      case com.foundaml.server.domain.models.backends.TensorFlowBackend(
+          _,
+          _,
+          TensorFlowFeaturesTransformer(signatureName, fields),
+          TensorFlowLabelsTransformer(labels)
+          ) =>
         List(
-          validateEqualSize(project.configuration.featuresSize, fields.size, "features"),
-          validateEqualSize(project.configuration.labels.size, labels.size, "labels")
+          validateEqualSize(
+            project.configuration.featuresSize,
+            fields.size,
+            "features"
+          ),
+          validateEqualSize(
+            project.configuration.labels.size,
+            labels.size,
+            "labels"
+          )
         ).flatten
     }
   }
@@ -52,10 +69,14 @@ class AlgorithmsHttpService(
             .fold(throw _, identity)
           project <- projectFactory.get(request.projectId)
           errors = validate(request, project)
-          _ <- if(errors.isEmpty) {
+          _ <- if (errors.isEmpty) {
             Task.succeed(Unit)
           } else {
-            Task.fail(InvalidArgument(s"This algorithm cannot be added because: ${errors.mkString(", ")}"))
+            Task.fail(
+              InvalidArgument(
+                s"This algorithm cannot be added because: ${errors.mkString(", ")}"
+              )
+            )
           }
           algorithm = Algorithm(
             request.id,

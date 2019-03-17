@@ -11,9 +11,16 @@ import scalaz.zio.duration.Duration
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.{FiniteDuration, NANOSECONDS, TimeUnit}
 import scala.util.Properties.envOrNone
-import com.foundaml.server.application.controllers.{AlgorithmsHttpService, PredictionsHttpService, ProjectsHttpService}
+import com.foundaml.server.application.controllers.{
+  AlgorithmsHttpService,
+  PredictionsHttpService,
+  ProjectsHttpService
+}
 import com.foundaml.server.domain.factories.ProjectFactory
-import com.foundaml.server.domain.repositories.{AlgorithmsRepository, ProjectsRepository}
+import com.foundaml.server.domain.repositories.{
+  AlgorithmsRepository,
+  ProjectsRepository
+}
 import com.foundaml.server.domain.services.PredictionsService
 
 object Server {
@@ -34,10 +41,10 @@ object Server {
   }
 
   def stream(
-              predictionsService: PredictionsService,
-              projectsRepository: ProjectsRepository,
-              algorithmsRepository: AlgorithmsRepository,
-              projectFactory: ProjectFactory,
+      predictionsService: PredictionsService,
+      projectsRepository: ProjectsRepository,
+      algorithmsRepository: AlgorithmsRepository,
+      projectFactory: ProjectFactory
   )(implicit ec: ExecutionContext) =
     BlazeBuilder[Task]
       .bindHttp(8080, "0.0.0.0")
