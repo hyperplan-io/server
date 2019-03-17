@@ -8,6 +8,7 @@ import scalaz.zio.interop.catz._
 import java.util.UUID
 
 import com.foundaml.server.application.controllers.requests._
+import com.foundaml.server.domain.factories.ProjectFactory
 import com.foundaml.server.domain.models._
 import com.foundaml.server.domain.models.errors.InvalidArgument
 import com.foundaml.server.domain.repositories._
@@ -74,36 +75,12 @@ class ProjectsHttpService(
           Ok(ProjectSerializer.encodeJson(project))
         }
       case GET -> Root / projectId =>
-        (for {
-          project <- projectsRepository.read(projectId)
-        } yield project).flatMap {
-          case (
-              id,
-              name,
-              Right(algorithmPolicy),
-              Right(problem),
-              featuresClass,
-              featuresSize,
-              labels
-              ) =>
-            Ok(
-              ProjectSerializer.encodeJson(
-                Project(
-                  id,
-                  name,
-                  ProjectConfiguration(
-                    problem,
-                    featuresClass,
-                    featuresSize,
-                    labels
-                  ),
-                  Nil,
-                  algorithmPolicy
-                )
-              )
+        ProjectFactory(projectId, projectsRepository, algorithmsRepository).flatMap { project =>
+          Ok(
+            ProjectSerializer.encodeJson(
+              project
             )
-          case _ =>
-            BadRequest("there is an error with this project")
+          )
         }
     }
   }

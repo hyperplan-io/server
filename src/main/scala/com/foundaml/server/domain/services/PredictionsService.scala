@@ -24,7 +24,15 @@ class PredictionsService(
 ) {
 
   def noAlgorithm(): Task[Either[Throwable, Labels]] =
-    Task(Left(NoAlgorithmAvailable("No algorithms are setup")))
+    Task(println("No algorithm setup")).flatMap { _ =>
+      Task.succeed(
+        Left(
+          NoAlgorithmAvailable("No algorithms are setup"
+          )
+        )
+      )
+    }
+
 
   def predictWithProjectPolicy(
       features: Features,

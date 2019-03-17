@@ -38,7 +38,7 @@ object ProjectFactory {
               featuresSize,
               labels
             ),
-            Nil,
+            algorithms,
             policy
           )
         )
