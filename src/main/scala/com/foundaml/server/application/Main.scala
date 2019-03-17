@@ -12,7 +12,11 @@ import scala.concurrent.duration.{FiniteDuration, NANOSECONDS, TimeUnit}
 import scala.util.{Left, Right}
 import com.foundaml.server.infrastructure.serialization.PredictionSerializer
 import com.foundaml.server.infrastructure.storage.PostgresqlService
-import com.foundaml.server.domain.repositories.{AlgorithmsRepository, PredictionsRepository, ProjectsRepository}
+import com.foundaml.server.domain.repositories.{
+  AlgorithmsRepository,
+  PredictionsRepository,
+  ProjectsRepository
+}
 import com.foundaml.server.domain.services.PredictionsService
 import com.foundaml.server.domain.models.Prediction
 import com.foundaml.server.infrastructure.streaming.KinesisService
@@ -58,16 +62,11 @@ object Main extends App {
         algorithmsRepository
       )
       kinesisService <- KinesisService("us-east-2")
-      predictionsService = new PredictionsService(projectsRepository, predictionsRepository)
+      predictionsService = new PredictionsService(
+        projectsRepository,
+        predictionsRepository
+      )
       _ <- printLine("Services have been correctly instantiated")
-      /*
-            predictionId = "test-id"
-      _ <- kinesisService.put(
-        Prediction(predictionId),
-        "test",
-        predictionId
-      )(PredictionSerializer.encoder)
-       */
       _ <- Server
         .stream(
           predictionsService,

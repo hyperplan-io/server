@@ -10,8 +10,10 @@ object PredictionSerializer {
 
   import io.circe._, io.circe.generic.semiauto._
 
-  implicit val featuresEncoder: Encoder[Features] = FeaturesSerializer.Implicits.encoder
-  implicit val featuresDecoder: Decoder[Features] = FeaturesSerializer.Implicits.decoder
+  implicit val featuresEncoder: Encoder[Features] =
+    FeaturesSerializer.Implicits.encoder
+  implicit val featuresDecoder: Decoder[Features] =
+    FeaturesSerializer.Implicits.decoder
 
   implicit val labelsEncoder: Encoder[Labels] = LabelsSerializer.encoder
   implicit val labelsDecoder: Decoder[Labels] = LabelsSerializer.decoder

@@ -11,8 +11,14 @@ import com.foundaml.server.domain.models.errors._
 import com.foundaml.server.domain.models.features._
 import com.foundaml.server.domain.models.labels._
 import com.foundaml.server.domain.models.labels.transformers.TensorFlowLabels
-import com.foundaml.server.domain.repositories.{PredictionsRepository, ProjectsRepository}
-import com.foundaml.server.infrastructure.serialization.{TensorFlowFeaturesSerializer, TensorFlowLabelsSerializer}
+import com.foundaml.server.domain.repositories.{
+  PredictionsRepository,
+  ProjectsRepository
+}
+import com.foundaml.server.infrastructure.serialization.{
+  TensorFlowFeaturesSerializer,
+  TensorFlowLabelsSerializer
+}
 import org.http4s.client.blaze.BlazeClientBuilder
 
 import scala.concurrent.ExecutionContext
@@ -49,15 +55,16 @@ class PredictionsService(
                 algorithm,
                 features
               ).flatMap { prediction =>
-                predictionsRepository.insert(prediction) *> Task.succeed(prediction)
+                predictionsRepository.insert(prediction) *> Task
+                  .succeed(prediction)
               }
           )
       }
 
   def predictWithAlgorithm(
-                          projectId: String,
-                          algorithm: Algorithm,
-                            features: Features
+      projectId: String,
+      algorithm: Algorithm,
+      features: Features
   ): Task[Prediction] = algorithm.backend match {
     case local: Local =>
       Task.succeed(
@@ -104,11 +111,12 @@ class PredictionsService(
                       _.expect[TensorFlowLabels](request)(
                         TensorFlowLabelsSerializer.entityDecoder
                       ).flatMap { tfLabels =>
-                          lTransformer
-                            .transform(tfLabels)
-                            .fold(
-                              err => Task.fail(err),
-                              labels => Task.succeed(
+                        lTransformer
+                          .transform(tfLabels)
+                          .fold(
+                            err => Task.fail(err),
+                            labels =>
+                              Task.succeed(
                                 Prediction(
                                   UUID.randomUUID().toString,
                                   projectId,
@@ -118,8 +126,8 @@ class PredictionsService(
                                   Examples(None)
                                 )
                               )
-                            )
-                        }
+                          )
+                      }
                     )
                 }
               )
@@ -186,9 +194,14 @@ class PredictionsService(
               )
             )(
               algorithm =>
-                predictWithAlgorithm(project.id, algorithm, features).flatMap { prediction =>
-                    if (validateLabels(project.configuration.labels, prediction.labels)) {
-                      predictionsRepository.insert(prediction) *> Task.succeed(prediction)
+                predictWithAlgorithm(project.id, algorithm, features).flatMap {
+                  prediction =>
+                    if (validateLabels(
+                        project.configuration.labels,
+                        prediction.labels
+                      )) {
+                      predictionsRepository.insert(prediction) *> Task
+                        .succeed(prediction)
                     } else {
                       Task.fail(
                         LabelsValidationFailed(

@@ -11,7 +11,11 @@ import com.foundaml.server.domain.models.Prediction
 import com.foundaml.server.domain.models.labels._
 import com.foundaml.server.domain.repositories._
 import com.foundaml.server.domain.services.PredictionsService
-import com.foundaml.server.infrastructure.serialization.{LabelsSerializer, PredictionRequestEntitySerializer, PredictionSerializer}
+import com.foundaml.server.infrastructure.serialization.{
+  LabelsSerializer,
+  PredictionRequestEntitySerializer,
+  PredictionSerializer
+}
 
 class PredictionsHttpService(
     predictionsService: PredictionsService,
