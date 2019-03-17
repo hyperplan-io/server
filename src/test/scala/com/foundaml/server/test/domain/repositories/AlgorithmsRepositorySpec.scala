@@ -17,17 +17,16 @@ class AlgorithmsRepositorySpec
 
     withInMemoryDatabase { _ =>
       val algorithm = AlgorithmGenerator.withLocalBackend()
-      val insertIO = algorithmRepository.insert(algorithm)
-      val readIO = algorithmRepository.read(algorithm.id)
+      val insertIO = algorithmRepository.insertQuery(algorithm)
+      val readIO = algorithmRepository.readQuery(algorithm.id)
       val readForProjectIO =
-        algorithmRepository.readForProject(algorithm.projectId)
-      val readAllIO = algorithmRepository.readAll()
+        algorithmRepository.readForProjectQuery(algorithm.projectId)
+      val readAllIO = algorithmRepository.readAllQuery()
       check(insertIO)
       check(readIO)
       check(readForProjectIO)
       check(readAllIO)
     }
-
   }
 
 }

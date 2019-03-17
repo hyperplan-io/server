@@ -4,6 +4,7 @@ import doobie._
 import doobie.implicits._
 
 import scalaz.zio.Task
+import scalaz.zio.interop.catz._
 
 import com.foundaml.server.domain.models.Algorithm
 import com.foundaml.server.domain.models.backends._
@@ -16,7 +17,7 @@ class AlgorithmsRepository(implicit xa: Transactor[Task]) {
   implicit val backendPut: Put[Backend] =
     Put[String].contramap(BackendSerializer.encodeJson)
 
-  def insert(algorithm: Algorithm): doobie.Update0 =
+  def insertQuery(algorithm: Algorithm): doobie.Update0 =
     sql"""INSERT INTO algorithms(
       id, 
       backend, 
@@ -27,7 +28,9 @@ class AlgorithmsRepository(implicit xa: Transactor[Task]) {
       ${algorithm.projectId}
     )""".update
 
-  def read(algorithmId: String): doobie.Query0[Algorithm] =
+  def insert(algorithm: Algorithm): Task[Int] = insertQuery(algorithm).run.transact(xa)
+
+  def readQuery(algorithmId: String): doobie.Query0[Algorithm] =
     sql"""
       SELECT id, backend, project_id 
       FROM algorithms 
@@ -35,7 +38,9 @@ class AlgorithmsRepository(implicit xa: Transactor[Task]) {
       """
       .query[Algorithm]
 
-  def readForProject(projectId: String): doobie.Query0[Algorithm] =
+  def read(algorithmId: String): Task[Algorithm] = readQuery(algorithmId).unique.transact(xa)
+
+  def readForProjectQuery(projectId: String): doobie.Query0[Algorithm] =
     sql"""
       SELECT id, backend, project_id 
       FROM algorithms 
@@ -43,11 +48,15 @@ class AlgorithmsRepository(implicit xa: Transactor[Task]) {
       """
       .query[Algorithm]
 
-  def readAll(): doobie.Query0[Algorithm] =
+  def readForProject(projectId: String): Task[List[Algorithm]] = readForProjectQuery(projectId).to[List].transact(xa)
+
+  def readAllQuery(): doobie.Query0[Algorithm] =
     sql"""
       SELECT id, backend, project_id 
       FROM algorithms 
       """
       .query[Algorithm]
+
+  def readAll(): Task[List[Algorithm]] = readAllQuery().to[List].transact(xa)
 
 }
