@@ -1,6 +1,6 @@
 package com.foundaml.server.domain.models.errors
 
-sealed trait PredictionError {
+sealed trait PredictionError extends Throwable {
   def message: String
 }
 

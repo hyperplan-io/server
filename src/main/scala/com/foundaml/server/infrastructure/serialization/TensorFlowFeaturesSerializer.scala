@@ -1,10 +1,12 @@
 package com.foundaml.server.infrastructure.serialization
 
 import com.foundaml.server.domain.models.features._
-import io.circe.{Encoder, _}
-import io.circe.generic.extras.Configuration
-import io.circe.parser.decode
 import io.circe.syntax._
+import io.circe.{Encoder, _}
+import org.http4s.EntityEncoder
+import org.http4s.circe.jsonEncoderOf
+import scalaz.zio.Task
+import scalaz.zio.interop.catz._
 
 object TensorFlowFeaturesSerializer {
 
@@ -26,6 +28,10 @@ object TensorFlowFeaturesSerializer {
             Some(key -> Json.fromString(value))
         })))
       )
+
+  implicit val entityEncoder
+      : EntityEncoder[Task, TensorFlowClassificationFeatures] =
+    jsonEncoderOf[Task, TensorFlowClassificationFeatures]
 
   def encodeJson(features: TensorFlowClassificationFeatures): Json =
     features.asJson

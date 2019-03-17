@@ -7,7 +7,9 @@ import org.scalatest.Inside.inside
 import com.foundaml.server.domain.models.features._
 import com.foundaml.server.domain.repositories.ProjectsRepository
 import com.foundaml.server.test.{ProjectGenerator, TestDatabase}
-import scalaz.zio.DefaultRuntime
+import org.http4s.client.blaze.Http1Client
+import scalaz.zio.{DefaultRuntime, Task}
+import scalaz.zio.interop.catz._
 
 class PredictionsServiceSpec
     extends FlatSpec
@@ -15,7 +17,8 @@ class PredictionsServiceSpec
     with TestDatabase {
 
   val projectRepository = new ProjectsRepository()(xa)
-  val predictionsService = new PredictionsService(projectRepository)
+  val httpClient = unsafeRun(Http1Client.stream[Task]().compile.last).get
+  val predictionsService = new PredictionsService(projectRepository, httpClient)
 
   it should "fail to execute predictions for an incorrect configuration" in {
     val features = CustomFeatures(

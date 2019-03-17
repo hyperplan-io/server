@@ -5,16 +5,11 @@ import io.circe._
 import io.circe.parser.decode
 import io.circe.syntax._
 import com.foundaml.server.domain.models.features._
-import io.circe.generic.extras.Configuration
 
 object FeaturesSerializer {
 
-  import io.circe.generic.extras.semiauto._
-
-  object Implicits {
-
-    implicit val discriminator: Configuration =
-      Configuration.default.withDiscriminator("class")
+  object FeatureSerializer {
+    import io.circe.generic.semiauto._
 
     implicit val doubleEncoder: Encoder[DoubleFeature] = deriveEncoder
     implicit val doubleDecoder: Decoder[DoubleFeature] = deriveDecoder
@@ -30,6 +25,16 @@ object FeaturesSerializer {
 
     implicit val featureEncoder: Encoder[Feature] = deriveEncoder
     implicit val featureDecoder: Decoder[Feature] = deriveDecoder
+  }
+
+  object Implicits {
+    import io.circe.generic.extras.Configuration
+    import io.circe.generic.extras.semiauto._
+
+    import FeatureSerializer._
+
+    implicit val discriminator: Configuration =
+      Configuration.default.withDiscriminator("class")
 
     implicit val encoder: Encoder[Features] = deriveEncoder
     implicit val decoder: Decoder[Features] = deriveDecoder

@@ -1,27 +1,35 @@
 package com.foundaml.server.domain.services
 
+import org.http4s._
 import scalaz.zio.{IO, Task}
+import scalaz.zio.interop.catz._
 import com.foundaml.server.domain.models._
 import com.foundaml.server.domain.models.backends._
-import com.foundaml.server.domain.models.errors.{
-  FeaturesValidationFailed,
-  LabelsValidationFailed,
-  NoAlgorithmAvailable,
-  PredictionError
-}
+import com.foundaml.server.domain.models.errors._
 import com.foundaml.server.domain.models.features._
 import com.foundaml.server.domain.models.labels._
+import com.foundaml.server.domain.models.labels.transformers.TensorFlowLabels
 import com.foundaml.server.domain.repositories.ProjectsRepository
+import com.foundaml.server.infrastructure.serialization.{
+  TensorFlowFeaturesSerializer,
+  TensorFlowLabelsSerializer
+}
+import org.http4s.client.Client
+import org.http4s.dsl.io._
+import org.http4s.circe._
 
-class PredictionsService(projectsRepository: ProjectsRepository) {
+class PredictionsService(
+    projectsRepository: ProjectsRepository,
+    httpClient: Client[Task]
+) {
 
-  def noAlgorithm(): Task[Either[PredictionError, Labels]] =
+  def noAlgorithm(): Task[Either[Throwable, Labels]] =
     Task(Left(NoAlgorithmAvailable("No algorithms are setup")))
 
   def predictWithProjectPolicy(
       features: Features,
       project: Project
-  ): Task[Either[PredictionError, Labels]] =
+  ): Task[Either[Throwable, Labels]] =
     project.policy
       .take()
       .fold(
@@ -43,13 +51,40 @@ class PredictionsService(projectsRepository: ProjectsRepository) {
   def predictWithAlgorithm(
       features: Features,
       algorithm: Algorithm
-  ): Task[Either[PredictionError, Labels]] = algorithm.backend match {
+  ): Task[Either[Throwable, Labels]] = algorithm.backend match {
     case local: Local =>
       Task(Right(local.computed))
     case tfBackend @ TensorFlowBackend(host, port, fTransormer, lTransformer) =>
-      Task(
-        Left(NoAlgorithmAvailable("Tensorflow backend is not implemented yet"))
-      )
+      fTransormer
+        .transform(features)
+        .fold(
+          err =>
+            Task.fail(
+              FeaturesTransformerError(
+                "The features could not be transformed to a TensorFlow compatible format"
+              )
+            ),
+          tfFeatures => {
+            implicit val encoder
+                : EntityEncoder[Task, TensorFlowClassificationFeatures] =
+              TensorFlowFeaturesSerializer.entityEncoder
+            val request =
+              Request[Task](method = Method.POST, uri = Uri.uri("/"))
+                .withBody(tfFeatures)
+            httpClient
+              .expect[TensorFlowLabels](request)(
+                TensorFlowLabelsSerializer.entityDecoder
+              )
+              .map { tfLabels =>
+                lTransformer
+                  .transform(tfLabels)
+                  .fold(
+                    err => Left(err),
+                    labels => Right(labels)
+                  )
+              }
+          }
+        )
   }
 
   def validateFeatures(
@@ -86,7 +121,7 @@ class PredictionsService(projectsRepository: ProjectsRepository) {
       features: Features,
       project: Project,
       optionalAlgoritmId: Option[String]
-  ): Task[Either[PredictionError, Labels]] = {
+  ): Task[Either[Throwable, Labels]] = {
     if (validateFeatures(
         project.configuration.featureClass,
         project.configuration.featuresSize,

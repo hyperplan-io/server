@@ -3,7 +3,7 @@ package com.foundaml.server.domain.models.labels.transformers
 import com.foundaml.server.domain.models.errors.LabelsTransformerError
 import com.foundaml.server.domain.models.labels._
 
-case class TensorFlowLabels(result: Set[TensorFlowLabel])
+case class TensorFlowLabels(result: List[List[(String, Float)]])
 
 case class TensorFlowLabel(label: String, probability: Float) {
   override def equals(o: Any): Boolean = o match {
@@ -19,11 +19,11 @@ case class TensorFlowLabelsTransformer(fields: Set[String]) {
       tfLabels: TensorFlowLabels
   ): Either[LabelsTransformerError, Labels] = {
 
-    val labelsString = tfLabels.result.map(_.label)
-    val probabilities = tfLabels.result.map(_.probability)
+    val labelsString = tfLabels.result.flatten.map(_._1).toSet
 
-    val labels: Set[Label] = tfLabels.result.map { tfLabel =>
-      ClassificationLabel(tfLabel.label, tfLabel.probability)
+    val labels: Set[Label] = tfLabels.result.flatten.map {
+      case (labelString, probability) =>
+        ClassificationLabel(labelString, probability)
     }.toSet
 
     if (labelsString == fields) {

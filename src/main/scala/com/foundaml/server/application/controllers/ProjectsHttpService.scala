@@ -22,7 +22,7 @@ class ProjectsHttpService(
 
   val regex = "[0-9a-zA-Z-_]*"
   def validateAlphaNumerical(input: String): Option[String] = {
-    if(input.matches(regex)) {
+    if (input.matches(regex)) {
       None
     } else {
       Some(s"The identifier $input is not alphanumerical")
@@ -46,10 +46,16 @@ class ProjectsHttpService(
             )
             .fold(throw _, identity)
           errors = validateRequest(request)
-          _ <- if(errors.isEmpty) {
+          _ <- if (errors.isEmpty) {
             Task(Unit)
           } else {
-            Task.fail(InvalidArgument(errors.mkString(s"The following errors occurred: ${errors.mkString(", ")}")))
+            Task.fail(
+              InvalidArgument(
+                errors.mkString(
+                  s"The following errors occurred: ${errors.mkString(", ")}"
+                )
+              )
+            )
           }
           project = Project(
             request.id,

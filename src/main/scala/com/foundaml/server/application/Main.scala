@@ -18,6 +18,8 @@ import com.foundaml.server.domain.repositories.{
 import com.foundaml.server.domain.services.PredictionsService
 import com.foundaml.server.domain.models.Prediction
 import com.foundaml.server.infrastructure.streaming.KinesisService
+import org.http4s.client.blaze._
+import scala.concurrent.ExecutionContext
 
 object Main extends App {
 
@@ -51,8 +53,14 @@ object Main extends App {
       _ <- printLine("SQL scripts have been runned successfully")
       projectsRepository = new ProjectsRepository
       algorithmsRepository = new AlgorithmsRepository
-      predictionsService = new PredictionsService(projectsRepository)
       kinesisService <- KinesisService("us-east-2")
+      clientStream <- Http1Client
+        .stream[Task](BlazeClientConfig.defaultConfig)
+        .compile
+        .last
+      predictionsService = clientStream.fold(
+        throw new RuntimeException("Could not instantiate http client")
+      )(httpClient => new PredictionsService(projectsRepository, httpClient))
       _ <- printLine("Services have been correctly instanciated")
       predictionId = "test-id"
       _ <- kinesisService.put(
