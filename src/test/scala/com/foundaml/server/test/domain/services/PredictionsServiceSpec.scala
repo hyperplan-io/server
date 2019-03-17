@@ -1,5 +1,6 @@
 package com.foundaml.server.test.domain.services
 
+import com.foundaml.server.domain.{FoundaMLConfig, KinesisConfig}
 import com.foundaml.server.domain.models.errors.FeaturesValidationFailed
 import com.foundaml.server.domain.services.PredictionsService
 import org.scalatest._
@@ -9,6 +10,7 @@ import com.foundaml.server.domain.repositories.{
   PredictionsRepository,
   ProjectsRepository
 }
+import com.foundaml.server.infrastructure.streaming.KinesisService
 import com.foundaml.server.test.{ProjectGenerator, TestDatabase}
 import org.http4s.client.blaze.Http1Client
 import scalaz.zio.{DefaultRuntime, Task}
@@ -21,10 +23,19 @@ class PredictionsServiceSpec
     with DefaultRuntime
     with TestDatabase {
 
+  val config = FoundaMLConfig(
+    KinesisConfig(enabled = false, "")
+  )
+  val kinesisService = unsafeRun(KinesisService("fake-region"))
   val projectRepository = new ProjectsRepository()(xa)
   val predictionsRepository = new PredictionsRepository()(xa)
   val predictionsService =
-    new PredictionsService(projectRepository, predictionsRepository)
+    new PredictionsService(
+      projectRepository,
+      predictionsRepository,
+      kinesisService,
+      config
+    )
 
   it should "fail to execute predictions for an incorrect configuration" in {
     val features = CustomFeatures(
