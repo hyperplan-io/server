@@ -1,8 +1,8 @@
 package com.foundaml.server.domain.models.errors
 
-sealed trait TensorFlowBackendError extends Throwable
+class TensorFlowBackendError(message: String) extends Throwable(message)
 
 case class LabelsTransformerError(message: String)
-    extends TensorFlowBackendError
+    extends TensorFlowBackendError(message)
 case class FeaturesTransformerError(message: String)
-    extends TensorFlowBackendError
+    extends TensorFlowBackendError(message)

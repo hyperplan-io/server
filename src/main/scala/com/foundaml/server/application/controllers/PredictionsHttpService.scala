@@ -35,20 +35,14 @@ class PredictionsHttpService(
           labels <- predict(predictionRequest)
           _ <- Task(println("prediction successful"))
         } yield labels).flatMap { labels =>
-          labels.fold(
-            _ =>
-              InternalServerError(
-                "An error occurred while computing this prediction, check your logs"
-              ),
-            labels => Ok(LabelsSerializer.encodeJson(labels))
-          )
+          Ok(LabelsSerializer.encodeJson(labels))
         }
     }
   }
 
   def predict(
       request: PredictionRequest
-  ): Task[Either[Throwable, Labels]] = {
+  ): Task[Labels] = {
     projectFactory.get(request.projectId).flatMap { project =>
         predictionsService.predict(
           request.features,

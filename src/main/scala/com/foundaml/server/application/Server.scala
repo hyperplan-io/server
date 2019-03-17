@@ -62,7 +62,8 @@ object Server {
       .mountService(
         new AlgorithmsHttpService(
           projectsRepository,
-          algorithmsRepository
+          algorithmsRepository,
+          projectFactory
         ).service,
         "/algorithms"
       )

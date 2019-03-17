@@ -10,10 +10,7 @@ import com.foundaml.server.domain.models.features._
 import com.foundaml.server.domain.models.labels._
 import com.foundaml.server.domain.models.labels.transformers.TensorFlowLabels
 import com.foundaml.server.domain.repositories.ProjectsRepository
-import com.foundaml.server.infrastructure.serialization.{
-  TensorFlowFeaturesSerializer,
-  TensorFlowLabelsSerializer
-}
+import com.foundaml.server.infrastructure.serialization.{TensorFlowFeaturesSerializer, TensorFlowLabelsSerializer}
 import org.http4s.client.Client
 import org.http4s.dsl.io._
 import org.http4s.circe._
@@ -23,13 +20,10 @@ class PredictionsService(
     httpClient: Client[Task]
 ) {
 
-  def noAlgorithm(): Task[Either[Throwable, Labels]] =
+  def noAlgorithm(): Task[Labels] =
     Task(println("No algorithm setup")).flatMap { _ =>
-      Task.succeed(
-        Left(
-          NoAlgorithmAvailable("No algorithms are setup"
-          )
-        )
+      Task.fail(
+        NoAlgorithmAvailable("No algorithms are setup")
       )
     }
 
@@ -37,7 +31,7 @@ class PredictionsService(
   def predictWithProjectPolicy(
       features: Features,
       project: Project
-  ): Task[Either[Throwable, Labels]] =
+  ): Task[Labels] =
     project.policy
       .take()
       .fold(
@@ -59,14 +53,15 @@ class PredictionsService(
   def predictWithAlgorithm(
       features: Features,
       algorithm: Algorithm
-  ): Task[Either[Throwable, Labels]] = algorithm.backend match {
+  ): Task[Labels] = algorithm.backend match {
     case local: Local =>
-      Task(Right(local.computed))
+      Task.succeed(local.computed)
     case tfBackend @ TensorFlowBackend(host, port, fTransormer, lTransformer) =>
       fTransormer
         .transform(features)
         .fold(
           err =>
+            Task(println(err.getMessage)) *>
             Task.fail(
               FeaturesTransformerError(
                 "The features could not be transformed to a TensorFlow compatible format"
@@ -83,12 +78,12 @@ class PredictionsService(
               .expect[TensorFlowLabels](request)(
                 TensorFlowLabelsSerializer.entityDecoder
               )
-              .map { tfLabels =>
+              .flatMap { tfLabels =>
                 lTransformer
                   .transform(tfLabels)
                   .fold(
-                    err => Left(err),
-                    labels => Right(labels)
+                    err => Task.fail(err),
+                    labels => Task.succeed(labels)
                   )
               }
           }
@@ -102,13 +97,13 @@ class PredictionsService(
   ): Boolean = {
     lazy val typeCheck = expectedFeaturesClass match {
       case DoubleFeatures.featuresClass =>
-        features.features.count(_.isInstanceOf[DoubleFeature]) == features.features.size
+        features.features.count(_.isInstanceOf[Double]) == features.features.size
       case FloatFeatures.featuresClass =>
-        features.features.count(_.isInstanceOf[FloatFeatures]) == features.features.size
+        features.features.count(_.isInstanceOf[Float]) == features.features.size
       case IntFeatures.featuresClass =>
-        features.features.count(_.isInstanceOf[IntFeatures]) == features.features.size
+        features.features.count(_.isInstanceOf[Int]) == features.features.size
       case StringFeatures.featuresClass =>
-        features.features.count(_.isInstanceOf[StringFeatures]) == features.features.size
+        features.features.count(_.isInstanceOf[String]) == features.features.size
       case CustomFeatures.featuresClass =>
         // custom features does not guarantee the features to be correct
         true
@@ -128,45 +123,43 @@ class PredictionsService(
   def predict(
       features: Features,
       project: Project,
-      optionalAlgoritmId: Option[String]
-  ): Task[Either[Throwable, Labels]] = {
+      optionalAlgorithmId: Option[String]
+  ): Task[Labels] = {
     if (validateFeatures(
         project.configuration.featureClass,
         project.configuration.featuresSize,
         features
       )) {
-      optionalAlgoritmId.fold(
+      optionalAlgorithmId.fold(
         predictWithProjectPolicy(features, project)
       )(
         algorithmId =>
           project.algorithmsMap
             .get(algorithmId)
-            .fold(
-              predictWithProjectPolicy(features, project)
+            .fold[Task[Labels]](
+            Task(println(s"project algorithms: ${project.algorithmsMap.toString()}")) *> Task.fail(
+                InvalidArgument(s"The algorithm $algorithmId does not exist in the project ${project.id}")
+              )
             )(
               algorithm =>
-                predictWithAlgorithm(features, algorithm).map {
-                  predictionResults =>
-                    predictionResults.flatMap { labels =>
-                      if (validateLabels(project.configuration.labels, labels)) {
-                        Right(labels)
-                      } else {
-                        Left(
-                          LabelsValidationFailed(
-                            "The labels do not match the project configuration"
-                          )
+                predictWithAlgorithm(features, algorithm).flatMap {
+                  labels =>
+                    if (validateLabels(project.configuration.labels, labels)) {
+                      Task.succeed[Labels](labels)
+                    } else {
+                      Task.fail(
+                        LabelsValidationFailed(
+                          "The labels do not match the project configuration"
                         )
-                      }
+                      )
                     }
                 }
             )
       )
     } else {
-      Task(
-        Left(
-          FeaturesValidationFailed(
-            "The features are not correct for this project"
-          )
+      Task.fail(
+        FeaturesValidationFailed(
+          "The features are not correct for this project"
         )
       )
     }
