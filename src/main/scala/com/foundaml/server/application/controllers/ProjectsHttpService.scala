@@ -18,7 +18,8 @@ import com.foundaml.server.infrastructure.serialization._
 class ProjectsHttpService(
     predictionsService: PredictionsService,
     projectsRepository: ProjectsRepository,
-    algorithmsRepository: AlgorithmsRepository
+    algorithmsRepository: AlgorithmsRepository,
+    projectFactory: ProjectFactory
 ) extends Http4sDsl[Task] {
 
   val regex = "[0-9a-zA-Z-_]*"
@@ -75,7 +76,7 @@ class ProjectsHttpService(
           Ok(ProjectSerializer.encodeJson(project))
         }
       case GET -> Root / projectId =>
-        ProjectFactory(projectId, projectsRepository, algorithmsRepository).flatMap { project =>
+        projectFactory.get(projectId).flatMap { project =>
           Ok(
             ProjectSerializer.encodeJson(
               project

@@ -2,32 +2,26 @@ package com.foundaml.server.domain.factories
 
 import com.foundaml.server.domain.models.errors.FactoryException
 import com.foundaml.server.domain.models.{Project, ProjectConfiguration}
-import com.foundaml.server.domain.repositories.{
-  AlgorithmsRepository,
-  ProjectsRepository
-}
-import scalaz.zio.Task
+import com.foundaml.server.domain.repositories.{AlgorithmsRepository, ProjectsRepository}
+import scalaz.zio.{Task, ZIO}
 
-object ProjectFactory {
-  def apply(
-      projectId: String,
-      projectsRepository: ProjectsRepository,
-      algorithmsRepository: AlgorithmsRepository
-  ): Task[Project] = {
+class ProjectFactory(projectsRepository: ProjectsRepository,
+                     algorithmsRepository: AlgorithmsRepository) {
+  def get(projectId: String): ZIO[Any, Throwable, Project] =
     (projectsRepository.read(projectId) zipPar algorithmsRepository
       .readForProject(projectId)).flatMap {
       case (
-          (
-            id,
-            name,
-            Right(policy),
-            Right(problemType),
-            featuresClass,
-            featuresSize,
-            labels
+        (
+          id,
+          name,
+          Right(policy),
+          Right(problemType),
+          featuresClass,
+          featuresSize,
+          labels
           ),
-          algorithms
-          ) =>
+        algorithms
+        ) =>
         Task.succeed(
           Project(
             id,
@@ -49,5 +43,4 @@ object ProjectFactory {
           )
         )
     }
-  }
 }
