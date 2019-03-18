@@ -11,17 +11,10 @@ import scalaz.zio.duration.Duration
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.{FiniteDuration, NANOSECONDS, TimeUnit}
 import scala.util.Properties.envOrNone
-import com.foundaml.server.application.controllers.{
-  AlgorithmsHttpService,
-  PredictionsHttpService,
-  ProjectsHttpService
-}
+import com.foundaml.server.application.controllers.{AlgorithmsController, PredictionsController, ProjectsController}
 import com.foundaml.server.domain.factories.ProjectFactory
-import com.foundaml.server.domain.repositories.{
-  AlgorithmsRepository,
-  ProjectsRepository
-}
-import com.foundaml.server.domain.services.PredictionsService
+import com.foundaml.server.domain.repositories.{AlgorithmsRepository, ProjectsRepository}
+import com.foundaml.server.domain.services.{AlgorithmsService, PredictionsService, ProjectsService}
 
 object Server {
   val port: Int = envOrNone("HTTP_PORT").fold(9090)(_.toInt)
@@ -41,36 +34,28 @@ object Server {
   }
 
   def stream(
-      predictionsService: PredictionsService,
-      projectsRepository: ProjectsRepository,
-      algorithmsRepository: AlgorithmsRepository,
-      projectFactory: ProjectFactory
+              predictionsService: PredictionsService,
+              projectsService: ProjectsService,
+              algorithmsService: AlgorithmsService,
+              projectsRepository: ProjectsRepository
   )(implicit ec: ExecutionContext) =
     BlazeBuilder[Task]
       .bindHttp(8080, "0.0.0.0")
       .mountService(
-        new PredictionsHttpService(
-          predictionsService,
-          projectsRepository,
-          algorithmsRepository,
-          projectFactory
+        new PredictionsController(
+          predictionsService
         ).service,
         "/predictions"
       )
       .mountService(
-        new ProjectsHttpService(
-          predictionsService,
-          projectsRepository,
-          algorithmsRepository,
-          projectFactory
+        new ProjectsController(
+          projectsService
         ).service,
         "/projects"
       )
       .mountService(
-        new AlgorithmsHttpService(
-          projectsRepository,
-          algorithmsRepository,
-          projectFactory
+        new AlgorithmsController(
+          algorithmsService
         ).service,
         "/algorithms"
       )
