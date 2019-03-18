@@ -263,14 +263,14 @@ class PredictionsService(
   }
 
   def addExample(predictionId: String, labelId: String) =
-    predictionsRepository.read(predictionId).fold(
+    predictionsRepository.read(predictionId).fold[Task[Label]](
       err => Task.fail(NotFound(s"The prediction $predictionId does not exist")),
-      prediction => prediction.labels.labels.find(_.id == labelId).fold(
-        NotFound(s"The label $labelId does not exist")
+      prediction => prediction.labels.labels.find(_.id == labelId).fold[Task[Label]](
+        Task.fail(NotFound(s"The label $labelId does not exist"))
       ) (
         label => {
           val updatedPrediction = prediction.copy(examples = Examples(prediction.examples.examples + label))
-          ???
+          predictionsRepository.updateExamples(predictionId, updatedPrediction.labels) *> Task.succeed(label)
         }
       )
     )

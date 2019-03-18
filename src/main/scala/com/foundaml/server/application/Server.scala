@@ -11,7 +11,7 @@ import scalaz.zio.duration.Duration
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.{FiniteDuration, NANOSECONDS, TimeUnit}
 import scala.util.Properties.envOrNone
-import com.foundaml.server.application.controllers.{AlgorithmsController, PredictionsController, ProjectsController}
+import com.foundaml.server.application.controllers.{AlgorithmsController, ExamplesController, PredictionsController, ProjectsController}
 import com.foundaml.server.domain.factories.ProjectFactory
 import com.foundaml.server.domain.repositories.{AlgorithmsRepository, ProjectsRepository}
 import com.foundaml.server.domain.services.{AlgorithmsService, PredictionsService, ProjectsService}
@@ -58,6 +58,12 @@ object Server {
           algorithmsService
         ).service,
         "/algorithms"
+      )
+      .mountService(
+        new ExamplesController(
+          predictionsService
+        ).service,
+        "/examples"
       )
       .serve
 

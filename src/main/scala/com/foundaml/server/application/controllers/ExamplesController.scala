@@ -21,8 +21,8 @@ class ExamplesController(
     HttpService[Task] {
       case req @ POST -> Root :? PredictionIdMatcher(predictionId) +& LabelIdMatcher(labelId) =>
         (for {
-          _ <- predictionsService.addExample(predictionId, labelId)
-        } yield ()).flatMap { _ =>
+          example <- predictionsService.addExample(predictionId, labelId)
+        } yield ()).flatMap { example =>
           Ok()
         }
     }

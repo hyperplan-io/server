@@ -23,6 +23,7 @@ class PredictionSerializerSpec
     val predictionId = UUID.randomUUID().toString
     val projectId = "test-project-encode"
     val algorithmId = "test-algorithm-encode"
+    val labelId = UUID.randomUUID().toString
     val prediction = Prediction(
       predictionId,
       projectId,
@@ -37,17 +38,20 @@ class PredictionSerializerSpec
       Labels(
         Set(
           ClassificationLabel(
+            labelId,
             "",
-            0.5f
+            0.5f,
+            "correct_example_url",
+            "incorrect_example_url"
           )
         )
       ),
-      Examples(None)
+      Examples(Set.empty)
     )
 
     testEncoder(prediction) { json =>
       val expectedJson =
-        s"""{"id":"$predictionId","projectId":"$projectId","algorithmId":"$algorithmId","features":{"data":[0.0,0.1,0.5],"class":"DoubleFeatures"},"labels":{"labels":[{"label":"","probability":0.5,"class":"ClassificationLabel"}]},"examples":{"examples":null}}"""
+        s"""{"id":"$predictionId","projectId":"$projectId","algorithmId":"$algorithmId","features":{"data":[0.0,0.1,0.5],"class":"DoubleFeatures"},"labels":{"labels":[{"id":"$labelId","label":"","probability":0.5,"correctExampleUrl":"correct_example_url","incorrectExampleUrl":"incorrect_example_url"."class":"ClassificationLabel"}]},"examples":{"examples":[]}}"""
       json.noSpaces should be(expectedJson)
     }(encoder)
   }

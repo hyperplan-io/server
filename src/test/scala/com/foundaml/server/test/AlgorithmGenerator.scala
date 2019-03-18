@@ -11,16 +11,25 @@ object AlgorithmGenerator {
   val computed = Labels(
     Set(
       labels.ClassificationLabel(
+        UUID.randomUUID().toString,
         "class1",
-        0.1f
+        0.1f,
+        "correct_url",
+        "incorrect_url"
       ),
       labels.ClassificationLabel(
+        UUID.randomUUID().toString,
         "class2",
-        0.2f
+        0.2f,
+        "correct_url",
+        "incorrect_url"
       ),
       labels.ClassificationLabel(
+        UUID.randomUUID().toString,
         "class3",
-        0.3f
+        0.3f,
+        "correct_url",
+        "incorrect_url"
       )
     )
   )
