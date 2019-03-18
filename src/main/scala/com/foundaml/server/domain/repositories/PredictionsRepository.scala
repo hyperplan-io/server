@@ -57,11 +57,9 @@ class PredictionsRepository(implicit xa: Transactor[Task]) {
   def read(predictionId: String) =
     readQuery(predictionId).unique.transact(xa)
 
-  def updateExamplesQuery(predictionId: String, labels: Labels) =
-    sql"""UPDATE predictions SET(
-        examples = $labels
-      ) WHERE id=$predictionId
-    )""".update
+  def updateExamplesQuery(predictionId: String, examples: Examples) =
+    sql"""UPDATE predictions SET examples = $examples WHERE id=$predictionId""".update
 
-  def updateExamples(predictionId: String, labels: Labels) = updateExamplesQuery(predictionId, labels).run.transact(xa)
+  def updateExamples(predictionId: String, examples: Examples) =
+    updateExamplesQuery(predictionId, examples).run.transact(xa)
 }
