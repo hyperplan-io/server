@@ -175,18 +175,18 @@ class PredictionsService(
   ): Boolean = {
     lazy val typeCheck = expectedFeaturesClass match {
       case DoubleFeatures.featuresClass =>
-        features.features.count(_.isInstanceOf[Double]) == features.features.size
+        features.data.count(_.isInstanceOf[Double]) == features.data.size
       case FloatFeatures.featuresClass =>
-        features.features.count(_.isInstanceOf[Float]) == features.features.size
+        features.data.count(_.isInstanceOf[Float]) == features.data.size
       case IntFeatures.featuresClass =>
-        features.features.count(_.isInstanceOf[Int]) == features.features.size
+        features.data.count(_.isInstanceOf[Int]) == features.data.size
       case StringFeatures.featuresClass =>
-        features.features.count(_.isInstanceOf[String]) == features.features.size
+        features.data.count(_.isInstanceOf[String]) == features.data.size
       case CustomFeatures.featuresClass =>
         // custom features does not guarantee the features to be correct
         true
     }
-    lazy val sizeCheck = features.features.size == expectedFeaturesSize
+    lazy val sizeCheck = features.data.size == expectedFeaturesSize
 
     sizeCheck && typeCheck
   }

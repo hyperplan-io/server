@@ -10,7 +10,7 @@ case class TensorFlowFeaturesTransformer(
   def transform(
       features: Features
   ): Either[Throwable, TensorFlowClassificationFeatures] = {
-    if (features.features.size == fields.size) {
+    if (features.data.size == fields.size) {
       val examples = features match {
         case DoubleFeatures(doubleFeatures) =>
           doubleFeatures.zip(fields).map {

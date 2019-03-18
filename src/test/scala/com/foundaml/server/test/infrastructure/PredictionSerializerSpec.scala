@@ -47,7 +47,7 @@ class PredictionSerializerSpec
 
     testEncoder(prediction) { json =>
       val expectedJson =
-        s"""{"id":"$predictionId","projectId":"$projectId","algorithmId":"$algorithmId","features":{"features":[0.0,0.1,0.5],"class":"DoubleFeatures"},"labels":{"labels":[{"label":"","probability":0.5,"class":"ClassificationLabel"}]},"examples":{"examples":null}}"""
+        s"""{"id":"$predictionId","projectId":"$projectId","algorithmId":"$algorithmId","features":{"data":[0.0,0.1,0.5],"class":"DoubleFeatures"},"labels":{"labels":[{"label":"","probability":0.5,"class":"ClassificationLabel"}]},"examples":{"examples":null}}"""
       json.noSpaces should be(expectedJson)
     }(encoder)
   }
@@ -58,7 +58,7 @@ class PredictionSerializerSpec
     val projectId = "test-project-decode"
     val algorithmId = "test-algorithm-decode"
     val predictionJson =
-      s"""{"id":"$predictionId","projectId":"$projectId","algorithmId":"$algorithmId","features":{"features":[0.0,0.1,0.5],"class":"DoubleFeatures"},"labels":{"labels":[{"label":"","probability":0.5,"class":"ClassificationLabel"}]},"examples":{"examples":null}}"""
+      s"""{"id":"$predictionId","projectId":"$projectId","algorithmId":"$algorithmId","features":{"data":[0.0,0.1,0.5],"class":"DoubleFeatures"},"labels":{"labels":[{"label":"","probability":0.5,"class":"ClassificationLabel"}]},"examples":{"examples":null}}"""
     testDecoder[Prediction](predictionJson) { prediction =>
       prediction.id should be(predictionId)
     }(decoder)
