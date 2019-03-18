@@ -1,5 +1,6 @@
 package com.foundaml.server.domain.repositories
 
+import com.foundaml.server.domain.models.Examples.Examples
 import com.foundaml.server.domain.models.{Examples, Prediction}
 import com.foundaml.server.domain.models.features.Features
 import com.foundaml.server.domain.models.labels.Labels

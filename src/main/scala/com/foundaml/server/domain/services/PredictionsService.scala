@@ -83,7 +83,7 @@ class PredictionsService(
         algorithm.id,
         features,
         local.computed,
-        Examples(Set.empty)
+        Set.empty
       )
     )
   }
@@ -139,7 +139,7 @@ class PredictionsService(
                                 algorithm.id,
                                 features,
                                 labels,
-                                Examples(Set.empty)
+                                Set.empty
                               )
                             )
                         )
@@ -268,9 +268,7 @@ class PredictionsService(
         Task.fail(NotFound(s"The label $labelId does not exist"))
       ) (
         label => {
-          println(label)
-          val examples = Examples(prediction.examples.examples + label)
-          println(examples)
+          val examples = prediction.examples + label.id
           predictionsRepository.updateExamples(predictionId, examples) *> Task.succeed(label)
         }
       )

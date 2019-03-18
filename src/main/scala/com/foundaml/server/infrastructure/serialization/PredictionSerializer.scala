@@ -18,9 +18,6 @@ object PredictionSerializer {
   implicit val labelsEncoder: Encoder[Labels] = LabelsSerializer.encoder
   implicit val labelsDecoder: Decoder[Labels] = LabelsSerializer.decoder
 
-  implicit val examplesEncoder: Encoder[Examples] = ExamplesSerializer.encoder
-  implicit val examplesDecoder: Decoder[Examples] = ExamplesSerializer.decoder
-
   implicit val encoder: Encoder[Prediction] = deriveEncoder
   implicit val decoder: Decoder[Prediction] = deriveDecoder
 
