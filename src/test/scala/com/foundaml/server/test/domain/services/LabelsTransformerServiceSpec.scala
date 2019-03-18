@@ -98,23 +98,11 @@ class LabelsTransformerServiceSpec
 
     inside(transformedFeatures) {
       case Right(tfLabels) =>
-        val expected = Set(
-          ClassificationLabel(
-            UUID.randomUUID().toString,
-            "toto",
-            0.5f,
-            "correct example url",
-            "incorrect example url"
-          ),
-          ClassificationLabel(
-            UUID.randomUUID().toString,
-            "titi",
-            0.3f,
-            "correct example url",
-            "incorrect example url"
-          )
-        )
-        tfLabels.labels should be(expected)
+        inside(tfLabels.labels.toList) {
+          case ClassificationLabel(_, "toto", 0.5f, _, _)
+            :: ClassificationLabel(_, "titi", 0.3f, _, _)
+            :: Nil =>
+        }
     }
   }
 
