@@ -8,9 +8,9 @@ import com.foundaml.server.domain.repositories.ProjectsRepository
 import scalaz.zio.{Task, ZIO}
 
 class ProjectsService(
-                       projectsRepository: ProjectsRepository,
-                       projectFactory: ProjectFactory
-                     ) {
+    projectsRepository: ProjectsRepository,
+    projectFactory: ProjectFactory
+) {
 
   val regex = "[0-9a-zA-Z-_]*"
   def validateAlphaNumerical(input: String): Option[String] = {
@@ -27,7 +27,14 @@ class ProjectsService(
     ).flatten
   }
 
-  def createEmptyProject(id: String, name: String, problem: ProblemType, featuresClass: String, featuresSize: Int, labels: Set[String]): ZIO[Any, Throwable, Project] =  {
+  def createEmptyProject(
+      id: String,
+      name: String,
+      problem: ProblemType,
+      featuresClass: String,
+      featuresSize: Int,
+      labels: Set[String]
+  ): ZIO[Any, Throwable, Project] = {
     val project = Project(
       id,
       name,
