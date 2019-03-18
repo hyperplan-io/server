@@ -1,7 +1,10 @@
 package com.foundaml.server.domain.models.labels.transformers
 
+import java.util.UUID
+
 import com.foundaml.server.domain.models.errors.LabelsTransformerError
 import com.foundaml.server.domain.models.labels._
+import com.foundaml.server.domain.services.ExampleUrlService
 import com.foundaml.server.infrastructure.serialization.TensorFlowLabelsSerializer
 
 case class TensorFlowLabels(result: List[List[(String, Float)]])
@@ -17,6 +20,7 @@ case class TensorFlowLabel(label: String, probability: Float) {
 case class TensorFlowLabelsTransformer(fields: Map[String, String]) {
 
   def transform(
+               predictionId: String,
       tfLabels: TensorFlowLabels
   ): Either[LabelsTransformerError, Labels] = {
 
@@ -27,7 +31,19 @@ case class TensorFlowLabelsTransformer(fields: Map[String, String]) {
         case (label, probability) =>
           fields
             .get(label)
-            .map(label => ClassificationLabel(label, probability))
+            .map { label =>
+              val labelId = UUID.randomUUID().toString
+              val correctUrl = ExampleUrlService.correctExampleUrl(predictionId, labelId)
+              val incorrectUrl = ExampleUrlService.incorrectExampleUrl(predictionId, labelId)
+              ClassificationLabel(
+                labelId,
+                label,
+                probability,
+                correctUrl,
+                incorrectUrl
+              )
+            }
+
       }.toSet
 
       if (labels.size == fields.keys.size) {

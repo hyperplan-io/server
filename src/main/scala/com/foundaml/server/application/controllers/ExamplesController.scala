@@ -19,11 +19,11 @@ class ExamplesController(
 
   val service: HttpService[Task] = {
     HttpService[Task] {
-      case req @ POST -> Root :? LabelIdMatcher(labelId) +& PredictionIdMatcher(predictionId) =>
+      case req @ POST -> Root :? PredictionIdMatcher(predictionId) +& LabelIdMatcher(labelId) =>
         (for {
-          _ <- predictionsService
-        } yield prediction).flatMap { prediction =>
-          Ok(PredictionSerializer.encodeJson(prediction))
+          _ <- predictionsService.addExample(predictionId, labelId)
+        } yield ()).flatMap { _ =>
+          Ok()
         }
     }
   }

@@ -83,7 +83,7 @@ class PredictionsService(
         algorithm.id,
         features,
         local.computed,
-        Examples(None)
+        Examples(Set.empty)
       )
     )
   }
@@ -93,6 +93,7 @@ class PredictionsService(
       features: Features,
       backend: TensorFlowBackend
   ) = {
+    val predictionId = UUID.randomUUID().toString
     backend.featuresTransformer
       .transform(features)
       .fold(
@@ -127,18 +128,18 @@ class PredictionsService(
                       TensorFlowLabelsSerializer.entityDecoder
                     ).flatMap { tfLabels =>
                       backend.labelsTransformer
-                        .transform(tfLabels)
+                        .transform(predictionId, tfLabels)
                         .fold(
                           err => Task.fail(err),
                           labels =>
                             Task.succeed(
                               Prediction(
-                                UUID.randomUUID().toString,
+                                predictionId,
                                 projectId,
                                 algorithm.id,
                                 features,
                                 labels,
-                                Examples(None)
+                                Examples(Set.empty)
                               )
                             )
                         )
