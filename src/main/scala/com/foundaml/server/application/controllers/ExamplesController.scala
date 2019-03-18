@@ -16,11 +16,14 @@ class ExamplesController(
 ) extends Http4sDsl[Task] {
 
   object LabelIdMatcher extends QueryParamDecoderMatcher[String]("labelId")
-  object PredictionIdMatcher extends QueryParamDecoderMatcher[String]("predictionId")
+  object PredictionIdMatcher
+      extends QueryParamDecoderMatcher[String]("predictionId")
 
   val service: HttpService[Task] = {
     HttpService[Task] {
-      case req @ POST -> Root :? PredictionIdMatcher(predictionId) +& LabelIdMatcher(labelId) =>
+      case req @ POST -> Root :? PredictionIdMatcher(predictionId) +& LabelIdMatcher(
+            labelId
+          ) =>
         (for {
           example <- predictionsService.addExample(predictionId, labelId)
         } yield example).flatMap { example =>

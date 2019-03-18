@@ -20,7 +20,7 @@ case class TensorFlowLabel(label: String, probability: Float) {
 case class TensorFlowLabelsTransformer(fields: Map[String, String]) {
 
   def transform(
-               predictionId: String,
+      predictionId: String,
       tfLabels: TensorFlowLabels
   ): Either[LabelsTransformerError, Labels] = {
 
@@ -33,8 +33,10 @@ case class TensorFlowLabelsTransformer(fields: Map[String, String]) {
             .get(label)
             .map { label =>
               val labelId = UUID.randomUUID().toString
-              val correctUrl = ExampleUrlService.correctExampleUrl(predictionId, labelId)
-              val incorrectUrl = ExampleUrlService.incorrectExampleUrl(predictionId, labelId)
+              val correctUrl =
+                ExampleUrlService.correctExampleUrl(predictionId, labelId)
+              val incorrectUrl =
+                ExampleUrlService.incorrectExampleUrl(predictionId, labelId)
               ClassificationLabel(
                 labelId,
                 label,

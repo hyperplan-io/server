@@ -13,8 +13,15 @@ import com.foundaml.server.domain.models.errors._
 import com.foundaml.server.domain.models.features._
 import com.foundaml.server.domain.models.labels._
 import com.foundaml.server.domain.models.labels.transformers.TensorFlowLabels
-import com.foundaml.server.domain.repositories.{PredictionsRepository, ProjectsRepository}
-import com.foundaml.server.infrastructure.serialization.{PredictionSerializer, TensorFlowFeaturesSerializer, TensorFlowLabelsSerializer}
+import com.foundaml.server.domain.repositories.{
+  PredictionsRepository,
+  ProjectsRepository
+}
+import com.foundaml.server.infrastructure.serialization.{
+  PredictionSerializer,
+  TensorFlowFeaturesSerializer,
+  TensorFlowLabelsSerializer
+}
 import com.foundaml.server.infrastructure.streaming.KinesisService
 import org.http4s.client.blaze.BlazeClientBuilder
 
@@ -200,15 +207,15 @@ class PredictionsService(
   }
 
   def predict(
-    projectId: String,
-    features: Features,
-    optionalAlgorithmId: Option[String]
+      projectId: String,
+      features: Features,
+      optionalAlgorithmId: Option[String]
   ) = projectFactory.get(projectId).flatMap { project =>
-      predictForProject(project, features, optionalAlgorithmId)
-    }
+    predictForProject(project, features, optionalAlgorithmId)
+  }
 
   def predictForProject(
-               project: Project,
+      project: Project,
       features: Features,
       optionalAlgorithmId: Option[String]
   ) = {
@@ -264,13 +271,16 @@ class PredictionsService(
 
   def addExample(predictionId: String, labelId: String) =
     predictionsRepository.read(predictionId).flatMap { prediction =>
-      prediction.labels.labels.find(_.id == labelId).fold[Task[Label]](
-        Task.fail(NotFound(s"The label $labelId does not exist"))
-      ) (
-        label => {
-          val examples = prediction.examples + label.id
-          predictionsRepository.updateExamples(predictionId, examples) *> Task.succeed(label)
-        }
-      )
+      prediction.labels.labels
+        .find(_.id == labelId)
+        .fold[Task[Label]](
+          Task.fail(NotFound(s"The label $labelId does not exist"))
+        )(
+          label => {
+            val examples = prediction.examples + label.id
+            predictionsRepository.updateExamples(predictionId, examples) *> Task
+              .succeed(label)
+          }
+        )
     }
 }

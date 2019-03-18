@@ -18,11 +18,6 @@ jobs:
   - script: sbt ++$TRAVIS_SCALA_VERSION test package packageSrc publishLocal
     name: "Run tests for Scala 2.12"
   - script: sbt ++$TRAVIS_SCALA_VERSION
-    name: "Documentation validations and tests"
-  - script: bin/test-sbt-1.0
-    name: "Scripted tests for sbt 1"
-  - script: bin/test-maven
-    name: "PublishM2 and test Maven"
 
 matrix:
   fast_finish: true

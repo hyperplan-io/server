@@ -14,7 +14,6 @@ class AlgorithmsController(
     algorithmsService: AlgorithmsService
 ) extends Http4sDsl[Task] {
 
-
   val service: HttpService[Task] = {
     HttpService[Task] {
       case req @ POST -> Root =>
@@ -24,7 +23,11 @@ class AlgorithmsController(
               PostAlgorithmRequestEntitySerializer.entityDecoder
             )
             .fold(throw _, identity)
-          algorithm <- algorithmsService.createAlgorithm(request.id, request.backend, request.projectId)
+          algorithm <- algorithmsService.createAlgorithm(
+            request.id,
+            request.backend,
+            request.projectId
+          )
         } yield algorithm).flatMap { algorithm =>
           Ok(AlgorithmsSerializer.encodeJson(algorithm))
         }

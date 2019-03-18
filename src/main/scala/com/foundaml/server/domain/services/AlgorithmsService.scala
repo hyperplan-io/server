@@ -8,19 +8,22 @@ import com.foundaml.server.domain.models.backends.Backend
 import com.foundaml.server.domain.models.errors.InvalidArgument
 import com.foundaml.server.domain.models.features.transformers.TensorFlowFeaturesTransformer
 import com.foundaml.server.domain.models.labels.transformers.TensorFlowLabelsTransformer
-import com.foundaml.server.domain.repositories.{AlgorithmsRepository, ProjectsRepository}
+import com.foundaml.server.domain.repositories.{
+  AlgorithmsRepository,
+  ProjectsRepository
+}
 
 class AlgorithmsService(
-                         algorithmsRepository: AlgorithmsRepository,
-                         projectsRepository: ProjectsRepository,
-                         projectFactory: ProjectFactory
-                     ) {
+    algorithmsRepository: AlgorithmsRepository,
+    projectsRepository: ProjectsRepository,
+    projectFactory: ProjectFactory
+) {
 
   def validateEqualSize(
-                         expectedSize: Int,
-                         actualSize: Int,
-                         featureName: String
-                       ) =
+      expectedSize: Int,
+      actualSize: Int,
+      featureName: String
+  ) =
     if (expectedSize != actualSize) {
       Some(s"The $featureName size is incorrect for the project")
     } else {
@@ -31,11 +34,11 @@ class AlgorithmsService(
     algorithm.backend match {
       case com.foundaml.server.domain.models.backends.Local(computed) => Nil
       case com.foundaml.server.domain.models.backends.TensorFlowBackend(
-      _,
-      _,
-      TensorFlowFeaturesTransformer(signatureName, fields),
-      TensorFlowLabelsTransformer(labels)
-      ) =>
+          _,
+          _,
+          TensorFlowFeaturesTransformer(signatureName, fields),
+          TensorFlowLabelsTransformer(labels)
+          ) =>
         List(
           validateEqualSize(
             project.configuration.featuresSize,
@@ -50,7 +53,6 @@ class AlgorithmsService(
         ).flatten
     }
   }
-
 
   def createAlgorithm(id: String, backend: Backend, projectId: String) = {
     for {

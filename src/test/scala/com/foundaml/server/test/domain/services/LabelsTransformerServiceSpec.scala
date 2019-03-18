@@ -6,7 +6,11 @@ import com.foundaml.server.domain.models.labels.ClassificationLabel
 import scalaz.zio.DefaultRuntime
 import org.scalatest.Inside.inside
 import org.scalatest._
-import com.foundaml.server.domain.models.labels.transformers.{TensorFlowLabel, TensorFlowLabels, TensorFlowLabelsTransformer}
+import com.foundaml.server.domain.models.labels.transformers.{
+  TensorFlowLabel,
+  TensorFlowLabels,
+  TensorFlowLabelsTransformer
+}
 
 class LabelsTransformerServiceSpec
     extends FlatSpec
@@ -100,8 +104,8 @@ class LabelsTransformerServiceSpec
       case Right(tfLabels) =>
         inside(tfLabels.labels.toList) {
           case ClassificationLabel(_, "toto", 0.5f, _, _)
-            :: ClassificationLabel(_, "titi", 0.3f, _, _)
-            :: Nil =>
+                :: ClassificationLabel(_, "titi", 0.3f, _, _)
+                :: Nil =>
         }
     }
   }

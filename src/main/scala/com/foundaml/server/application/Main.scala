@@ -4,8 +4,16 @@ import cats.effect
 import cats.effect.Timer
 import com.foundaml.server.domain.FoundaMLConfig
 import com.foundaml.server.domain.factories.ProjectFactory
-import com.foundaml.server.domain.repositories.{AlgorithmsRepository, PredictionsRepository, ProjectsRepository}
-import com.foundaml.server.domain.services.{AlgorithmsService, PredictionsService, ProjectsService}
+import com.foundaml.server.domain.repositories.{
+  AlgorithmsRepository,
+  PredictionsRepository,
+  ProjectsRepository
+}
+import com.foundaml.server.domain.services.{
+  AlgorithmsService,
+  PredictionsService,
+  ProjectsService
+}
 import com.foundaml.server.infrastructure.storage.PostgresqlService
 import com.foundaml.server.infrastructure.streaming.KinesisService
 import scalaz.zio.clock.Clock
