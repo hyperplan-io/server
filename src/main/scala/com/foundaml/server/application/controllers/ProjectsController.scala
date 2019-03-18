@@ -13,7 +13,6 @@ class ProjectsController(
     projectsService: ProjectsService
 ) extends Http4sDsl[Task] {
 
-
   val service: HttpService[Task] = {
 
     HttpService[Task] {
@@ -31,7 +30,7 @@ class ProjectsController(
             request.configuration.problem,
             request.configuration.featuresClass,
             request.configuration.featuresSize,
-            request.configuration.labels,
+            request.configuration.labels
           )
         } yield project).flatMap { project =>
           Ok(ProjectSerializer.encodeJson(project))

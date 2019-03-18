@@ -47,7 +47,8 @@ object LabelSerializer {
   implicit val encoder: Encoder[Label] = deriveEncoder
   implicit val decoder: Decoder[Label] = deriveDecoder
 
-  implicit val labelEntityDecoder: EntityEncoder[Task, Label] = jsonEncoderOf[Task, Label]
+  implicit val labelEntityDecoder: EntityEncoder[Task, Label] =
+    jsonEncoderOf[Task, Label]
 
   def encodeJsonNoSpaces(labels: Label): String = {
     labels.asJson.noSpaces

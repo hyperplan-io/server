@@ -7,7 +7,11 @@ import com.foundaml.server.domain.services.PredictionsService
 import org.scalatest._
 import org.scalatest.Inside.inside
 import com.foundaml.server.domain.models.features._
-import com.foundaml.server.domain.repositories.{AlgorithmsRepository, PredictionsRepository, ProjectsRepository}
+import com.foundaml.server.domain.repositories.{
+  AlgorithmsRepository,
+  PredictionsRepository,
+  ProjectsRepository
+}
 import com.foundaml.server.infrastructure.streaming.KinesisService
 import com.foundaml.server.test.{ProjectGenerator, TestDatabase}
 import org.http4s.client.blaze.Http1Client
@@ -28,7 +32,8 @@ class PredictionsServiceSpec
   val projectsRepository = new ProjectsRepository()(xa)
   val algorithmsRepository = new AlgorithmsRepository()(xa)
   val predictionsRepository = new PredictionsRepository()(xa)
-  val projectFactory = new ProjectFactory(projectsRepository, algorithmsRepository)
+  val projectFactory =
+    new ProjectFactory(projectsRepository, algorithmsRepository)
   val predictionsService =
     new PredictionsService(
       projectsRepository,
