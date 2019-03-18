@@ -62,6 +62,7 @@ object Main extends App {
         projectsRepository,
         predictionsRepository,
         kinesisService,
+        projectFactory,
         config
       )
       projectsService = new ProjectsService(

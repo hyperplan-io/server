@@ -3,6 +3,7 @@ package com.foundaml.server.domain.services
 import java.util.UUID
 
 import com.foundaml.server.domain.FoundaMLConfig
+import com.foundaml.server.domain.factories.ProjectFactory
 import org.http4s._
 import scalaz.zio.{IO, Task}
 import scalaz.zio.interop.catz._
@@ -12,15 +13,8 @@ import com.foundaml.server.domain.models.errors._
 import com.foundaml.server.domain.models.features._
 import com.foundaml.server.domain.models.labels._
 import com.foundaml.server.domain.models.labels.transformers.TensorFlowLabels
-import com.foundaml.server.domain.repositories.{
-  PredictionsRepository,
-  ProjectsRepository
-}
-import com.foundaml.server.infrastructure.serialization.{
-  PredictionSerializer,
-  TensorFlowFeaturesSerializer,
-  TensorFlowLabelsSerializer
-}
+import com.foundaml.server.domain.repositories.{PredictionsRepository, ProjectsRepository}
+import com.foundaml.server.infrastructure.serialization.{PredictionSerializer, TensorFlowFeaturesSerializer, TensorFlowLabelsSerializer}
 import com.foundaml.server.infrastructure.streaming.KinesisService
 import org.http4s.client.blaze.BlazeClientBuilder
 
@@ -30,6 +24,7 @@ class PredictionsService(
     projectsRepository: ProjectsRepository,
     predictionsRepository: PredictionsRepository,
     kinesisService: KinesisService,
+    projectFactory: ProjectFactory,
     config: FoundaMLConfig
 ) {
 
@@ -204,10 +199,19 @@ class PredictionsService(
   }
 
   def predict(
+    projectId: String,
+    features: Features,
+    optionalAlgorithmId: Option[String]
+  ) = projectFactory.get(projectId).flatMap { project =>
+      predictForProject(project, features, optionalAlgorithmId)
+    }
+
+  def predictForProject(
+               project: Project,
       features: Features,
-      project: Project,
       optionalAlgorithmId: Option[String]
   ) = {
+
     if (validateFeatures(
         project.configuration.featureClass,
         project.configuration.featuresSize,

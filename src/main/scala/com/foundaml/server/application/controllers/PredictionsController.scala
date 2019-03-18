@@ -8,16 +8,14 @@ import scalaz.zio.interop.catz._
 import com.foundaml.server.application.controllers.requests._
 import com.foundaml.server.domain.factories.ProjectFactory
 import com.foundaml.server.domain.models.Prediction
-import com.foundaml.server.domain.models.labels._
 import com.foundaml.server.domain.repositories._
 import com.foundaml.server.domain.services.PredictionsService
 import com.foundaml.server.infrastructure.serialization.{
-  LabelsSerializer,
   PredictionRequestEntitySerializer,
   PredictionSerializer
 }
 
-class PredictionsHttpService(
+class PredictionsController(
     predictionsService: PredictionsService,
     projectsRepository: ProjectsRepository,
     algorithmsRepository: AlgorithmsRepository,
@@ -48,13 +46,12 @@ class PredictionsHttpService(
   def predict(
       request: PredictionRequest
   ): Task[Prediction] = {
-    projectFactory.get(request.projectId).flatMap { project =>
-      predictionsService.predict(
-        request.features,
-        project,
-        request.algorithmId
-      )
-    }
+    predictionsService.predict(
+      request.projectId,
+      request.features,
+      request.algorithmId
+    )
+
   }
 
 }
