@@ -11,17 +11,10 @@ import scalaz.zio.duration.Duration
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.{FiniteDuration, NANOSECONDS, TimeUnit}
 import scala.util.Properties.envOrNone
-import com.foundaml.server.application.controllers.{
-  AlgorithmsHttpService,
-  PredictionsHttpService,
-  ProjectsHttpService
-}
+import com.foundaml.server.application.controllers.{AlgorithmsHttpService, PredictionsHttpService, ProjectsController}
 import com.foundaml.server.domain.factories.ProjectFactory
-import com.foundaml.server.domain.repositories.{
-  AlgorithmsRepository,
-  ProjectsRepository
-}
-import com.foundaml.server.domain.services.PredictionsService
+import com.foundaml.server.domain.repositories.{AlgorithmsRepository, ProjectsRepository}
+import com.foundaml.server.domain.services.{PredictionsService, ProjectsService}
 
 object Server {
   val port: Int = envOrNone("HTTP_PORT").fold(9090)(_.toInt)
@@ -42,6 +35,7 @@ object Server {
 
   def stream(
       predictionsService: PredictionsService,
+      projectsService: ProjectsService,
       projectsRepository: ProjectsRepository,
       algorithmsRepository: AlgorithmsRepository,
       projectFactory: ProjectFactory
@@ -58,10 +52,9 @@ object Server {
         "/predictions"
       )
       .mountService(
-        new ProjectsHttpService(
+        new ProjectsController(
           predictionsService,
-          projectsRepository,
-          algorithmsRepository,
+          projectsService,
           projectFactory
         ).service,
         "/projects"

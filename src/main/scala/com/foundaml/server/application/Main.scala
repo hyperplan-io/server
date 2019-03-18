@@ -4,26 +4,19 @@ import cats.effect
 import cats.effect.Timer
 import com.foundaml.server.domain.FoundaMLConfig
 import com.foundaml.server.domain.factories.ProjectFactory
+import com.foundaml.server.domain.repositories.{AlgorithmsRepository, PredictionsRepository, ProjectsRepository}
+import com.foundaml.server.domain.services.{PredictionsService, ProjectsService}
+import com.foundaml.server.infrastructure.storage.PostgresqlService
+import com.foundaml.server.infrastructure.streaming.KinesisService
 import scalaz.zio.clock.Clock
 import scalaz.zio.duration.Duration
-import scalaz.zio.{App, IO, Task, ZIO}
 import scalaz.zio.interop.catz._
+import scalaz.zio.{App, IO, Task, ZIO}
 
 import scala.concurrent.duration.{FiniteDuration, NANOSECONDS, TimeUnit}
 import scala.util.{Left, Right}
-import com.foundaml.server.infrastructure.serialization.PredictionSerializer
-import com.foundaml.server.infrastructure.storage.PostgresqlService
-import com.foundaml.server.domain.repositories.{
-  AlgorithmsRepository,
-  PredictionsRepository,
-  ProjectsRepository
-}
-import com.foundaml.server.domain.services.PredictionsService
-import com.foundaml.server.domain.models.Prediction
-import com.foundaml.server.infrastructure.streaming.KinesisService
-import org.http4s.client.blaze._
+
 import pureconfig.generic.auto._
-import scala.concurrent.ExecutionContext
 
 object Main extends App {
 
@@ -71,13 +64,18 @@ object Main extends App {
         kinesisService,
         config
       )
+      projectsService = new ProjectsService(
+        projectsRepository,
+        projectFactory
+      )
       _ <- printLine("Services have been correctly instantiated")
       _ <- Server
         .stream(
           predictionsService,
+          projectsService,
           projectsRepository,
           algorithmsRepository,
-          projectFactory
+          projectFactory,
         )
         .compile
         .drain
