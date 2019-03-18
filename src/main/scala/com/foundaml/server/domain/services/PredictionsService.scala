@@ -2,7 +2,7 @@ package com.foundaml.server.domain.services
 
 import java.util.UUID
 
-import com.foundaml.server.domain.FoundaMLConfig
+import com.foundaml.server.domain.{FoundaMLConfig, models}
 import com.foundaml.server.domain.factories.ProjectFactory
 import org.http4s._
 import scalaz.zio.{IO, Task}
@@ -260,4 +260,17 @@ class PredictionsService(
       )
     }
   }
+
+  def addExample(predictionId: String, labelId: String) =
+    predictionsRepository.read(predictionId).fold(
+      err => Task.fail(NotFound(s"The prediction $predictionId does not exist")),
+      prediction => prediction.labels.labels.find(_.id == labelId).fold(
+        NotFound(s"The label $labelId does not exist")
+      ) (
+        label => {
+          val updatedPrediction = prediction.copy(examples = Examples(prediction.examples.examples + label))
+          ???
+        }
+      )
+    )
 }
