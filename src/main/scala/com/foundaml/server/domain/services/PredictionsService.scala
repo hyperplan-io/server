@@ -2,7 +2,7 @@ package com.foundaml.server.domain.services
 
 import java.util.UUID
 
-import com.foundaml.server.domain.FoundaMLConfig
+import com.foundaml.server.domain.{FoundaMLConfig, models}
 import com.foundaml.server.domain.factories.ProjectFactory
 import org.http4s._
 import scalaz.zio.{IO, Task}
@@ -83,7 +83,7 @@ class PredictionsService(
         algorithm.id,
         features,
         local.computed,
-        Examples(None)
+        Set.empty
       )
     )
   }
@@ -93,6 +93,7 @@ class PredictionsService(
       features: Features,
       backend: TensorFlowBackend
   ) = {
+    val predictionId = UUID.randomUUID().toString
     backend.featuresTransformer
       .transform(features)
       .fold(
@@ -127,18 +128,18 @@ class PredictionsService(
                       TensorFlowLabelsSerializer.entityDecoder
                     ).flatMap { tfLabels =>
                       backend.labelsTransformer
-                        .transform(tfLabels)
+                        .transform(predictionId, tfLabels)
                         .fold(
                           err => Task.fail(err),
                           labels =>
                             Task.succeed(
                               Prediction(
-                                UUID.randomUUID().toString,
+                                predictionId,
                                 projectId,
                                 algorithm.id,
                                 features,
                                 labels,
-                                Examples(None)
+                                Set.empty
                               )
                             )
                         )
@@ -260,4 +261,16 @@ class PredictionsService(
       )
     }
   }
+
+  def addExample(predictionId: String, labelId: String) =
+    predictionsRepository.read(predictionId).flatMap { prediction =>
+      prediction.labels.labels.find(_.id == labelId).fold[Task[Label]](
+        Task.fail(NotFound(s"The label $labelId does not exist"))
+      ) (
+        label => {
+          val examples = prediction.examples + label.id
+          predictionsRepository.updateExamples(predictionId, examples) *> Task.succeed(label)
+        }
+      )
+    }
 }

@@ -1,14 +1,12 @@
 package com.foundaml.server.test.domain.services
 
+import java.util.UUID
+
 import com.foundaml.server.domain.models.labels.ClassificationLabel
 import scalaz.zio.DefaultRuntime
 import org.scalatest.Inside.inside
 import org.scalatest._
-import com.foundaml.server.domain.models.labels.transformers.{
-  TensorFlowLabel,
-  TensorFlowLabels,
-  TensorFlowLabelsTransformer
-}
+import com.foundaml.server.domain.models.labels.transformers.{TensorFlowLabel, TensorFlowLabels, TensorFlowLabelsTransformer}
 
 class LabelsTransformerServiceSpec
     extends FlatSpec
@@ -33,6 +31,7 @@ class LabelsTransformerServiceSpec
 
     inside(
       transformer2.transform(
+        UUID.randomUUID().toString,
         labels1
       )
     ) {
@@ -61,6 +60,7 @@ class LabelsTransformerServiceSpec
 
     inside(
       transformer1.transform(
+        UUID.randomUUID().toString,
         labels2
       )
     ) {
@@ -92,22 +92,17 @@ class LabelsTransformerServiceSpec
     )
 
     val transformedFeatures = transformer.transform(
+      UUID.randomUUID().toString,
       labels
     )
 
     inside(transformedFeatures) {
       case Right(tfLabels) =>
-        val expected = Set(
-          ClassificationLabel(
-            "toto",
-            0.5f
-          ),
-          ClassificationLabel(
-            "titi",
-            0.3f
-          )
-        )
-        tfLabels.labels should be(expected)
+        inside(tfLabels.labels.toList) {
+          case ClassificationLabel(_, "toto", 0.5f, _, _)
+            :: ClassificationLabel(_, "titi", 0.3f, _, _)
+            :: Nil =>
+        }
     }
   }
 

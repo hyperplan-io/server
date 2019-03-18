@@ -1,6 +1,6 @@
 package com.foundaml.server.infrastructure.serialization
 
-import com.foundaml.server.domain.models.Examples
+import com.foundaml.server.domain.models.Examples.Examples
 import com.foundaml.server.domain.models.labels.Label
 import io.circe._
 import io.circe.parser.decode
@@ -13,9 +13,6 @@ object ExamplesSerializer {
 
   implicit val labelsEncoder: Encoder[Label] = deriveEncoder
   implicit val labelsDecoder: Decoder[Label] = deriveDecoder
-
-  implicit val encoder: Encoder[Examples] = deriveEncoder
-  implicit val decoder: Decoder[Examples] = deriveDecoder
 
   def encodeJson(examples: Examples): Json = {
     examples.asJson

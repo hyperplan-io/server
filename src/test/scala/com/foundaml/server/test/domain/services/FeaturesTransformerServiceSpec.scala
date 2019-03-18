@@ -16,6 +16,7 @@ import scalaz.zio.DefaultRuntime
 class FeaturesTransformerServiceSpec extends FlatSpec with DefaultRuntime {
 
   it should "not accept a feature transformer with a different number of arguments than the features" in {
+
     val features3 = CustomFeatures(
       List(
         StringFeature("test instance"),

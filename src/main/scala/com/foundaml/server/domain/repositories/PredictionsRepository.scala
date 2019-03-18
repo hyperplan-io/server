@@ -1,5 +1,6 @@
 package com.foundaml.server.domain.repositories
 
+import com.foundaml.server.domain.models.Examples.Examples
 import com.foundaml.server.domain.models.{Examples, Prediction}
 import com.foundaml.server.domain.models.features.Features
 import com.foundaml.server.domain.models.labels.Labels
@@ -57,4 +58,9 @@ class PredictionsRepository(implicit xa: Transactor[Task]) {
   def read(predictionId: String) =
     readQuery(predictionId).unique.transact(xa)
 
+  def updateExamplesQuery(predictionId: String, examples: Examples) =
+    sql"""UPDATE predictions SET examples = $examples WHERE id=$predictionId""".update
+
+  def updateExamples(predictionId: String, examples: Examples) =
+    updateExamplesQuery(predictionId, examples).run.transact(xa)
 }
