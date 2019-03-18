@@ -3,12 +3,12 @@ package com.foundaml.server.application.controllers
 import org.http4s.HttpService
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
+
 import scalaz.zio.Task
 import scalaz.zio.interop.catz._
+
 import com.foundaml.server.application.controllers.requests._
-import com.foundaml.server.domain.factories.ProjectFactory
 import com.foundaml.server.domain.models.Prediction
-import com.foundaml.server.domain.repositories._
 import com.foundaml.server.domain.services.PredictionsService
 import com.foundaml.server.infrastructure.serialization.{
   PredictionRequestEntitySerializer,
@@ -16,10 +16,7 @@ import com.foundaml.server.infrastructure.serialization.{
 }
 
 class PredictionsController(
-    predictionsService: PredictionsService,
-    projectsRepository: ProjectsRepository,
-    algorithmsRepository: AlgorithmsRepository,
-    projectFactory: ProjectFactory
+    predictionsService: PredictionsService
 ) extends Http4sDsl[Task] {
 
   val service: HttpService[Task] = {

@@ -1,8 +1,7 @@
 package com.foundaml.server.application.controllers
 
 import com.foundaml.server.application.controllers.requests._
-import com.foundaml.server.domain.factories.ProjectFactory
-import com.foundaml.server.domain.services.{PredictionsService, ProjectsService}
+import com.foundaml.server.domain.services.ProjectsService
 import com.foundaml.server.infrastructure.serialization._
 import org.http4s.HttpService
 import org.http4s.circe._
@@ -11,9 +10,7 @@ import scalaz.zio.Task
 import scalaz.zio.interop.catz._
 
 class ProjectsController(
-    predictionsService: PredictionsService,
-    projectsService: ProjectsService,
-    projectFactory: ProjectFactory
+    projectsService: ProjectsService
 ) extends Http4sDsl[Task] {
 
 

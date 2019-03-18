@@ -11,10 +11,10 @@ import scalaz.zio.duration.Duration
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.{FiniteDuration, NANOSECONDS, TimeUnit}
 import scala.util.Properties.envOrNone
-import com.foundaml.server.application.controllers.{AlgorithmsHttpService, PredictionsController, ProjectsController}
+import com.foundaml.server.application.controllers.{AlgorithmsController, PredictionsController, ProjectsController}
 import com.foundaml.server.domain.factories.ProjectFactory
 import com.foundaml.server.domain.repositories.{AlgorithmsRepository, ProjectsRepository}
-import com.foundaml.server.domain.services.{PredictionsService, ProjectsService}
+import com.foundaml.server.domain.services.{AlgorithmsService, PredictionsService, ProjectsService}
 
 object Server {
   val port: Int = envOrNone("HTTP_PORT").fold(9090)(_.toInt)
@@ -34,36 +34,28 @@ object Server {
   }
 
   def stream(
-      predictionsService: PredictionsService,
-      projectsService: ProjectsService,
-      projectsRepository: ProjectsRepository,
-      algorithmsRepository: AlgorithmsRepository,
-      projectFactory: ProjectFactory
+              predictionsService: PredictionsService,
+              projectsService: ProjectsService,
+              algorithmsService: AlgorithmsService,
+              projectsRepository: ProjectsRepository
   )(implicit ec: ExecutionContext) =
     BlazeBuilder[Task]
       .bindHttp(8080, "0.0.0.0")
       .mountService(
         new PredictionsController(
-          predictionsService,
-          projectsRepository,
-          algorithmsRepository,
-          projectFactory
+          predictionsService
         ).service,
         "/predictions"
       )
       .mountService(
         new ProjectsController(
-          predictionsService,
-          projectsService,
-          projectFactory
+          projectsService
         ).service,
         "/projects"
       )
       .mountService(
-        new AlgorithmsHttpService(
-          projectsRepository,
-          algorithmsRepository,
-          projectFactory
+        new AlgorithmsController(
+          algorithmsService
         ).service,
         "/algorithms"
       )
