@@ -278,8 +278,13 @@ class PredictionsService(
         )(
           label => {
             val examples = prediction.examples + label.id
-            predictionsRepository.updateExamples(predictionId, examples) *> Task
-              .succeed(label)
+
+            predictionsRepository
+              .updateExamples(predictionId, examples) *> kinesisService.put(
+              examples,
+              config.kinesis.examplesStream,
+              predictionId
+            ) *> Task.succeed(label)
           }
         )
     }
