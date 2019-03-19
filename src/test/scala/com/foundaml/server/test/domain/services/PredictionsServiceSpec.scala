@@ -1,7 +1,12 @@
 package com.foundaml.server.test.domain.services
 
 import com.foundaml.server.domain.factories.ProjectFactory
-import com.foundaml.server.domain.{DatabaseConfig, FoundaMLConfig, KinesisConfig, PostgreSqlConfig}
+import com.foundaml.server.domain.{
+  DatabaseConfig,
+  FoundaMLConfig,
+  KinesisConfig,
+  PostgreSqlConfig
+}
 import com.foundaml.server.domain.models.errors.FeaturesValidationFailed
 import com.foundaml.server.domain.services.PredictionsService
 import org.scalatest._
