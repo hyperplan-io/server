@@ -5,14 +5,13 @@ val ScalazZIOVersion = "1.0-RC1"
 val circeVersion = "0.11.1"
 val DoobieVersion = "0.7.0-M3"
 
-fork in run := true
-enablePlugins(AshScriptPlugin)
 lazy val root = (project in file("."))
   .settings(
     organization := "foundaml",
     name := "foundaml-server",
     version := "0.0.1-SNAPSHOT",
     scalaVersion := "2.12.8",
+    fork in run := true,
     libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-blaze-server" % Http4sVersion,
       "org.http4s" %% "http4s-blaze-client" % Http4sVersion,
@@ -36,5 +35,18 @@ lazy val root = (project in file("."))
       "com.github.pureconfig" %% "pureconfig" % "0.10.2"
     ),
     addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.6"),
-    addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.2.4")
+    addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.2.4"),
+    micrositeName := "FoundaML",
+    micrositeDescription := "Pipeline for machine learning algorithms",
+    micrositeAuthor := "FoundaML contributors",
+    micrositeOrganizationHomepage := "https://github.com/antoinesauray/foundaml-server",
+    micrositeGitterChannelUrl := "antoinesauray/foundaml-server",
+    micrositeGitHostingUrl := "https://antoinesauray.github.io/foundaml-server",
+    micrositeGithubOwner := "antoinesauray",
+    micrositeGithubRepo := "foundaml-server",
+    micrositeFavicons := Seq(
+      microsites.MicrositeFavicon("favicon.png", "512x512")
+    ),
+    micrositeBaseUrl := "https://antoinesauray.github.io/foundaml-server"
   )
+  .enablePlugins(MicrositesPlugin)
