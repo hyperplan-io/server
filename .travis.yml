@@ -7,34 +7,14 @@ env:
   matrix:
   - TRAVIS_JDK=adopt@1.8.192-12
 
-install:
-- rvm use 2.3.0 --install --fuzzy
-- gem update --system
-- gem install sass
-- gem install jekyll -v 3.2.1
-
-stages:
-- validations-and-test
-
-jobs:
-  include:
-  - stage: validations-and-test
-    script: sbt ++$TRAVIS_SCALA_VERSION scalafmtCheck test:scalafmtCheck scalafmtSbtCheck
-    name: "Code validations (format, binary compatibilty, whitesource, etc.)"
-  - script: sbt ++$TRAVIS_SCALA_VERSION test package packageSrc publishLocal
-    name: "Run tests for Scala 2.12"
-  - script: sbt ++$TRAVIS_SCALA_VERSION
-
 matrix:
   fast_finish: true
 
 before_install:
-# See https://github.com/travis-ci/travis-ci/issues/4629#issuecomment-239493916
-- rm ~/.m2/settings.xml
-- curl -sL https://github.com/shyiko/jabba/raw/master/install.sh | bash && . ~/.jabba/jabba.sh
+- if [ "$TRAVIS_BRANCH" = "master" -a "$TRAVIS_PULL_REQUEST" = "false" ]; then bash scripts/decrypt-keys.sh; fi
+- export PATH=${PATH}:./vendor/bundle
 
 install:
-- $JABBA_HOME/bin/jabba install $TRAVIS_JDK
 - export JAVA_HOME="$JABBA_HOME/jdk/$TRAVIS_JDK" && export PATH="$JAVA_HOME/bin:$PATH" && java -Xmx32m -version
 
 cache:
@@ -52,3 +32,19 @@ before_cache:
 # Delete all ivydata files since ivy touches them on each build
 - find $HOME/.ivy2 -name "ivydata-*.properties" -delete
 - find $HOME/.sbt -name "*.lock" -delete
+
+jobs:
+  include:
+  - stage: validations-and-test
+    script: sbt ++$TRAVIS_SCALA_VERSION scalafmtCheck test:scalafmtCheck scalafmtSbtCheck
+    name: "Code validations (format, binary compatibilty, whitesource, etc.)"
+  - script: sbt ++$TRAVIS_SCALA_VERSION test package packageSrc publishLocal
+    name: "Run tests for Scala 2.12"
+  - script: sbt ++$TRAVIS_SCALA_VERSION
+
+
+after_success:
+- if [ "$TRAVIS_BRANCH" = "master" -a "$TRAVIS_PULL_REQUEST" = "false" ]; then bash
+  scripts/publish-microsite.sh; fi
+- if [ "$TRAVIS_PULL_REQUEST" = "true" ]; then echo "Not in master branch, skipping
+  deploy and release"; fi
