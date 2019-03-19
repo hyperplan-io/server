@@ -26,7 +26,7 @@ class PredictionsServiceSpec
     with TestDatabase {
 
   val config = FoundaMLConfig(
-    KinesisConfig(enabled = false, "")
+    KinesisConfig(enabled = false, "predictionsStream", "examplesStream")
   )
   val kinesisService = unsafeRun(KinesisService("fake-region"))
   val projectsRepository = new ProjectsRepository()(xa)
