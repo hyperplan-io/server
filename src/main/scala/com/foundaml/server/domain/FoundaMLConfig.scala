@@ -9,4 +9,4 @@ case class KinesisConfig(
 case class PostgreSqlConfig(host: String, port: Int, database: String, username: String, password: String)
 case class DatabaseConfig(postgresql: PostgreSqlConfig)
 
-case class FoundaMLConfig(kinesis: KinesisConfig, databaseConfig: DatabaseConfig)
+case class FoundaMLConfig(kinesis: KinesisConfig, database: DatabaseConfig)

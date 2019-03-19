@@ -44,7 +44,7 @@ object Main extends App {
   import scala.concurrent.ExecutionContext.Implicits.global
 
   def run(args: List[String]): ZIO[Environment, Nothing, Int] =
-    program().either.map(_.fold(err => {
+    loadConfigAndStart().either.map(_.fold(err => {
       println(err)
       1
     }, _ => 0))
@@ -93,29 +93,31 @@ object Main extends App {
         .drain
     } yield ()
 
-  def program(): Task[Unit] =
+  def loadConfigAndStart() =
+    pureconfig
+      .loadConfig[FoundaMLConfig]
+      .fold(
+        err =>
+          printLine(s"Failed to load configuration because $err"),
+        config => program(config)
+      )
+
+  def program(config: FoundaMLConfig): Task[Unit] =
     for {
       _ <- printLine("Starting Foundaml server")
       _ <- printLine("Connecting to database")
       transactor = PostgresqlService(
-        "127.0.0.1",
-        "5432",
-        "postgres",
-        "postgres",
-        "postgres"
+        config.database.postgresql.host,
+        config.database.postgresql.port.toString,
+        config.database.postgresql.database,
+        config.database.postgresql.username,
+        config.database.postgresql.password
       )
       _ <- transactor.use { implicit xa =>
         PostgresqlService.testConnection.flatMap {
           _.toEither match {
             case Right(_) =>
-              pureconfig
-                .loadConfig[FoundaMLConfig]
-                .fold(
-                  err =>
-                    printLine(s"Failed to load configuration because $err"),
-                  config => databaseConnected(config)
-                )
-
+              databaseConnected(config)
             case Left(err) =>
               printLine(s"Could not connect to the database: $err")
           }

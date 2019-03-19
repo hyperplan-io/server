@@ -1,7 +1,7 @@
 package com.foundaml.server.test.domain.services
 
 import com.foundaml.server.domain.factories.ProjectFactory
-import com.foundaml.server.domain.{FoundaMLConfig, KinesisConfig}
+import com.foundaml.server.domain.{DatabaseConfig, FoundaMLConfig, KinesisConfig, PostgreSqlConfig}
 import com.foundaml.server.domain.models.errors.FeaturesValidationFailed
 import com.foundaml.server.domain.services.PredictionsService
 import org.scalatest._
@@ -26,7 +26,16 @@ class PredictionsServiceSpec
     with TestDatabase {
 
   val config = FoundaMLConfig(
-    KinesisConfig(enabled = false, "predictionsStream", "examplesStream")
+    KinesisConfig(enabled = false, "predictionsStream", "examplesStream"),
+    DatabaseConfig(
+      PostgreSqlConfig(
+        "host",
+        5432,
+        "database",
+        "username",
+        "password"
+      )
+    )
   )
   val kinesisService = unsafeRun(KinesisService("fake-region"))
   val projectsRepository = new ProjectsRepository()(xa)
