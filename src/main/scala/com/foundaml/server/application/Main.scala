@@ -97,8 +97,7 @@ object Main extends App {
     pureconfig
       .loadConfig[FoundaMLConfig]
       .fold(
-        err =>
-          printLine(s"Failed to load configuration because $err"),
+        err => printLine(s"Failed to load configuration because $err"),
         config => program(config)
       )
 
