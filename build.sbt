@@ -41,12 +41,12 @@ lazy val root = (project in file("."))
     micrositeAuthor := "FoundaML contributors",
     micrositeOrganizationHomepage := "https://github.com/antoinesauray/foundaml-server",
     micrositeGitterChannelUrl := "antoinesauray/foundaml-server",
-    micrositeGitHostingUrl := "https://antoinesauray.github.io/foundaml-server",
     micrositeGithubOwner := "antoinesauray",
     micrositeGithubRepo := "foundaml-server",
     micrositeFavicons := Seq(
       microsites.MicrositeFavicon("favicon.png", "512x512")
     ),
-    micrositeBaseUrl := "https://antoinesauray.github.io/foundaml-server"
+    micrositeUrl := "https://antoinesauray.github.io",
+    micrositeBaseUrl := "/foundaml-server"
   )
   .enablePlugins(MicrositesPlugin)
