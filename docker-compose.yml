@@ -1,0 +1,9 @@
+version: '3'
+services:
+  foundaml-servver:
+    build: .
+    ports:
+     - "8080:8080"
+    restart: always
+  postgres:
+    image: "postgres:latest"

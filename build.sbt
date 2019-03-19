@@ -6,7 +6,7 @@ val circeVersion = "0.11.1"
 val DoobieVersion = "0.7.0-M3"
 
 fork in run := true
-
+enablePlugins(AshScriptPlugin)
 lazy val root = (project in file("."))
   .settings(
     organization := "foundaml",
