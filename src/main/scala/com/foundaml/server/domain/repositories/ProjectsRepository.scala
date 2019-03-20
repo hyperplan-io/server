@@ -23,7 +23,7 @@ class ProjectsRepository(implicit xa: Transactor[Task]) {
     Put[String].contramap(AlgorithmPolicySerializer.encodeJson)
 
   implicit val featuresConfigurationGet
-  : Get[Either[io.circe.Error, FeaturesConfiguration]] =
+      : Get[Either[io.circe.Error, FeaturesConfiguration]] =
     Get[String].map(FeaturesConfigurationSerializer.decodeJson)
 
   implicit val featuresConfigurationPut: Put[FeaturesConfiguration] =
@@ -79,7 +79,7 @@ object ProjectsRepository {
       String,
       Either[io.circe.Error, AlgorithmPolicy],
       Either[io.circe.Error, ProblemType],
-      Either[io.circe.Error,FeaturesConfiguration],
+      Either[io.circe.Error, FeaturesConfiguration],
       Set[String]
   )
 }

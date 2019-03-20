@@ -4,6 +4,7 @@ import com.foundaml.server.application.controllers.requests.PostProjectRequest
 import com.foundaml.server.domain.factories.ProjectFactory
 import com.foundaml.server.domain.models._
 import com.foundaml.server.domain.models.errors.InvalidArgument
+import com.foundaml.server.domain.models.features._
 import com.foundaml.server.domain.repositories.ProjectsRepository
 import scalaz.zio.{Task, ZIO}
 
@@ -21,9 +22,40 @@ class ProjectsService(
     }
   }
 
+  def validateFeatureClasses(featuresConfiguration: FeaturesConfiguration) =
+    featuresConfiguration match {
+      case StandardFeaturesConfiguration(featuresClass, featuresSize) =>
+        val allowedFeaturesClass = List(
+          DoubleFeatures.featuresClass,
+          FloatFeatures.featuresClass,
+          IntFeatures.featuresClass,
+          StringFeatures.featuresClass
+        )
+        if (allowedFeaturesClass.contains(featuresClass)) {
+          None
+        } else {
+          Some("The feature you specified is not supported or does not exist")
+        }
+      case CustomFeaturesConfiguration(featuresClasses) =>
+        val allowedFeatureClasses = List(
+          DoubleFeature.featureClass,
+          StringFeature.featureClass
+        )
+        if (featuresClasses.count(
+            featureClass => allowedFeatureClasses.contains(featureClass)
+          ) == featuresClasses.size) {
+          None
+        } else {
+          Some(
+            "Some of the features you specified are not supported or do not exist"
+          )
+        }
+    }
+
   def validateProject(project: Project): List[String] = {
     List(
-      validateAlphaNumerical(project.id)
+      validateAlphaNumerical(project.id),
+      validateFeatureClasses(project.configuration.features)
     ).flatten
   }
 

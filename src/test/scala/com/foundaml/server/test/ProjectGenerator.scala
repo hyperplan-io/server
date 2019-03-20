@@ -42,8 +42,10 @@ object ProjectGenerator {
     "example project",
     ProjectConfiguration(
       Classification(),
-      CustomFeatures.featuresClass,
-      10,
+      StandardFeaturesConfiguration(
+        CustomFeatures.featuresClass,
+        10
+      ),
       Set(
         "class1",
         "class2",

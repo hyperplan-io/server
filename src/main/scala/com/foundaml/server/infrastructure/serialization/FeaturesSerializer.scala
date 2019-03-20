@@ -27,13 +27,11 @@ object FeaturesSerializer {
     }
     // encodeFoo: io.circe.Encoder[Thing] = $anon$1@50acf339
 
-    implicit val featureDecoder: Decoder[CustomFeature] = new Decoder[CustomFeature] {
-      final def apply(c: HCursor): Decoder.Result[CustomFeature] = {
-        if(c.value.isNumber) {
-          c.value.as[DoubleFeature]
-        } else {
-          c.value.as[StringFeature]
-        }
+    implicit val featureDecoder: Decoder[CustomFeature] = (c: HCursor) => {
+      if (c.value.isNumber) {
+        c.value.as[Double].map(d => DoubleFeature(d))
+      } else {
+        c.value.as[String].map(s => StringFeature(s))
       }
     }
   }

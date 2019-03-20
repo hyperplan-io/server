@@ -28,7 +28,6 @@ object ProjectSerializer {
   implicit val featuresConfigurationDecoder: Decoder[FeaturesConfiguration] =
     FeaturesConfigurationSerializer.decoder
 
-
   implicit val projectConfigurationEncoder: Encoder[ProjectConfiguration] =
     deriveEncoder
   implicit val projectConfigurationDecoder: Decoder[ProjectConfiguration] =

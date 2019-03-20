@@ -4,7 +4,10 @@ import org.http4s.EntityDecoder
 import org.http4s.circe.jsonOf
 import scalaz.zio.Task
 import scalaz.zio.interop.catz._
-import com.foundaml.server.application.controllers.requests.{PostProjectConfiguration, PostProjectRequest}
+import com.foundaml.server.application.controllers.requests.{
+  PostProjectConfiguration,
+  PostProjectRequest
+}
 import com.foundaml.server.domain.models.{FeaturesConfiguration, ProblemType}
 import io.circe.Decoder
 
