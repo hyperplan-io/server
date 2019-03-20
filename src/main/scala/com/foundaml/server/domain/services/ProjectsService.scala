@@ -31,8 +31,7 @@ class ProjectsService(
       id: String,
       name: String,
       problem: ProblemType,
-      featuresClass: String,
-      featuresSize: Int,
+      featuresConfiguration: FeaturesConfiguration,
       labels: Set[String]
   ): ZIO[Any, Throwable, Project] = {
     val project = Project(
@@ -40,8 +39,7 @@ class ProjectsService(
       name,
       ProjectConfiguration(
         problem,
-        featuresClass,
-        featuresSize,
+        featuresConfiguration,
         labels
       ),
       Nil,

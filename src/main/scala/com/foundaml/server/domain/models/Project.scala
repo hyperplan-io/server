@@ -1,9 +1,13 @@
 package com.foundaml.server.domain.models
 
+sealed trait FeaturesConfiguration
+
+case class StandardFeaturesConfiguration(featuresClass: String, featuresSize: Int) extends FeaturesConfiguration
+case class CustomFeaturesConfiguration(featuresClasses: List[String]) extends FeaturesConfiguration
+
 case class ProjectConfiguration(
     problem: ProblemType,
-    featureClass: String,
-    featuresSize: Int,
+    features: FeaturesConfiguration,
     labels: Set[String]
 )
 

@@ -176,7 +176,27 @@ class PredictionsService(
     }
   }
 
-  def validateFeatures(
+  def validateFeatures(featuresConfiguration: FeaturesConfiguration, features: Features) = featuresConfiguration match {
+    case StandardFeaturesConfiguration(featureClass, featuresSize) =>
+      validateStandardFeatures(featureClass, featuresSize, features)
+    case CustomFeaturesConfiguration(featuresClasses: List[String]) =>
+      features match {
+        case CustomFeatures(customFeatures) =>
+          validateCustomFeatures(featuresClasses, customFeatures)
+        case _ => false
+
+      }
+  }
+
+  def validateCustomFeatures(featuresClasses: List[String], customFeatures: List[CustomFeature]) =
+    featuresClasses.zip(customFeatures).map {
+      case (DoubleFeature.featureClass, DoubleFeature(_)) => true
+      case (IntFeature.featureClass, IntFeature(_)) => true
+      case (StringFeature.featureClass, StringFeature(_)) => true
+      case _ => false
+    }.reduce(_ & _)
+
+  def validateStandardFeatures(
       expectedFeaturesClass: String,
       expectedFeaturesSize: Int,
       features: Features
@@ -221,8 +241,7 @@ class PredictionsService(
   ) = {
 
     if (validateFeatures(
-        project.configuration.featureClass,
-        project.configuration.featuresSize,
+        project.configuration.features,
         features
       )) {
       optionalAlgorithmId.fold(

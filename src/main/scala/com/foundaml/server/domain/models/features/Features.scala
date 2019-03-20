@@ -32,5 +32,14 @@ object CustomFeatures {
 sealed trait CustomFeature
 
 case class DoubleFeature(value: Double) extends CustomFeature
+object DoubleFeature {
+  val featureClass = "DoubleFeature"
+}
 case class IntFeature(value: Int) extends CustomFeature
+object IntFeature {
+  val featureClass = "IntFeature"
+}
 case class StringFeature(value: String) extends CustomFeature
+object StringFeature {
+  val featureClass = "StringFeature"
+}

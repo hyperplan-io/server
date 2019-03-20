@@ -28,8 +28,7 @@ class ProjectsController(
             request.id,
             request.name,
             request.configuration.problem,
-            request.configuration.featuresClass,
-            request.configuration.featuresSize,
+            request.configuration.features,
             request.configuration.labels
           )
         } yield project).flatMap { project =>

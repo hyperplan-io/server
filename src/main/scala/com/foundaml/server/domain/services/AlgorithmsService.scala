@@ -39,9 +39,15 @@ class AlgorithmsService(
           TensorFlowFeaturesTransformer(signatureName, fields),
           TensorFlowLabelsTransformer(labels)
           ) =>
+        val size = project.configuration.features match {
+          case StandardFeaturesConfiguration(featureClass, featuresSize) =>
+            featuresSize
+          case CustomFeaturesConfiguration(featuresClasses: List[String]) =>
+            featuresClasses.size
+        }
         List(
           validateEqualSize(
-            project.configuration.featuresSize,
+            size,
             fields.size,
             "features"
           ),

@@ -22,6 +22,13 @@ class ProjectsRepository(implicit xa: Transactor[Task]) {
   implicit val algorithmPolicyTypePut: Put[AlgorithmPolicy] =
     Put[String].contramap(AlgorithmPolicySerializer.encodeJson)
 
+  implicit val featuresConfigurationGet
+  : Get[Either[io.circe.Error, FeaturesConfiguration]] =
+    Get[String].map(FeaturesConfigurationSerializer.decodeJson)
+
+  implicit val featuresConfigurationPut: Put[FeaturesConfiguration] =
+    Put[String].contramap(FeaturesConfigurationSerializer.encodeJson)
+
   val separator = ";"
   implicit val labelsTypeGet: Get[Set[String]] =
     Get[String].map(_.split(separator).toSet)
@@ -34,16 +41,14 @@ class ProjectsRepository(implicit xa: Transactor[Task]) {
       name, 
       algorithm_policy,
       problem,
-      features_class,
-      features_size,
+      features_configuration,
       labels
     ) VALUES(
       ${project.id},
       ${project.name},
       ${project.policy},
       ${project.configuration.problem},
-      ${project.configuration.featureClass},
-      ${project.configuration.featuresSize},
+      ${project.configuration.features},
       ${project.configuration.labels}
     )""".update
 
@@ -51,7 +56,7 @@ class ProjectsRepository(implicit xa: Transactor[Task]) {
 
   def readQuery(projectId: String) =
     sql"""
-      SELECT id, name, algorithm_policy, problem, features_class, features_size, labels
+      SELECT id, name, algorithm_policy, problem, features_configuration, labels
       FROM projects
       WHERE id=$projectId
       """
@@ -61,7 +66,7 @@ class ProjectsRepository(implicit xa: Transactor[Task]) {
 
   def readAll() =
     sql"""
-        SELECT id, name, algorithm_policy, problem, features_class, features_size, labels
+        SELECT id, name, algorithm_policy, problem, features_configuration, labels
       FROM projects
       """
       .query[ProjectsRepository.ProjectData]
@@ -74,8 +79,7 @@ object ProjectsRepository {
       String,
       Either[io.circe.Error, AlgorithmPolicy],
       Either[io.circe.Error, ProblemType],
-      String,
-      Int,
+      Either[io.circe.Error,FeaturesConfiguration],
       Set[String]
   )
 }

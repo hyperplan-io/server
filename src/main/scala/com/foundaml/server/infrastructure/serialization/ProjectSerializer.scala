@@ -23,6 +23,12 @@ object ProjectSerializer {
   implicit val algorithmDecoder: Decoder[Algorithm] =
     AlgorithmsSerializer.Implicits.decoder
 
+  implicit val featuresConfigurationEncoder: Encoder[FeaturesConfiguration] =
+    FeaturesConfigurationSerializer.encoder
+  implicit val featuresConfigurationDecoder: Decoder[FeaturesConfiguration] =
+    FeaturesConfigurationSerializer.decoder
+
+
   implicit val projectConfigurationEncoder: Encoder[ProjectConfiguration] =
     deriveEncoder
   implicit val projectConfigurationDecoder: Decoder[ProjectConfiguration] =
