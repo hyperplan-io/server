@@ -24,14 +24,13 @@ object StringFeatures {
   val featuresClass = "StringFeatures"
 }
 
-case class CustomFeatures(data: List[Feature]) extends Features
+case class CustomFeatures(data: List[CustomFeature]) extends Features
 object CustomFeatures {
   val featuresClass = "CustomFeatures"
 }
 
-sealed trait Feature
+sealed trait CustomFeature
 
-case class DoubleFeature(value: Double) extends Feature
-case class FloatFeature(value: Float) extends Feature
-case class IntFeature(value: Int) extends Feature
-case class StringFeature(value: String) extends Feature
+case class DoubleFeature(value: Double) extends CustomFeature
+case class IntFeature(value: Int) extends CustomFeature
+case class StringFeature(value: String) extends CustomFeature

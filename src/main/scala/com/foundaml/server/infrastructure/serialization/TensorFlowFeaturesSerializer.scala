@@ -20,8 +20,6 @@ object TensorFlowFeaturesSerializer {
         ("examples", Json.arr(Json.fromFields(features.examples.flatMap {
           case TensorFlowDoubleFeature(key, value) =>
             Json.fromDouble(value).map(json => key -> json)
-          case TensorFlowFloatFeature(key, value) =>
-            Json.fromFloat(value).map(json => key -> json)
           case TensorFlowIntFeature(key, value) =>
             Some(key -> Json.fromInt(value))
           case TensorFlowStringFeature(key, value) =>

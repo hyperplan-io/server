@@ -21,7 +21,7 @@ class FeaturesTransformerServiceSpec extends FlatSpec with DefaultRuntime {
       List(
         StringFeature("test instance"),
         IntFeature(1),
-        FloatFeature(0.5f)
+        DoubleFeature(0.5f)
       )
     )
 
@@ -70,7 +70,7 @@ class FeaturesTransformerServiceSpec extends FlatSpec with DefaultRuntime {
       List(
         StringFeature("test instance"),
         IntFeature(1),
-        FloatFeature(0.5f)
+        DoubleFeature(0.5f)
       )
     )
 

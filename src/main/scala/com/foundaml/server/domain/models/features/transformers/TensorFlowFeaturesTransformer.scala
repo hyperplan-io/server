@@ -17,11 +17,6 @@ case class TensorFlowFeaturesTransformer(
             case (value, field) =>
               TensorFlowDoubleFeature(field, value)
           }
-        case FloatFeatures(floatFeatures) =>
-          floatFeatures.zip(fields).map {
-            case (value, field) =>
-              TensorFlowFloatFeature(field, value)
-          }
         case IntFeatures(intFeatures) =>
           intFeatures.zip(fields).map {
             case (value, field) =>
@@ -36,8 +31,6 @@ case class TensorFlowFeaturesTransformer(
           customFeatures.zip(fields).map {
             case (DoubleFeature(value), field) =>
               TensorFlowDoubleFeature(field, value)
-            case (FloatFeature(value), field) =>
-              TensorFlowFloatFeature(field, value)
             case (IntFeature(value), field) =>
               TensorFlowIntFeature(field, value)
             case (StringFeature(value), field) =>

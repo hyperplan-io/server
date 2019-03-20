@@ -11,11 +11,8 @@ object FeaturesSerializer {
   object FeatureSerializer {
     import io.circe.generic.semiauto._
 
-    implicit val doubleEncoder: Encoder[DoubleFeature] = deriveEncoder
-    implicit val doubleDecoder: Decoder[DoubleFeature] = deriveDecoder
-
-    implicit val floatEncoder: Encoder[FloatFeature] = deriveEncoder
-    implicit val floatDecoder: Decoder[FloatFeature] = deriveDecoder
+    implicit val floatEncoder: Encoder[DoubleFeature] = deriveEncoder
+    implicit val floatDecoder: Decoder[DoubleFeature] = deriveDecoder
 
     implicit val intEncoder: Encoder[IntFeature] = deriveEncoder
     implicit val intDecoder: Decoder[IntFeature] = deriveDecoder
@@ -23,8 +20,22 @@ object FeaturesSerializer {
     implicit val stringEncoder: Encoder[StringFeature] = deriveEncoder
     implicit val stringDecoder: Decoder[StringFeature] = deriveDecoder
 
-    implicit val featureEncoder: Encoder[Feature] = deriveEncoder
-    implicit val featureDecoder: Decoder[Feature] = deriveDecoder
+    implicit val featureEncoder: Encoder[CustomFeature] = {
+      case DoubleFeature(value) => Json.fromDoubleOrNull(value)
+      case IntFeature(value) => Json.fromInt(value)
+      case StringFeature(value) => Json.fromString(value)
+    }
+    // encodeFoo: io.circe.Encoder[Thing] = $anon$1@50acf339
+
+    implicit val featureDecoder: Decoder[CustomFeature] = new Decoder[CustomFeature] {
+      final def apply(c: HCursor): Decoder.Result[CustomFeature] = {
+        if(c.value.isNumber) {
+          c.value.as[DoubleFeature]
+        } else {
+          c.value.as[StringFeature]
+        }
+      }
+    }
   }
 
   object Implicits {
