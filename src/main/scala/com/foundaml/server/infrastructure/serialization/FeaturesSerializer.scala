@@ -25,11 +25,14 @@ object FeaturesSerializer {
       case IntFeature(value) => Json.fromInt(value)
       case StringFeature(value) => Json.fromString(value)
     }
-    // encodeFoo: io.circe.Encoder[Thing] = $anon$1@50acf339
 
     implicit val featureDecoder: Decoder[CustomFeature] = (c: HCursor) => {
       if (c.value.isNumber) {
-        c.value.as[Double].map(d => DoubleFeature(d))
+        if (c.value.noSpaces.contains(".")) {
+          c.value.as[Double].map(d => DoubleFeature(d))
+        } else {
+          c.value.as[Int].map(d => IntFeature(d))
+        }
       } else {
         c.value.as[String].map(s => StringFeature(s))
       }

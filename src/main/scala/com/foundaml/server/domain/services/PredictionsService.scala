@@ -180,12 +180,12 @@ class PredictionsService(
       featuresConfiguration: FeaturesConfiguration,
       features: Features
   ) = featuresConfiguration match {
-    case StandardFeaturesConfiguration(featureClass, featuresSize) =>
+    case StandardFeaturesConfiguration(featureClass, featuresSize, _) =>
       validateStandardFeatures(featureClass, featuresSize, features)
-    case CustomFeaturesConfiguration(featuresClasses: List[String]) =>
+    case CustomFeaturesConfiguration(featuresClasses: List[CustomFeatureConfiguration]) =>
       features match {
         case CustomFeatures(customFeatures) =>
-          validateCustomFeatures(featuresClasses, customFeatures)
+          validateCustomFeatures(featuresClasses.map(_.featureClass), customFeatures)
         case _ =>
           false
 

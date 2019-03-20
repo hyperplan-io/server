@@ -40,9 +40,9 @@ class AlgorithmsService(
           TensorFlowLabelsTransformer(labels)
           ) =>
         val size = project.configuration.features match {
-          case StandardFeaturesConfiguration(featureClass, featuresSize) =>
+          case StandardFeaturesConfiguration(featureClass, featuresSize, description) =>
             featuresSize
-          case CustomFeaturesConfiguration(featuresClasses: List[String]) =>
+          case CustomFeaturesConfiguration(featuresClasses: List[CustomFeatureConfiguration]) =>
             featuresClasses.size
         }
         List(
