@@ -24,7 +24,11 @@ class ProjectsService(
 
   def validateFeatureClasses(featuresConfiguration: FeaturesConfiguration) =
     featuresConfiguration match {
-      case StandardFeaturesConfiguration(featuresClass, featuresSize, description) =>
+      case StandardFeaturesConfiguration(
+          featuresClass,
+          featuresSize,
+          description
+          ) =>
         val allowedFeaturesClass = List(
           DoubleFeatures.featuresClass,
           FloatFeatures.featuresClass,
@@ -43,7 +47,8 @@ class ProjectsService(
           StringFeature.featureClass
         )
         if (featuresClasses.count(
-            featureClass => allowedFeatureClasses.contains(featureClass.featureClass)
+            featureClass =>
+              allowedFeatureClasses.contains(featureClass.featureClass)
           ) == featuresClasses.size) {
           None
         } else {

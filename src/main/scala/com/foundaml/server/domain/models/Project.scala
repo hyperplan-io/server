@@ -8,10 +8,15 @@ case class StandardFeaturesConfiguration(
     description: String
 ) extends FeaturesConfiguration
 
-case class CustomFeatureConfiguration(key: String, featureClass: String, description: String)
+case class CustomFeatureConfiguration(
+    key: String,
+    featureClass: String,
+    description: String
+)
 
-case class CustomFeaturesConfiguration(featuresClasses: List[CustomFeatureConfiguration])
-    extends FeaturesConfiguration
+case class CustomFeaturesConfiguration(
+    featuresClasses: List[CustomFeatureConfiguration]
+) extends FeaturesConfiguration
 
 case class ProjectConfiguration(
     problem: ProblemType,

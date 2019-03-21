@@ -16,8 +16,10 @@ object FeaturesConfigurationSerializer {
   import io.circe.{Decoder, Encoder}, io.circe.generic.auto._
   import io.circe.syntax._
 
-  implicit val customFeaturesEncoder = CustomFeatureConfigurationSerializer.encoder
-  implicit val customFeaturesDecoder = CustomFeatureConfigurationSerializer.decoder
+  implicit val customFeaturesEncoder =
+    CustomFeatureConfigurationSerializer.encoder
+  implicit val customFeaturesDecoder =
+    CustomFeatureConfigurationSerializer.decoder
 
   implicit val encoder: Encoder[FeaturesConfiguration] = Encoder.instance {
     case foo @ StandardFeaturesConfiguration(_, _, _) => foo.asJson
