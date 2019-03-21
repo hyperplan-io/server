@@ -24,10 +24,14 @@ To solve this problem, we need to list the data on which our algorithms will per
 * Cabin
 * Embarked
 
-The algorithm should predict whether or not the person survived. This is a classification problem. We can create the project with the POST request below
+The algorithm should predict whether or not the person survived. This is a classification problem. We can now create the project with a curl request.
 
 ```
-{
+curl -X POST \
+  http://localhost:8080/projects/ \
+  -H 'Content-Type: application/json' \
+  -H 'cache-control: no-cache' \
+  -d '{
 	"id": "kaggle-titanic",
     "name": "Kaggle Titanic",
     "configuration": {
@@ -86,7 +90,7 @@ The algorithm should predict whether or not the person survived. This is a class
         		     "featureClass": "StringFeature",
         			"description": "Which cabin"
         		},
-        			{
+        		{
         			"key": "embarked",
         			"featureClass": "StringFeature",
         			"description": "The port in which a passenger has embarked. C - Cherbourg, S - Southampton, Q = Queenstown"
@@ -98,7 +102,7 @@ The algorithm should predict whether or not the person survived. This is a class
             "notSurvived"
         ]
     }
-}
+}'
 ```
 
 # Our first algorithm, a simple heuristic
