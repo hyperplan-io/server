@@ -9,7 +9,7 @@ case class StandardFeaturesConfiguration(
 ) extends FeaturesConfiguration
 
 case class CustomFeatureConfiguration(
-    key: String,
+    name: String,
     featureClass: String,
     description: String
 )
