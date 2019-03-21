@@ -44,7 +44,8 @@ object ProjectGenerator {
       Classification(),
       StandardFeaturesConfiguration(
         CustomFeatures.featuresClass,
-        10
+        10,
+        "this is a description of the features"
       ),
       Set(
         "class1",
