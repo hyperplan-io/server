@@ -1,0 +1,279 @@
+<html><head><title>FoundaML: Example: The Titanic</title><meta charset="utf-8" /><meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="author" content="FoundaML contributors" /><meta name="description" content="Pipeline for machine learning algorithms" /><meta name="og:image" content="/foundaml-server/img/poster.png" /><meta name="image" property="og:image" content="/foundaml-server/img/poster.png" /><meta name="og:title" content="FoundaML: Example: The Titanic" /><meta name="title" property="og:title" content="FoundaML: Example: The Titanic" /><meta name="og:site_name" content="FoundaML" /><meta name="og:url" content="" /><meta name="og:type" content="website" /><meta name="og:description" content="Pipeline for machine learning algorithms" /><link rel="icon" type="image/png" href="/foundaml-server/img/favicon.png" /><meta name="twitter:title" content="FoundaML: Example: The Titanic" /><meta name="twitter:image" content="https://antoinesauray.github.io/foundaml-server/img/poster.png" /><meta name="twitter:description" content="Pipeline for machine learning algorithms" /><meta name="twitter:card" content="summary_large_image" /><link rel="icon" type="image/png" sizes="512x512" href="/foundaml-server/img/favicon.png" /><link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" /><link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" /><link rel="stylesheet" href="/foundaml-server/highlight/styles/default.css" /><link rel="stylesheet" href="/foundaml-server/css/style.css" /><link rel="stylesheet" href="/foundaml-server/css/palette.css" /><link rel="stylesheet" href="/foundaml-server/css/codemirror.css" /></head><body><header id="site-header"><div class="navbar-wrapper navbar-inverse"><div class="container"><div class="navbar-header"><button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1" aria-expanded="false"><span class="sr-only">Toggle navigation</span><span class="icon-bar"></span><span class="icon-bar"></span><span class="icon-bar"></span></button><a href="/foundaml-server/" class="brand"><div class="icon-wrapper"><span>FoundaML</span></div></a></div><nav class="text-right"><ul class=""><li><a href="https://github.com/antoinesauray/foundaml-server"><i class="fa fa-github"></i><span class="hidden-xs">GitHub</span></a></li></ul></nav></div></div><div class="jumbotron" style="background-image:url('/foundaml-server/img/jumbotron_pattern.png')"></div><div><ul class="horizontalNav">     <li><a class="" href="/foundaml-server/">Home</a></li>  <li><a class="" href="/foundaml-server/getting_started.html">Getting Started</a></li>  <li><a class=" active " href="/foundaml-server/the_titanic.html">Example: The Titanic</a></li> </ul></div></header><main id="site-main"><section class="use"><div class="container"><div id="content"><h1 id="the-titanic-work-in-progress">The Titanic (Work in progress)</h1>
+<p>The Kaggle Titanic challenge is a popular Kaggle contest. It will serve as a good example to teach you how to use FoundaML to solve this problem.</p>
+
+<h1 id="creating-the-project">Creating the project</h1>
+<p>To solve this problem, we need to list the data on which our algorithms will perform. The features look as follows.</p>
+
+<ul>
+  <li>PassengerId</li>
+  <li>Survived</li>
+  <li>Pclass</li>
+  <li>Name</li>
+  <li>Sex</li>
+  <li>Age</li>
+  <li>SibSp</li>
+  <li>Parch</li>
+  <li>Ticket</li>
+  <li>Fare</li>
+  <li>Cabin</li>
+  <li>Embarked</li>
+</ul>
+
+<p>The algorithm should predict whether or not the person survived. This is a classification problem. We can now create the project with a curl request.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl -X POST \
+  http://localhost:8080/projects/ \
+  -H 'Content-Type: application/json' \
+  -H 'cache-control: no-cache' \
+  -d '{
+	"id": "kaggle-titanic",
+    "name": "Kaggle Titanic",
+    "configuration": {
+        "problem": {
+            "class": "Classification"
+        },
+        "features": {
+        	"featuresClasses": [
+        		{
+        			"name": "passengerId",
+        			"featureClass": "IntFeature",
+        			"description": "The unique identifier of the passenger"
+        		},
+        		{
+        			"name": "pClass",
+        			"featureClass": "IntFeature",
+        			"description": "Class of travel"
+        		},
+        		{
+        			"name": "name",
+        			"featureClass": "StringFeature",
+        			"description": "Name of passenger"
+        		},
+        		{
+        			"name": "sex",
+        			"featureClass": "StringFeature",
+        			"description": "Gender"
+        		},
+        		{
+        			"name": "age",
+        			"featureClass": "IntFeature",
+        			"description": "Age"
+        		},
+        		{
+        			"name": "sibSp",
+        			"featureClass": "IntFeature",
+        			"description": "Number of Sibling/Spouse aboard"
+        		},
+        		{
+        			"name": "pArch",
+        			"featureClass": "IntFeature",
+        			"description": "Number of Parent/Child aboard"
+        		},
+        		{
+        			"name": "ticket",
+        			"featureClass": "StringFeature",
+        			"description": "The ticket identifier"
+        		},
+        		{
+        			"name": "fare",
+        			"featureClass": "StringFeature",
+        			"description": "Which fare"
+        		},
+        		{
+        			"name": "cabin",
+        		     "featureClass": "StringFeature",
+        			"description": "Which cabin"
+        		},
+        		{
+        			"name": "embarked",
+        			"featureClass": "StringFeature",
+        			"description": "The port in which a passenger has embarked. C - Cherbourg, S - Southampton, Q = Queenstown"
+        		}
+        	]
+        },
+        "labels": [
+            "survived",
+            "notSurvived"
+        ]
+    }
+}'
+</code></pre></div></div>
+
+<h1 id="our-first-algorithm-a-simple-heuristic">Our first algorithm, a simple heuristic</h1>
+<p>Our first algorithm will be quite simple. It will be simple heuristic.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>if age &gt; 18 and age &lt; 40:
+    return 'survived'
+else:
+    return 'did_not_survived'
+</code></pre></div></div>
+<p>It does not really matter at that point what we compute.</p>
+
+<p>We will use the <a href="https://www.tensorflow.org/tfx/serving/api_rest">TensorFlow Serving API</a> for our algorithm. I suggest you read about it before you continue this example.</p>
+
+<p>A NodeJs implementation is available <a href="https://antoinesauray.github.com/foundaml-server">here</a></p>
+
+<h3 id="features-transformation">Features transformation</h3>
+<p>TensorFlow Serving has a notion of signature name.  We also have feature names to map</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>"featuresTransformer": {
+	"signatureName": "",
+	"fields": [
+		"passenger_id",
+		"p_class",
+		"name",
+		"sex",
+		"age",
+		"sib_sp",
+		"p_arch",
+		"ticket",
+		"fare",
+		"cabin",
+		"embarked"
+	]
+}
+</code></pre></div></div>
+<h3 id="labels-transformation">Labels transformation</h3>
+<p>It is possible that the output of the algorithm does not exactly match the output of our project. We can define a transformation that maps one to the other.</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>"labelsTransformer": {
+    "function": "map",
+    "fields": {
+	    "survived": "survived",
+	    "did_not_survived": "notSurvived"
+	}
+}
+</code></pre></div></div>
+<p>The keys of the <code class="highlighter-rouge">field</code> object are the outputs of the algorithm. Their value is the class of the project that we want to map it to.</p>
+
+<p>In case they do match, you can use the <code class="highlighter-rouge">identity</code> function.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>"labelsTransformer": {
+   "function": "identity"
+}
+</code></pre></div></div>
+
+<h2 id="adding-our-algorithm-to-the-project">Adding our algorithm to the project</h2>
+<p>We can summarize the information above with this http query.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl -X POST \
+  http://localhost:8080/algorithms/ \
+  -H 'Content-Type: application/json' \
+  -H 'cache-control: no-cache' \
+  -d '{
+	"id": "tf-kaggle-titanic-1",
+	"projectId": "kaggle-titanic",
+	"backend": {
+		"class": "TensorFlowBackend",
+		"host": "127.0.0.1",
+		"port": 3000,
+		"featuresTransformer": {
+			"signatureName": "",
+			"fields": [
+				"passenger_id",
+				"p_class",
+				"name",
+				"sex",
+				"age",
+				"sib_sp",
+				"p_arch",
+				"ticket",
+				"fare",
+				"cabin",
+				"embarked"
+			]
+		},
+		"labelsTransformer": {
+		    "function": "map",
+			"fields": {
+				"survived": "survived",
+				"did_not_survived": "notSurvived"
+			}
+		}
+	}
+}
+</code></pre></div></div>
+
+<h1 id="start-predicting-labels">Start predicting labels</h1>
+<p>So we should have a working algorithm by now. We can start making predictions. Let’s take the first sample of our Kaggle dataset.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>curl -X POST \
+  http://localhost:8080/predictions \
+  -H 'Content-Type: application/json' \
+  -H 'cache-control: no-cache' \
+  -d '{
+	"projectId": "kaggle-titanic",
+	"algorithmId": "tf-kaggle-titanic-1",
+	"features": {
+		"class": "CustomFeatures",
+		"data": [
+			1,
+			3,
+			"Braund Mr. Owen Harris",
+			"male",
+			22,
+			1,
+			0,
+			"A/5 21171",
+			"7.25",
+			"",
+			"S"
+		]
+	}
+}
+</code></pre></div></div>
+
+<p>If our algorithm is correctly configured, we will get something like below.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>{
+    "id": "5c93c052-be9e-4b1c-bfda-fbd3c0514966",
+    "projectId": "kaggle-titanic",
+    "algorithmId": "tf-kaggle-titanic-1",
+    "features": {
+        "data": [
+            1,
+            3,
+            "Braund Mr. Owen Harris",
+            "male",
+            22,
+            1,
+            0,
+            "A/5 21171",
+            "7.25",
+            "",
+            "S"
+        ],
+        "class": "CustomFeatures"
+    },
+    "labels": {
+        "labels": [
+            {
+                "id": "4e1574f9-5376-434d-ada0-b74ed18ca50c",
+                "label": "survived",
+                "probability": 0,
+                "correctExampleUrl": "/examples?predictionId=5c93c052-be9e-4b1c-bfda-fbd3c0514966&amp;labelId=4e1574f9-5376-434d-ada0-b74ed18ca50c&amp;isCorrect=true",
+                "incorrectExampleUrl": "/examples?predictionId=5c93c052-be9e-4b1c-bfda-fbd3c0514966&amp;labelId=4e1574f9-5376-434d-ada0-b74ed18ca50c&amp;isIncorrect=true",
+                "class": "ClassificationLabel"
+            },
+            {
+                "id": "4f9e4773-a31d-4d49-a63e-360947060363",
+                "label": "notSurvived",
+                "probability": 1,
+                "correctExampleUrl": "/examples?predictionId=5c93c052-be9e-4b1c-bfda-fbd3c0514966&amp;labelId=4f9e4773-a31d-4d49-a63e-360947060363&amp;isCorrect=true",
+                "incorrectExampleUrl": "/examples?predictionId=5c93c052-be9e-4b1c-bfda-fbd3c0514966&amp;labelId=4f9e4773-a31d-4d49-a63e-360947060363&amp;isIncorrect=true",
+                "class": "ClassificationLabel"
+            }
+        ]
+    },
+    "examples": []
+}
+</code></pre></div></div>
+
+<p>Notice that we predicted the passenger would not survive with a probability of 1 ! Pay attention to the <code class="highlighter-rouge">correctExampleUrl</code> and <code class="highlighter-rouge">incorrectExampleUrl</code>. These links are relative to the root of the foundaml server.</p>
+
+<p>They allow you to label a prediction correct or incorrect. If you can have humans validate your predictions, this is extremely valuable.</p>
+
+<p>You should also be aware that each prediction and example gets published to your favorite streaming platform (Only Amazon Kinesis at the moment). This allows you to evaluate your algorithms in real time.</p>
+</div></div></section></main><footer id="site-footer"><div class="container"><div class="row"><div class="col-xs-6"><p>FoundaML is designed and developed by <a href="https://github.com/antoinesauray/foundaml-server" target="_blank">FoundaML contributors</a></p></div><div class="col-xs-6"><p class="text-right"><a href="https://github.com/antoinesauray/foundaml-server"><span class="fa fa-github"></span>View on GitHub</a></p></div></div><div class="row"><div class="col-xs-6"><p>Website built with <a href="https://47deg.github.io/sbt-microsites/" target="_blank">Sbt-microsites</a> - © 2016 <a href="https://www.47deg.com/" target="_blank">47 Degrees</a></p></div></div></div></footer><script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.7/js/bootstrap.min.js"></script><script src="/foundaml-server/highlight/highlight.pack.js"></script><script>hljs.configure({languages:['scala','java','bash']});
+hljs.initHighlighting();
+              </script><script>((window.gitter = {}).chat = {}).options = {
+room: 'antoinesauray/foundaml-server'};</script><script src="https://sidecar.gitter.im/dist/sidecar.v1.js"></script></body></html>
