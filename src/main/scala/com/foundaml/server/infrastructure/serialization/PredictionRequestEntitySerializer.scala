@@ -6,11 +6,7 @@ import org.http4s.circe.jsonOf
 import scalaz.zio.Task
 import scalaz.zio.interop.catz._
 import com.foundaml.server.application.controllers.requests.PredictionRequest
-import com.foundaml.server.domain.models.features.{
-  DoubleFeature,
-  DoubleFeatures,
-  Features
-}
+import com.foundaml.server.domain.models.features.Features
 
 object PredictionRequestEntitySerializer {
 

@@ -2,7 +2,7 @@ package com.foundaml.server.test.infrastructure
 
 import java.util.UUID
 
-import com.foundaml.server.domain.models.features.DoubleFeatures
+import com.foundaml.server.domain.models.features.FloatFeatures
 import com.foundaml.server.domain.models.labels.{ClassificationLabel, Labels}
 import com.foundaml.server.domain.models.{Examples, Prediction}
 import com.foundaml.server.infrastructure.serialization.PredictionSerializer
@@ -28,11 +28,11 @@ class PredictionSerializerSpec
       predictionId,
       projectId,
       algorithmId,
-      DoubleFeatures(
+      FloatFeatures(
         List(
-          0.0,
-          0.1,
-          0.5
+          0.0f,
+          0.1f,
+          0.5f
         )
       ),
       Labels(

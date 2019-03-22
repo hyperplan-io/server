@@ -11,8 +11,8 @@ object FeaturesSerializer {
   object FeatureSerializer {
     import io.circe.generic.semiauto._
 
-    implicit val floatEncoder: Encoder[DoubleFeature] = deriveEncoder
-    implicit val floatDecoder: Decoder[DoubleFeature] = deriveDecoder
+    implicit val floatEncoder: Encoder[FloatFeature] = deriveEncoder
+    implicit val floatDecoder: Decoder[FloatFeature] = deriveDecoder
 
     implicit val intEncoder: Encoder[IntFeature] = deriveEncoder
     implicit val intDecoder: Decoder[IntFeature] = deriveDecoder
@@ -21,7 +21,7 @@ object FeaturesSerializer {
     implicit val stringDecoder: Decoder[StringFeature] = deriveDecoder
 
     implicit val featureEncoder: Encoder[CustomFeature] = {
-      case DoubleFeature(value) => Json.fromDoubleOrNull(value)
+      case FloatFeature(value) => Json.fromDoubleOrNull(value)
       case IntFeature(value) => Json.fromInt(value)
       case StringFeature(value) => Json.fromString(value)
     }
@@ -29,7 +29,7 @@ object FeaturesSerializer {
     implicit val featureDecoder: Decoder[CustomFeature] = (c: HCursor) => {
       if (c.value.isNumber) {
         if (c.value.noSpaces.contains(".")) {
-          c.value.as[Double].map(d => DoubleFeature(d))
+          c.value.as[Float].map(d => FloatFeature(d))
         } else {
           c.value.as[Int].map(d => IntFeature(d))
         }

@@ -18,7 +18,7 @@ object TensorFlowFeaturesSerializer {
       Json.obj(
         ("signature_name", Json.fromString(features.signatureName)),
         ("examples", Json.arr(Json.fromFields(features.examples.flatMap {
-          case TensorFlowDoubleFeature(key, value) =>
+          case TensorFlowFloatFeature(key, value) =>
             Json.fromDouble(value).map(json => key -> json)
           case TensorFlowIntFeature(key, value) =>
             Some(key -> Json.fromInt(value))

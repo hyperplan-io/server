@@ -30,7 +30,6 @@ class ProjectsService(
           description
           ) =>
         val allowedFeaturesClass = List(
-          DoubleFeatures.featuresClass,
           FloatFeatures.featuresClass,
           IntFeatures.featuresClass,
           StringFeatures.featuresClass
@@ -42,7 +41,7 @@ class ProjectsService(
         }
       case CustomFeaturesConfiguration(featuresClasses) =>
         val allowedFeatureClasses = List(
-          DoubleFeature.featureClass,
+          FloatFeature.featureClass,
           IntFeature.featureClass,
           StringFeature.featureClass
         )

@@ -3,7 +3,7 @@ package com.foundaml.server.domain.models.features
 sealed trait TensorFlowFeature {
   val key: String
 }
-case class TensorFlowDoubleFeature(key: String, value: Double)
+case class TensorFlowFloatFeature(key: String, value: Float)
     extends TensorFlowFeature
 case class TensorFlowIntFeature(key: String, value: Int)
     extends TensorFlowFeature

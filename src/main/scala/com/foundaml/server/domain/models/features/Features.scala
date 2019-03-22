@@ -4,11 +4,6 @@ sealed trait Features {
   def data: List[Any]
 }
 
-case class DoubleFeatures(data: List[Double]) extends Features
-object DoubleFeatures {
-  val featuresClass = "DoubleFeatures"
-}
-
 case class FloatFeatures(data: List[Float]) extends Features
 object FloatFeatures {
   val featuresClass = "FloatFeatures"
@@ -31,10 +26,11 @@ object CustomFeatures {
 
 sealed trait CustomFeature
 
-case class DoubleFeature(value: Double) extends CustomFeature
-object DoubleFeature {
-  val featureClass = "DoubleFeature"
+case class FloatFeature(value: Float) extends CustomFeature
+object FloatFeature {
+  val featureClass = "FloatFeature"
 }
+
 case class IntFeature(value: Int) extends CustomFeature
 object IntFeature {
   val featureClass = "IntFeature"

@@ -62,7 +62,7 @@ class PredictionsServiceSpec
       List(
         StringFeature("test instance"),
         IntFeature(1),
-        DoubleFeature(0.5f)
+        FloatFeature(0.5f)
       )
     )
 

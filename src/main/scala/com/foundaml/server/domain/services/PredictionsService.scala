@@ -204,7 +204,7 @@ class PredictionsService(
     featuresClasses
       .zip(customFeatures)
       .map {
-        case (DoubleFeature.featureClass, DoubleFeature(_)) => true
+        case (FloatFeature.featureClass, FloatFeature(_)) => true
         case (IntFeature.featureClass, IntFeature(_)) => true
         case (StringFeature.featureClass, StringFeature(_)) => true
         case _ => false
@@ -218,8 +218,6 @@ class PredictionsService(
       features: Features
   ): Boolean = {
     lazy val typeCheck = expectedFeaturesClass match {
-      case DoubleFeatures.featuresClass =>
-        features.data.count(_.isInstanceOf[Double]) == features.data.size
       case FloatFeatures.featuresClass =>
         features.data.count(_.isInstanceOf[Float]) == features.data.size
       case IntFeatures.featuresClass =>
