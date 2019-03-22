@@ -29,17 +29,19 @@ FoundaML supports a set of generic features that you can combine to build any al
 
 ### Algorithms
 
-An algorithm is code, running on another instance, that compute values from data. Algorithms in the same project will work on the same data, that can be reprocessed in a pre processing pipeline ([An example with Tensorflow Transform](https://github.com/tensorflow/transform))
+An algorithm is code, running on another instance, that computes values from data. Algorithms in the same project will work on the same data. if necessary, they can reprocess  it in a pre processing pipeline ([An example with Tensorflow Transform](https://github.com/tensorflow/transform)). This can be useful if you need to normalize your data or you need to try different word embeddings on your  NLP problem.
+
+
 FoundaML can implement various backends. Currently, FoundaML supports the following APIs.
 
 * TensorFlow Serving API
 
-To perform the transformation from the project features to the algorithm input features, FoundaML requires features transformers. The same operation is required when converting the algorithm labels to the project labels, using label transformers.
+To perform the transformation from the project features to the algorithm input features, FoundaML needs **features transformers**. The same operation is required when converting the algorithm labels to the project labels, using **label transformers**.
 
 
 ### Predictions
 
-A prediction belongs to a project. The algorithm that is executed depends on the project policy. You can choose between various policies available.
+A prediction belongs to a project and an algorithm. The algorithm that is executed depends on the project policy (if not specified explicitely by the client). You can choose between various policies available.
 
 * **No Algorithm** (By default, a project will deny predictions until an algorithm is created)
 * **DefaultAlgorithm** means executing the same algorithm all the time
@@ -48,3 +50,5 @@ A prediction belongs to a project. The algorithm that is executed depends on the
 
 ### Examples
 Each prediction comes with a set of urls that allow you to tag it as correct or incorrect. This will help you generate a labeled dataset as well as evaluate your algorithm in real time.
+
+Let's now move on to the [Titanic Example](https://foundaml.github.io/server/the_titanic.html)
