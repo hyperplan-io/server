@@ -17,7 +17,7 @@ FoundaML has four key concepts.
 A project is a set of algorithms working on the same data. 
 The principle here is that you can compare and switch algorithms only if they operate on the same data.
 
-When you use FoundaML, you begin by defining your project, the data that it will work on and the objective it will pursue. For the moment, FoundaML supports the following types of problems.
+When you use FoundaML, you begin by defining your project with the data that it will work on and the objective it will pursue. For the moment, FoundaML supports the following types of problems.
 
 * Classification
 
