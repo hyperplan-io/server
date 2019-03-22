@@ -1,0 +1,183 @@
+{
+	"info": {
+		"_postman_id": "e6116266-be39-4b15-b21c-0b6f8471e72c",
+		"name": "Foundaml",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Create a project (Custom Features)",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"id\": \"kaggle-titanic\",\n    \"name\": \"Kaggle Titanic\",\n    \"configuration\": {\n        \"problem\": {\n            \"class\": \"Classification\"\n        },\n        \"features\": {\n        \t\"featuresClasses\": [\n        \t\t{\n        \t\t\t\"name\": \"passengerId\",\n        \t\t\t\"type\": \"Int\",\n        \t\t\t\"description\": \"The unique identifier of the passenger\"\n        \t\t},\n        \t\t{\n        \t\t\t\"name\": \"pClass\",\n        \t\t\t\"type\": \"Int\",\n        \t\t\t\"description\": \"Class of travel\"\n        \t\t},\n        \t\t{\n        \t\t\t\"name\": \"name\",\n        \t\t\t\"type\": \"String\",\n        \t\t\t\"description\": \"Name of passenger\"\n        \t\t},\n        \t\t{\n        \t\t\t\"name\": \"sex\",\n        \t\t\t\"type\": \"String\",\n        \t\t\t\"description\": \"Gender\"\n        \t\t},\n        \t\t{\n        \t\t\t\"name\": \"age\",\n        \t\t\t\"type\": \"Int\",\n        \t\t\t\"description\": \"Age\"\n        \t\t},\n        \t\t{\n        \t\t\t\"name\": \"sibSp\",\n        \t\t\t\"type\": \"Int\",\n        \t\t\t\"description\": \"Number of Sibling/Spouse aboard\"\n        \t\t},\n        \t\t{\n        \t\t\t\"name\": \"pArch\",\n        \t\t\t\"type\": \"Int\",\n        \t\t\t\"description\": \"Number of Parent/Child aboard\"\n        \t\t},\n        \t\t{\n        \t\t\t\"name\": \"ticket\",\n        \t\t\t\"type\": \"String\",\n        \t\t\t\"description\": \"The ticket identifier\"\n        \t\t},\n        \t\t{\n        \t\t\t\"name\": \"fare\",\n        \t\t\t\"type\": \"Float\",\n        \t\t\t\"description\": \"Which fare\"\n        \t\t},\n        \t\t{\n        \t\t\t\"name\": \"cabin\",\n        \t\t     \"type\": \"String\",\n        \t\t\t\"description\": \"Which cabin\"\n        \t\t},\n        \t\t\t{\n        \t\t\t\"name\": \"embarked\",\n        \t\t\t\"type\": \"String\",\n        \t\t\t\"description\": \"The port in which a passenger has embarked. C - Cherbourg, S - Southampton, Q = Queenstown\"\n        \t\t}\n        \t]\n        },\n        \"labels\": [\n            \"survived\",\n            \"notSurvived\"\n        ]\n    }\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/projects/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"projects",
+						""
+					]
+				},
+				"description": "A project abstracts multiples algorithms that work on the same data"
+			},
+			"response": []
+		},
+		{
+			"name": "Get a project",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"toto\",\n    \"problem\": \"Classification\",\n    \"featureType\": \"tf.cl1\",\n    \"labelType\": \"tf.cl1\"\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/projects/bitcoin-buyer",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"projects",
+						"bitcoin-buyer"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create an algorithm",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"id\": \"tf-kaggle-titanic-1\",\n\t\"projectId\": \"kaggle-titanic\",\n\t\"backend\": {\n\t\t\"class\": \"TensorFlowBackend\",\n\t\t\"host\": \"127.0.0.1\",\n\t\t\"port\": 3000,\n\t\t\"featuresTransformer\": {\n\t\t\t\"signatureName\": \"\",\n\t\t\t\"fields\": [\n\t\t\t\t\"passenger_id\",\n\t\t\t\t\"p_class\",\n\t\t\t\t\"name\",\n\t\t\t\t\"sex\",\n\t\t\t\t\"age\",\n\t\t\t\t\"sib_sp\",\n\t\t\t\t\"p_arch\",\n\t\t\t\t\"ticket\",\n\t\t\t\t\"fare\",\n\t\t\t\t\"cabin\",\n\t\t\t\t\"embarked\"\n\t\t\t]\n\t\t},\n\t\t\"labelsTransformer\": {\n\t\t\t\"fields\": {\n\t\t\t\t\"survived\": \"survived\",\n\t\t\t\t\"did_not_survived\": \"notSurvived\"\n\t\t\t}\n\t\t}\n\t}\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/algorithms/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"algorithms",
+						""
+					]
+				},
+				"description": "Any type of algorithm (heuristic or machine learning) hosted somewhere that is compatible with the backend api (Currently only TensorFlow Serving)"
+			},
+			"response": []
+		},
+		{
+			"name": "Create a prediction",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"projectId\": \"kaggle-titanic\",\n\t\"algorithmId\": \"tf-kaggle-titanic-1\",\n\t\"features\": {\n\t\t\"class\": \"CustomFeatures\",\n\t\t\"data\": [\n\t\t\t1,\n\t\t\t3,\n\t\t\t\"Braund Mr. Owen Harris\",\n\t\t\t\"male\",\n\t\t\t22,\n\t\t\t1,\n\t\t\t0,\n\t\t\t\"A/5 21171\",\n\t\t\t\"7.25\",\n\t\t\t\"\",\n\t\t\t\"S\"\n\t\t]\n\t}\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/predictions",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"predictions"
+					]
+				},
+				"description": "A prediction is the result of the execution of an algorithm on data"
+			},
+			"response": []
+		},
+		{
+			"name": "Create an example",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"name": "Content-Type",
+						"type": "text",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n\t\"projectId\": \"my-algorithm\",\n\t\"algorithmId\": \"tensorflow-1\",\n\t\"features\": {\n\t\t\"class\": \"DoubleFeatures\",\n\t\t\"features\": [\n\t\t\t0.0,\n\t\t\t0.0,\n\t\t\t0.0,\n\t\t\t0.0,\n\t\t\t0.0,\n\t\t\t0.0,\n\t\t\t0.0,\n\t\t\t0.0,\n\t\t\t0.0,\n\t\t\t0.0\n\t\t]\n\t}\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/examples?predictionId=0de20afd-23aa-400f-a5a3-144af26d1e70&labelId=a9055554-af35-49df-a135-dfa1c2f1303b&isCorrect=true",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"examples"
+					],
+					"query": [
+						{
+							"key": "predictionId",
+							"value": "0de20afd-23aa-400f-a5a3-144af26d1e70"
+						},
+						{
+							"key": "labelId",
+							"value": "a9055554-af35-49df-a135-dfa1c2f1303b"
+						},
+						{
+							"key": "isCorrect",
+							"value": "true"
+						}
+					]
+				},
+				"description": "A prediction is the result of the execution of an algorithm on data"
+			},
+			"response": []
+		}
+	]
+}
