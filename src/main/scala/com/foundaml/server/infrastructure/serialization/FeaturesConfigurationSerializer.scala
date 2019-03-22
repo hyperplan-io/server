@@ -1,10 +1,12 @@
 package com.foundaml.server.infrastructure.serialization
 
 import com.foundaml.server.domain.models.{
+  CustomFeatureConfiguration,
   CustomFeaturesConfiguration,
   FeaturesConfiguration,
   StandardFeaturesConfiguration
 }
+import io.circe.{HCursor, Json}
 import io.circe.parser.decode
 
 /**
@@ -16,10 +18,23 @@ object FeaturesConfigurationSerializer {
   import io.circe.{Decoder, Encoder}, io.circe.generic.auto._
   import io.circe.syntax._
 
-  implicit val customFeaturesEncoder =
-    CustomFeatureConfigurationSerializer.encoder
-  implicit val customFeaturesDecoder =
-    CustomFeatureConfigurationSerializer.decoder
+  implicit val customFeaturesEncoder: Encoder[CustomFeatureConfiguration] =
+    (a: CustomFeatureConfiguration) =>
+      Json.obj(
+        ("name", Json.fromString(a.name)),
+        ("type", Json.fromString(a.featuresType)),
+        ("description", Json.fromString(a.description))
+      )
+
+  implicit val customFeaturesDecoder: Decoder[CustomFeatureConfiguration] =
+    (c: HCursor) =>
+      for {
+        name <- c.downField("name").as[String]
+        featuresType <- c.downField("type").as[String]
+        description <- c.downField("description").as[String]
+      } yield {
+        CustomFeatureConfiguration(name, featuresType, description)
+      }
 
   implicit val encoder: Encoder[FeaturesConfiguration] = Encoder.instance {
     case foo @ StandardFeaturesConfiguration(_, _, _) => foo.asJson

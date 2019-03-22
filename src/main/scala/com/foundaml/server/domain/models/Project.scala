@@ -10,7 +10,7 @@ case class StandardFeaturesConfiguration(
 
 case class CustomFeatureConfiguration(
     name: String,
-    featureClass: String,
+    featuresType: String,
     description: String
 )
 

@@ -188,7 +188,7 @@ class PredictionsService(
       features match {
         case CustomFeatures(customFeatures) =>
           validateCustomFeatures(
-            featuresClasses.map(_.featureClass),
+            featuresClasses.map(_.featuresType),
             customFeatures
           )
         case _ =>

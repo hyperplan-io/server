@@ -47,7 +47,7 @@ class ProjectsService(
         )
         if (featuresClasses.count(
             featureClass =>
-              allowedFeatureClasses.contains(featureClass.featureClass)
+              allowedFeatureClasses.contains(featureClass.featuresType)
           ) == featuresClasses.size) {
           None
         } else {
