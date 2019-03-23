@@ -1,6 +1,9 @@
 package com.foundaml.server.infrastructure.serialization
 
-import com.foundaml.server.domain.models.{FeatureConfiguration, FeaturesConfiguration}
+import com.foundaml.server.domain.models.{
+  FeatureConfiguration,
+  FeaturesConfiguration
+}
 import io.circe
 import io.circe.{HCursor, Json}
 import io.circe.parser._
@@ -33,16 +36,20 @@ object FeaturesConfigurationSerializer {
         FeatureConfiguration(name, featuresType, description)
       }
 
-
   implicit val decoder: Decoder[FeaturesConfiguration] =
     (c: HCursor) => {
-      c.as[List[FeatureConfiguration]](Decoder.decodeList[FeatureConfiguration](customFeatureDecoder))
-        .map (featureConfigurationList => FeaturesConfiguration(featureConfigurationList))
+      c.as[List[FeatureConfiguration]](
+          Decoder.decodeList[FeatureConfiguration](customFeatureDecoder)
+        )
+        .map(
+          featureConfigurationList =>
+            FeaturesConfiguration(featureConfigurationList)
+        )
     }
 
   implicit val encoder: Encoder[FeaturesConfiguration] =
-    (a: FeaturesConfiguration) => Json.arr(a.configuration.map(customFeatureEncoder.apply): _*)
-
+    (a: FeaturesConfiguration) =>
+      Json.arr(a.configuration.map(customFeatureEncoder.apply): _*)
 
   def encodeJson(featuresConfiguration: FeaturesConfiguration): String = {
     featuresConfiguration.asJson.noSpaces

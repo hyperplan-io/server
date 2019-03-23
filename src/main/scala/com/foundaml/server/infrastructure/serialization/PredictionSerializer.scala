@@ -3,7 +3,7 @@ package com.foundaml.server.infrastructure.serialization
 import io.circe.parser.decode
 import io.circe.syntax._
 import com.foundaml.server.domain.models.{Examples, Prediction}
-import com.foundaml.server.domain.models.features.Features
+import com.foundaml.server.domain.models.features.Features.Features
 import com.foundaml.server.domain.models.labels.Labels
 
 object PredictionSerializer {

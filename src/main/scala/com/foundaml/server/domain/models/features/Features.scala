@@ -1,7 +1,8 @@
 package com.foundaml.server.domain.models.features
 
-case class Features(data: List[Feature])
-
+object Features {
+  type Features = List[Feature]
+}
 
 sealed trait Feature
 

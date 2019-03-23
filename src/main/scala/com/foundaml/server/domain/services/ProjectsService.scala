@@ -3,7 +3,12 @@ package com.foundaml.server.domain.services
 import com.foundaml.server.application.controllers.requests.PostProjectRequest
 import com.foundaml.server.domain.factories.ProjectFactory
 import com.foundaml.server.domain.models._
-import com.foundaml.server.domain.models.errors.{FeaturesConfigurationError, InvalidArgument, InvalidProjectIdentifier, ProjectError}
+import com.foundaml.server.domain.models.errors.{
+  FeaturesConfigurationError,
+  InvalidArgument,
+  InvalidProjectIdentifier,
+  ProjectError
+}
 import com.foundaml.server.domain.models.features._
 import com.foundaml.server.domain.repositories.ProjectsRepository
 import scalaz.zio.{Task, ZIO}
@@ -18,11 +23,17 @@ class ProjectsService(
     if (input.matches(regex)) {
       Nil
     } else {
-      List(InvalidProjectIdentifier(s"$input is not an alphanumerical id. It should satisfy the following regular expression: $regex"))
+      List(
+        InvalidProjectIdentifier(
+          s"$input is not an alphanumerical id. It should satisfy the following regular expression: $regex"
+        )
+      )
     }
   }
 
-  def validateFeatureClasses(featuresConfiguration: FeaturesConfiguration): List[ProjectError] =
+  def validateFeatureClasses(
+      featuresConfiguration: FeaturesConfiguration
+  ): List[ProjectError] =
     featuresConfiguration match {
       case FeaturesConfiguration(featureConfigurations) =>
         val allowedFeatureClasses = List(
@@ -35,10 +46,14 @@ class ProjectsService(
         )
 
         featureConfigurations.flatMap { featureConfiguration =>
-          if(allowedFeatureClasses.contains(featureConfiguration.featuresType)) {
+          if (allowedFeatureClasses.contains(featureConfiguration.featuresType)) {
             None
           } else {
-            Some(FeaturesConfigurationError(s"${featureConfiguration.featuresType} is not an accepted type for feature ${featureConfiguration.name}"))
+            Some(
+              FeaturesConfigurationError(
+                s"${featureConfiguration.featuresType} is not an accepted type for feature ${featureConfiguration.name}"
+              )
+            )
           }
         }
     }
@@ -72,7 +87,7 @@ class ProjectsService(
     for {
       _ <- errors.headOption.fold[Task[Unit]](
         Task.succeed(Unit)
-      ) (
+      )(
         err => Task.fail(err)
       )
       _ <- projectsRepository.insert(project)

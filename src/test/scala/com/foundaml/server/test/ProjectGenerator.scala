@@ -4,7 +4,10 @@ import java.util.UUID
 
 import com.foundaml.server.domain.models
 import com.foundaml.server.domain.models._
-import com.foundaml.server.domain.models.features.{CustomFeatures, StringFeature, StringFeatures}
+import com.foundaml.server.domain.models.features.{
+  StringFeature,
+  StringFeatures
+}
 import com.foundaml.server.domain.models.labels.Labels
 
 object ProjectGenerator {
@@ -38,7 +41,7 @@ object ProjectGenerator {
   val projectId = UUID.randomUUID().toString
   val defaultAlgorithmId = "algorithm id"
 
-  def withLocalBackend() = Project(
+  def withLocalBackend(algorithms: Option[List[Algorithm]] = None) = Project(
     projectId,
     "example project",
     ProjectConfiguration(
@@ -58,7 +61,7 @@ object ProjectGenerator {
         "class3"
       )
     ),
-    Nil,
+    algorithms.getOrElse(List(AlgorithmGenerator.withLocalBackend())),
     DefaultAlgorithm(defaultAlgorithmId)
   )
 }

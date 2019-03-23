@@ -10,6 +10,7 @@ import scalaz.zio.interop.catz._
 import com.foundaml.server.domain.models._
 import com.foundaml.server.domain.models.backends._
 import com.foundaml.server.domain.models.errors._
+import com.foundaml.server.domain.models.features.Features.Features
 import com.foundaml.server.domain.models.features._
 import com.foundaml.server.domain.models.labels._
 import com.foundaml.server.domain.models.labels.transformers.TensorFlowLabels
@@ -181,12 +182,21 @@ class PredictionsService(
       features: Features
   ) = featuresConfiguration match {
     case FeaturesConfiguration(
-        featuresClasses: List[FeatureConfiguration]
+        featuresConfigList: List[FeatureConfiguration]
         ) =>
-      validateCustomFeatures(
-        featuresClasses.map(_.featuresType),
-        features.data
-      )
+      lazy val sameSize = features.size == featuresConfigList.size
+      lazy val sameClasses = featuresConfigList
+        .map(_.featuresType)
+        .zip(features)
+        .map {
+          case (FloatFeature.featureClass, FloatFeature(_)) => true
+          case (IntFeature.featureClass, IntFeature(_)) => true
+          case (StringFeature.featureClass, StringFeature(_)) => true
+          case _ => false
+        }
+        .reduce(_ & _)
+
+      sameSize && sameClasses
   }
 
   def validateCustomFeatures(

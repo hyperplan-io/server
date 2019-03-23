@@ -2,7 +2,7 @@ package com.foundaml.server.test.infrastructure
 
 import java.util.UUID
 
-import com.foundaml.server.domain.models.features.FloatFeatures
+import com.foundaml.server.domain.models.features.{FloatFeature, FloatFeatures}
 import com.foundaml.server.domain.models.labels.{ClassificationLabel, Labels}
 import com.foundaml.server.domain.models.{Examples, Prediction}
 import com.foundaml.server.infrastructure.serialization.PredictionSerializer
@@ -28,12 +28,10 @@ class PredictionSerializerSpec
       predictionId,
       projectId,
       algorithmId,
-      FloatFeatures(
-        List(
-          0.0f,
-          0.1f,
-          0.5f
-        )
+      List(
+        FloatFeature(0.0f),
+        FloatFeature(0.0f),
+        FloatFeature(0.5f)
       ),
       Labels(
         Set(
@@ -50,8 +48,9 @@ class PredictionSerializerSpec
     )
 
     testEncoder(prediction) { json =>
+      println(json.noSpaces)
       val expectedJson =
-        s"""{"id":"$predictionId","projectId":"$projectId","algorithmId":"$algorithmId","features":{"data":[0.0,0.1,0.5],"class":"FloatFeatures"},"labels":{"labels":[{"id":"$labelId","label":"","probability":0.5,"correctExampleUrl":"correct_example_url","incorrectExampleUrl":"incorrect_example_url","class":"ClassificationLabel"}]},"examples":[]}"""
+        s"""{"id":"$predictionId","projectId":"$projectId","algorithmId":"$algorithmId","features":[0.0,0.0,0.5],"labels":{"labels":[{"id":"$labelId","label":"","probability":0.5,"correctExampleUrl":"correct_example_url","incorrectExampleUrl":"incorrect_example_url","class":"ClassificationLabel"}]},"examples":[]}"""
       json.noSpaces should be(expectedJson)
     }(encoder)
   }
@@ -63,7 +62,7 @@ class PredictionSerializerSpec
     val projectId = "test-project-decode"
     val algorithmId = "test-algorithm-decode"
     val predictionJson =
-      s"""{"id":"$predictionId","projectId":"$projectId","algorithmId":"$algorithmId","features":{"data":[0.0,0.1,0.5],"class":"FloatFeatures"},"labels":{"labels":[{"id":"$labelId","label":"","probability":0.5,"correctExampleUrl":"correct_example_url","incorrectExampleUrl":"incorrect_example_url","class":"ClassificationLabel"}]},"examples":[]}"""
+      s"""{"id":"$predictionId","projectId":"$projectId","algorithmId":"$algorithmId","features":[0.0,0.2,0.5],"labels":{"labels":[{"id":"$labelId","label":"","probability":0.5,"correctExampleUrl":"correct_example_url","incorrectExampleUrl":"incorrect_example_url","class":"ClassificationLabel"}]},"examples":[]}"""
     testDecoder[Prediction](predictionJson) { prediction =>
       prediction.id should be(predictionId)
       prediction.labels.labels.head.id should be(labelId)

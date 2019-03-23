@@ -1,5 +1,6 @@
 package com.foundaml.server.domain.models.features.transformers
 
+import com.foundaml.server.domain.models.features.Features.Features
 import com.foundaml.server.domain.models.features._
 
 case class TensorFlowFeaturesTransformer(
@@ -10,9 +11,9 @@ case class TensorFlowFeaturesTransformer(
   def transform(
       features: Features
   ): Either[Throwable, TensorFlowClassificationFeatures] = {
-    if (features.data.size == fields.size) {
+    if (features.size == fields.size) {
 
-      val examples = features.data.zip(fields).map {
+      val examples = features.zip(fields).map {
         case (FloatFeature(value), field) =>
           TensorFlowFloatFeature(field, value)
         case (IntFeature(value), field) =>

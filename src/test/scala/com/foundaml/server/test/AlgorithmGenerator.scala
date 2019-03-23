@@ -40,9 +40,9 @@ object AlgorithmGenerator {
     "test project id"
   )
 
-  def withLocalBackend() =
+  def withLocalBackend(algorithmId: Option[String] = None) =
     Algorithm(
-      UUID.randomUUID().toString,
+      algorithmId.getOrElse(UUID.randomUUID().toString),
       Local(computed),
       UUID.randomUUID().toString
     )

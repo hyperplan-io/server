@@ -1,5 +1,6 @@
 package com.foundaml.server.infrastructure.serialization
 
+import com.foundaml.server.domain.models.features.Features.Features
 import io.circe.Encoder
 import io.circe._
 import io.circe.parser.decode
@@ -10,6 +11,7 @@ import io.circe.Decoder.Result
 object FeaturesSerializer {
 
   object FeatureSerializer {
+
     import io.circe.generic.semiauto._
 
     implicit val floatEncoder: Encoder[FloatFeature] = deriveEncoder
@@ -20,6 +22,15 @@ object FeaturesSerializer {
 
     implicit val stringEncoder: Encoder[StringFeature] = deriveEncoder
     implicit val stringDecoder: Decoder[StringFeature] = deriveDecoder
+
+    implicit val intVectorEncoder: Encoder[IntFeatures] = deriveEncoder
+    implicit val intVectorDecoder: Decoder[IntFeatures] = deriveDecoder
+
+    implicit val floatVectorEncoder: Encoder[FloatFeatures] = deriveEncoder
+    implicit val floatVectorDecoder: Decoder[FloatFeatures] = deriveDecoder
+
+    implicit val stringVectorEncoder: Encoder[StringFeatures] = deriveEncoder
+    implicit val stringVectorDecoder: Decoder[StringFeatures] = deriveDecoder
 
     implicit val featureEncoder: Encoder[Feature] = {
       case FloatFeature(value) => Json.fromDoubleOrNull(value)
@@ -40,21 +51,23 @@ object FeaturesSerializer {
     }
 
     implicit val featureDecoder: Decoder[Feature] = (c: HCursor) => {
-      if(c.value.isArray) {
+      if (c.value.isArray) {
         c.value.asArray.fold[Decoder.Result[Feature]](
           Decoder.failedWithMessage[Feature]("features key is not an array")(c)
-        ) (
-          jsonArr => jsonArr.headOption.fold[Decoder.Result[Feature]](
-            Decoder.failedWithMessage[Feature]("features array is empty")(c)
-          ) (
-            head => parseFeature(head.hcursor)
-          )
+        )(
+          jsonArr =>
+            jsonArr.headOption.fold[Decoder.Result[Feature]](
+              Decoder.failedWithMessage[Feature]("features array is empty")(c)
+            )(
+              head => parseFeature(head.hcursor)
+            )
         )
       } else {
         parseFeature(c)
       }
 
     }
+
   }
 
   object Implicits {
@@ -66,8 +79,10 @@ object FeaturesSerializer {
     implicit val discriminator: Configuration =
       Configuration.default.withDiscriminator("class")
 
-    implicit val encoder: Encoder[Features] = deriveEncoder
-    implicit val decoder: Decoder[Features] = deriveDecoder
+    implicit val decoder: Decoder[List[Feature]] =
+      Decoder.decodeList[Feature](featureDecoder)
+    implicit val encoder: Encoder[List[Feature]] =
+      Encoder.encodeList[Feature](featureEncoder)
   }
 
   import Implicits._
