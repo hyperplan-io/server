@@ -192,26 +192,15 @@ class PredictionsService(
           case (FloatFeature.featureClass, FloatFeature(_)) => true
           case (IntFeature.featureClass, IntFeature(_)) => true
           case (StringFeature.featureClass, StringFeature(_)) => true
+          case (FloatVectorFeature.featureClass, FloatVectorFeature(_)) => true
+          case (IntVectorFeature.featureClass, IntVectorFeature(_)) => true
+          case (StringVectorFeature.featureClass, StringVectorFeature(_)) =>
+            true
           case _ => false
         }
         .reduce(_ & _)
 
       sameSize && sameClasses
-  }
-
-  def validateCustomFeatures(
-      featuresClasses: List[String],
-      customFeatures: List[Feature]
-  ) = {
-    featuresClasses
-      .zip(customFeatures)
-      .map {
-        case (FloatFeature.featureClass, FloatFeature(_)) => true
-        case (IntFeature.featureClass, IntFeature(_)) => true
-        case (StringFeature.featureClass, StringFeature(_)) => true
-        case _ => false
-      }
-      .reduce(_ & _)
   }
 
   def validateLabels(

@@ -24,6 +24,12 @@ object TensorFlowFeaturesSerializer {
             Some(key -> Json.fromInt(value))
           case TensorFlowStringFeature(key, value) =>
             Some(key -> Json.fromString(value))
+          case TensorFlowFloatVectorFeature(key, values) =>
+            Some(key -> Json.fromValues(values.flatMap(Json.fromFloat)))
+          case TensorFlowIntVectorFeature(key, values) =>
+            Some(key -> Json.fromValues(values.map(Json.fromInt)))
+          case TensorFlowStringVectorFeature(key, values) =>
+            Some(key -> Json.fromValues(values.map(Json.fromString)))
         })))
       )
 

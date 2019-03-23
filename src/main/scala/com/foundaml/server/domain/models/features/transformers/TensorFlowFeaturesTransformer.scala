@@ -20,6 +20,12 @@ case class TensorFlowFeaturesTransformer(
           TensorFlowIntFeature(field, value)
         case (StringFeature(value), field) =>
           TensorFlowStringFeature(field, value)
+        case (FloatVectorFeature(value), field) =>
+          TensorFlowFloatVectorFeature(field, value)
+        case (IntVectorFeature(value), field) =>
+          TensorFlowIntVectorFeature(field, value)
+        case (StringVectorFeature(value), field) =>
+          TensorFlowStringVectorFeature(field, value)
       }
 
       Right(TensorFlowClassificationFeatures(signatureName, examples))

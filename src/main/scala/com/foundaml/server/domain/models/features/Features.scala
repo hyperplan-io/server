@@ -6,19 +6,19 @@ object Features {
 
 sealed trait Feature
 
-case class FloatFeatures(data: List[Float]) extends Feature
-object FloatFeatures {
-  val featuresClass = "FloatVector"
+case class FloatVectorFeature(data: List[Float]) extends Feature
+object FloatVectorFeature {
+  val featureClass = "FloatVector"
 }
 
-case class IntFeatures(data: List[Int]) extends Feature
-object IntFeatures {
-  val featuresClass = "IntVector"
+case class IntVectorFeature(data: List[Int]) extends Feature
+object IntVectorFeature {
+  val featureClass = "IntVector"
 }
 
-case class StringFeatures(data: List[String]) extends Feature
-object StringFeatures {
-  val featuresClass = "StringVector"
+case class StringVectorFeature(data: List[String]) extends Feature
+object StringVectorFeature {
+  val featureClass = "StringVector"
 }
 
 case class FloatFeature(value: Float) extends Feature

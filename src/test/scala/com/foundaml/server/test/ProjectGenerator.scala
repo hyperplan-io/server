@@ -6,7 +6,7 @@ import com.foundaml.server.domain.models
 import com.foundaml.server.domain.models._
 import com.foundaml.server.domain.models.features.{
   StringFeature,
-  StringFeatures
+  StringVectorFeature
 }
 import com.foundaml.server.domain.models.labels.Labels
 
