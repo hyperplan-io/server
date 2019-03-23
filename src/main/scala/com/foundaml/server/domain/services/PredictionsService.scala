@@ -277,7 +277,7 @@ class PredictionsService(
       prediction.labels.labels
         .find(_.id == labelId)
         .fold[Task[Label]](
-          Task.fail(NotFound(s"The label $labelId does not exist"))
+          Task.fail(LabelNotFound(labelId))
         )(
           label => {
             val examples = prediction.examples + label.id

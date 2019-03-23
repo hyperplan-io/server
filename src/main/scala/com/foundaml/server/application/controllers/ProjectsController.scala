@@ -4,7 +4,8 @@ import cats.Functor
 import com.foundaml.server.application.controllers.requests._
 import com.foundaml.server.domain.models.errors.{
   FeaturesConfigurationError,
-  InvalidProjectIdentifier
+  InvalidProjectIdentifier,
+  ProjectNotFound
 }
 import com.foundaml.server.domain.services.ProjectsService
 import com.foundaml.server.infrastructure.serialization._
@@ -36,7 +37,7 @@ class ProjectsController(
           )
         } yield project)
           .flatMap { project =>
-            Ok(ProjectSerializer.encodeJson(project))
+            Created(ProjectSerializer.encodeJson(project))
           }
           .catchAll {
             case InvalidProjectIdentifier(message) =>
@@ -48,13 +49,19 @@ class ProjectsController(
           }
 
       case GET -> Root / projectId =>
-        projectsService.readProject(projectId).flatMap { project =>
-          Ok(
-            ProjectSerializer.encodeJson(
-              project
+        projectsService
+          .readProject(projectId)
+          .flatMap { project =>
+            Ok(
+              ProjectSerializer.encodeJson(
+                project
+              )
             )
-          )
-        }
+          }
+          .catchAll {
+            case ProjectNotFound(_) =>
+              NotFound(s"The project $projectId does not exist")
+          }
     }
   }
 

@@ -1,6 +1,9 @@
 package com.foundaml.server.domain.factories
 
-import com.foundaml.server.domain.models.errors.FactoryException
+import com.foundaml.server.domain.models.errors.{
+  FactoryException,
+  ProjectNotFound
+}
 import com.foundaml.server.domain.models.{Project, ProjectConfiguration}
 import com.foundaml.server.domain.repositories.{
   AlgorithmsRepository,
@@ -40,10 +43,6 @@ class ProjectFactory(
           )
         )
       case _ =>
-        Task.fail(
-          FactoryException(
-            s"could not build project $projectId because of a SQL error"
-          )
-        )
+        Task.fail(ProjectNotFound(projectId))
     }
 }
