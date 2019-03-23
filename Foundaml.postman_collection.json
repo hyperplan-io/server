@@ -19,7 +19,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"id\": \"kaggle-titanic\",\n    \"name\": \"Kaggle Titanic\",\n    \"configuration\": {\n        \"problem\": {\n            \"class\": \"Classification\"\n        },\n        \"features\": {\n        \t\"featuresClasses\": [\n        \t\t{\n        \t\t\t\"name\": \"passengerId\",\n        \t\t\t\"type\": \"Int\",\n        \t\t\t\"description\": \"The unique identifier of the passenger\"\n        \t\t},\n        \t\t{\n        \t\t\t\"name\": \"pClass\",\n        \t\t\t\"type\": \"Int\",\n        \t\t\t\"description\": \"Class of travel\"\n        \t\t},\n        \t\t{\n        \t\t\t\"name\": \"name\",\n        \t\t\t\"type\": \"String\",\n        \t\t\t\"description\": \"Name of passenger\"\n        \t\t},\n        \t\t{\n        \t\t\t\"name\": \"sex\",\n        \t\t\t\"type\": \"String\",\n        \t\t\t\"description\": \"Gender\"\n        \t\t},\n        \t\t{\n        \t\t\t\"name\": \"age\",\n        \t\t\t\"type\": \"Int\",\n        \t\t\t\"description\": \"Age\"\n        \t\t},\n        \t\t{\n        \t\t\t\"name\": \"sibSp\",\n        \t\t\t\"type\": \"Int\",\n        \t\t\t\"description\": \"Number of Sibling/Spouse aboard\"\n        \t\t},\n        \t\t{\n        \t\t\t\"name\": \"pArch\",\n        \t\t\t\"type\": \"Int\",\n        \t\t\t\"description\": \"Number of Parent/Child aboard\"\n        \t\t},\n        \t\t{\n        \t\t\t\"name\": \"ticket\",\n        \t\t\t\"type\": \"String\",\n        \t\t\t\"description\": \"The ticket identifier\"\n        \t\t},\n        \t\t{\n        \t\t\t\"name\": \"fare\",\n        \t\t\t\"type\": \"Float\",\n        \t\t\t\"description\": \"Which fare\"\n        \t\t},\n        \t\t{\n        \t\t\t\"name\": \"cabin\",\n        \t\t     \"type\": \"String\",\n        \t\t\t\"description\": \"Which cabin\"\n        \t\t},\n        \t\t\t{\n        \t\t\t\"name\": \"embarked\",\n        \t\t\t\"type\": \"String\",\n        \t\t\t\"description\": \"The port in which a passenger has embarked. C - Cherbourg, S - Southampton, Q = Queenstown\"\n        \t\t}\n        \t]\n        },\n        \"labels\": [\n            \"survived\",\n            \"notSurvived\"\n        ]\n    }\n}"
+					"raw": "{\n\t\"id\": \"kaggle-titanic\",\n    \"name\": \"Kaggle Titanic\",\n    \"configuration\": {\n        \"problem\": {\n            \"class\": \"Classification\"\n        },\n        \"features\": [\n        \t\t{\n        \t\t\t\"name\": \"passengerId\",\n        \t\t\t\"type\": \"Int\",\n        \t\t\t\"description\": \"The unique identifier of the passenger\"\n        \t\t},\n        \t\t{\n        \t\t\t\"name\": \"pClass\",\n        \t\t\t\"type\": \"Int\",\n        \t\t\t\"description\": \"Class of travel\"\n        \t\t},\n        \t\t{\n        \t\t\t\"name\": \"name\",\n        \t\t\t\"type\": \"String\",\n        \t\t\t\"description\": \"Name of passenger\"\n        \t\t},\n        \t\t{\n        \t\t\t\"name\": \"sex\",\n        \t\t\t\"type\": \"String\",\n        \t\t\t\"description\": \"Gender\"\n        \t\t},\n        \t\t{\n        \t\t\t\"name\": \"age\",\n        \t\t\t\"type\": \"Int\",\n        \t\t\t\"description\": \"Age\"\n        \t\t},\n        \t\t{\n        \t\t\t\"name\": \"sibSp\",\n        \t\t\t\"type\": \"Int\",\n        \t\t\t\"description\": \"Number of Sibling/Spouse aboard\"\n        \t\t},\n        \t\t{\n        \t\t\t\"name\": \"pArch\",\n        \t\t\t\"type\": \"Int\",\n        \t\t\t\"description\": \"Number of Parent/Child aboard\"\n        \t\t},\n        \t\t{\n        \t\t\t\"name\": \"ticket\",\n        \t\t\t\"type\": \"String\",\n        \t\t\t\"description\": \"The ticket identifier\"\n        \t\t},\n        \t\t{\n        \t\t\t\"name\": \"fare\",\n        \t\t\t\"type\": \"Float\",\n        \t\t\t\"description\": \"Which fare\"\n        \t\t},\n        \t\t{\n        \t\t\t\"name\": \"cabin\",\n        \t\t     \"type\": \"String\",\n        \t\t\t\"description\": \"Which cabin\"\n        \t\t},\n        \t\t\t{\n        \t\t\t\"name\": \"embarked\",\n        \t\t\t\"type\": \"String\",\n        \t\t\t\"description\": \"The port in which a passenger has embarked. C - Cherbourg, S - Southampton, Q = Queenstown\"\n        \t\t}\n        ],\n        \"labels\": [\n            \"survived\",\n            \"notSurvived\"\n        ]\n    }\n}"
 				},
 				"url": {
 					"raw": "http://localhost:8080/projects/",
@@ -57,7 +57,7 @@
 					"raw": "{\n    \"name\": \"toto\",\n    \"problem\": \"Classification\",\n    \"featureType\": \"tf.cl1\",\n    \"labelType\": \"tf.cl1\"\n}"
 				},
 				"url": {
-					"raw": "http://localhost:8080/projects/bitcoin-buyer",
+					"raw": "http://localhost:8080/projects/kaggle-titanic",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -65,7 +65,7 @@
 					"port": "8080",
 					"path": [
 						"projects",
-						"bitcoin-buyer"
+						"kaggle-titanic"
 					]
 				}
 			},
@@ -117,7 +117,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"projectId\": \"kaggle-titanic\",\n\t\"algorithmId\": \"tf-kaggle-titanic-1\",\n\t\"features\": {\n\t\t\"class\": \"CustomFeatures\",\n\t\t\"data\": [\n\t\t\t1,\n\t\t\t3,\n\t\t\t\"Braund Mr. Owen Harris\",\n\t\t\t\"male\",\n\t\t\t22,\n\t\t\t1,\n\t\t\t0,\n\t\t\t\"A/5 21171\",\n\t\t\t\"7.25\",\n\t\t\t\"\",\n\t\t\t\"S\"\n\t\t]\n\t}\n}"
+					"raw": "{\n\t\"projectId\": \"kaggle-titanic\",\n\t\"algorithmId\": \"tf-kaggle-titanic-1\",\n\t\"features\": [\n\t\t1,\n\t\t3,\n\t\t\"Braund Mr. Owen Harris\",\n\t\t\"male\",\n\t\t22,\n\t\t1,\n\t\t0,\n\t\t\"A/5 21171\",\n\t\t7.25,\n\t\t\"\",\n\t\t\"S\"\n\t]\n}"
 				},
 				"url": {
 					"raw": "http://localhost:8080/predictions",
