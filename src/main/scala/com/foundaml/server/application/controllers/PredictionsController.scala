@@ -9,7 +9,10 @@ import scalaz.zio.interop.catz._
 import com.foundaml.server.application.controllers.requests._
 import com.foundaml.server.domain.models.errors._
 import com.foundaml.server.domain.services.PredictionsService
-import com.foundaml.server.infrastructure.serialization.{PredictionRequestEntitySerializer, PredictionSerializer}
+import com.foundaml.server.infrastructure.serialization.{
+  PredictionRequestEntitySerializer,
+  PredictionSerializer
+}
 
 class PredictionsController(
     predictionsService: PredictionsService
