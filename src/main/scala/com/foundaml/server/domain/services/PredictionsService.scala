@@ -151,6 +151,9 @@ class PredictionsService(
                               )
                             )
                         )
+                    }.catchAll {
+                      case _ =>
+                        Task.fail(BackendError("An error occurred with the backend request"))
                     }
                   )
               }
@@ -240,9 +243,7 @@ class PredictionsService(
                   s"project algorithms: ${project.algorithmsMap.toString()}"
                 )
               ) *> Task.fail(
-                InvalidArgument(
-                  s"The algorithm $algorithmId does not exist in the project ${project.id}"
-                )
+                AlgorithmDoesNotExist(algorithmId)
               )
             )(
               algorithm =>

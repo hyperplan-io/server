@@ -11,3 +11,9 @@ case class LabelsValidationFailed(message: String)
 
 case class LabelNotFound(labelId: String)
     extends PredictionError(s"The label $labelId does not exist")
+
+case class AlgorithmDoesNotExist(algorithmId: String)
+  extends PredictionError(s"The algorithm $algorithmId does not exist")
+
+case class BackendError(message: String)
+  extends PredictionError(message)
