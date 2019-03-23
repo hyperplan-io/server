@@ -2,12 +2,6 @@ package com.foundaml.server.domain.models
 
 sealed trait FeaturesConfiguration
 
-case class StandardFeaturesConfiguration(
-    featuresClass: String,
-    featuresSize: Int,
-    description: String
-) extends FeaturesConfiguration
-
 case class CustomFeatureConfiguration(
     name: String,
     featuresType: String,

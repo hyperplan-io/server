@@ -3,7 +3,7 @@ package com.foundaml.server.domain.services
 import com.foundaml.server.application.controllers.requests.PostProjectRequest
 import com.foundaml.server.domain.factories.ProjectFactory
 import com.foundaml.server.domain.models._
-import com.foundaml.server.domain.models.errors.InvalidArgument
+import com.foundaml.server.domain.models.errors.{FeaturesConfigurationError, InvalidArgument, InvalidProjectIdentifier, ProjectError}
 import com.foundaml.server.domain.models.features._
 import com.foundaml.server.domain.repositories.ProjectsRepository
 import scalaz.zio.{Task, ZIO}
@@ -14,50 +14,36 @@ class ProjectsService(
 ) {
 
   val regex = "[0-9a-zA-Z-_]*"
-  def validateAlphaNumerical(input: String): Option[String] = {
+  def validateAlphaNumerical(input: String): List[ProjectError] = {
     if (input.matches(regex)) {
-      None
+      Nil
     } else {
-      Some(s"The identifier $input is not alphanumerical")
+      List(InvalidProjectIdentifier(s"$input is not an alphanumerical id. It should satisfy the following regular expression: $regex"))
     }
   }
 
-  def validateFeatureClasses(featuresConfiguration: FeaturesConfiguration) =
+  def validateFeatureClasses(featuresConfiguration: FeaturesConfiguration): List[ProjectError] =
     featuresConfiguration match {
-      case StandardFeaturesConfiguration(
-          featuresClass,
-          featuresSize,
-          description
-          ) =>
-        val allowedFeaturesClass = List(
+      case CustomFeaturesConfiguration(featureConfigurations) =>
+        val allowedFeatureClasses = List(
+          FloatFeature.featureClass,
+          IntFeature.featureClass,
+          StringFeature.featureClass,
           FloatFeatures.featuresClass,
           IntFeatures.featuresClass,
           StringFeatures.featuresClass
         )
-        if (allowedFeaturesClass.contains(featuresClass)) {
-          None
-        } else {
-          Some("The feature you specified is not supported or does not exist")
-        }
-      case CustomFeaturesConfiguration(featuresClasses) =>
-        val allowedFeatureClasses = List(
-          FloatFeature.featureClass,
-          IntFeature.featureClass,
-          StringFeature.featureClass
-        )
-        if (featuresClasses.count(
-            featureClass =>
-              allowedFeatureClasses.contains(featureClass.featuresType)
-          ) == featuresClasses.size) {
-          None
-        } else {
-          Some(
-            "Some of the features you specified are not supported or do not exist"
-          )
+
+        featureConfigurations.flatMap { featureConfiguration =>
+          if(allowedFeatureClasses.contains(featureConfiguration.featuresType)) {
+            None
+          } else {
+            Some(FeaturesConfigurationError(s"${featureConfiguration.featuresType} is not an accepted type for feature ${featureConfiguration.name}"))
+          }
         }
     }
 
-  def validateProject(project: Project): List[String] = {
+  def validateProject(project: Project): List[ProjectError] = {
     List(
       validateAlphaNumerical(project.id),
       validateFeatureClasses(project.configuration.features)
@@ -84,17 +70,11 @@ class ProjectsService(
     )
     val errors = validateProject(project)
     for {
-      _ <- if (errors.isEmpty) {
-        Task(Unit)
-      } else {
-        Task.fail(
-          InvalidArgument(
-            errors.mkString(
-              s"The following errors occurred: ${errors.mkString(", ")}"
-            )
-          )
-        )
-      }
+      _ <- errors.headOption.fold[Task[Unit]](
+        Task.succeed(Unit)
+      ) (
+        err => Task.fail(err)
+      )
       _ <- projectsRepository.insert(project)
     } yield project
   }

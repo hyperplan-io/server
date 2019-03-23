@@ -180,8 +180,6 @@ class PredictionsService(
       featuresConfiguration: FeaturesConfiguration,
       features: Features
   ) = featuresConfiguration match {
-    case StandardFeaturesConfiguration(featureClass, featuresSize, _) =>
-      validateStandardFeatures(featureClass, featuresSize, features)
     case CustomFeaturesConfiguration(
         featuresClasses: List[CustomFeatureConfiguration]
         ) =>
