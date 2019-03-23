@@ -8,7 +8,7 @@ import com.foundaml.server.application.controllers.requests.{
   PostProjectConfiguration,
   PostProjectRequest
 }
-import com.foundaml.server.domain.models.ProblemType
+import com.foundaml.server.domain.models.{FeaturesConfiguration, ProblemType}
 import io.circe.Decoder
 
 object PostProjectRequestEntitySerializer {
@@ -19,7 +19,8 @@ object PostProjectRequestEntitySerializer {
     ProblemTypeSerializer.decoder
   implicit val postProjectConfigurationDecoder
       : Decoder[PostProjectConfiguration] = deriveDecoder
-
+  implicit val featuresConfigurationDecoder: Decoder[FeaturesConfiguration] =
+    FeaturesConfigurationSerializer.decoder
   implicit val postProjectRequestDecoder: Decoder[PostProjectRequest] =
     deriveDecoder
 

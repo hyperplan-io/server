@@ -4,8 +4,7 @@ import com.foundaml.server.domain.models._
 
 case class PostProjectConfiguration(
     problem: ProblemType,
-    featuresClass: String,
-    featuresSize: Int,
+    features: FeaturesConfiguration,
     labels: Set[String]
 )
 

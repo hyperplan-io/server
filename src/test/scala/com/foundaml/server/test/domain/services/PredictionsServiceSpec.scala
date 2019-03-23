@@ -1,5 +1,7 @@
 package com.foundaml.server.test.domain.services
 
+import java.util.UUID
+
 import com.foundaml.server.domain.factories.ProjectFactory
 import com.foundaml.server.domain.{
   DatabaseConfig,
@@ -18,7 +20,11 @@ import com.foundaml.server.domain.repositories.{
   ProjectsRepository
 }
 import com.foundaml.server.infrastructure.streaming.KinesisService
-import com.foundaml.server.test.{ProjectGenerator, TestDatabase}
+import com.foundaml.server.test.{
+  AlgorithmGenerator,
+  ProjectGenerator,
+  TestDatabase
+}
 import org.http4s.client.blaze.Http1Client
 import scalaz.zio.{DefaultRuntime, Task}
 import scalaz.zio.interop.catz._
@@ -58,15 +64,16 @@ class PredictionsServiceSpec
     )
 
   it should "fail to execute predictions for an incorrect configuration" in {
-    val features = CustomFeatures(
-      List(
-        StringFeature("test instance"),
-        IntFeature(1),
-        FloatFeature(0.5f)
-      )
+    val features = List(
+      StringFeature("test instance"),
+      IntFeature(1),
+      FloatFeature(0.5f)
     )
 
-    val project = ProjectGenerator.withLocalBackend()
+    val algorithmId = UUID.randomUUID().toString
+    val project = ProjectGenerator.withLocalBackend(
+      Some(List(AlgorithmGenerator.withLocalBackend(Some(algorithmId))))
+    )
 
     val shouldThrow = Try(
       unsafeRun(
@@ -74,7 +81,7 @@ class PredictionsServiceSpec
           .predictForProject(
             project,
             features,
-            Some("algorithm id")
+            Some(algorithmId)
           )
       )
     )

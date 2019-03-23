@@ -17,12 +17,10 @@ class FeaturesTransformerServiceSpec extends FlatSpec with DefaultRuntime {
 
   it should "not accept a feature transformer with a different number of arguments than the features" in {
 
-    val features3 = CustomFeatures(
-      List(
-        StringFeature("test instance"),
-        IntFeature(1),
-        FloatFeature(0.5f)
-      )
+    val features3 = List(
+      StringFeature("test instance"),
+      IntFeature(1),
+      FloatFeature(0.5f)
     )
 
     val transformer2 = TensorFlowFeaturesTransformer(
@@ -41,12 +39,11 @@ class FeaturesTransformerServiceSpec extends FlatSpec with DefaultRuntime {
       case Left(err) =>
     }
 
-    val features2 = CustomFeatures(
-      List(
-        StringFeature("test instance"),
-        IntFeature(1)
-      )
+    val features2 = List(
+      StringFeature("test instance"),
+      IntFeature(1)
     )
+
     val transformer3 = TensorFlowFeaturesTransformer(
       "my_signature_name",
       Set(
@@ -66,12 +63,10 @@ class FeaturesTransformerServiceSpec extends FlatSpec with DefaultRuntime {
   }
 
   it should "transform features to a tensorflow classify compatible format" in {
-    val features = CustomFeatures(
-      List(
-        StringFeature("test instance"),
-        IntFeature(1),
-        FloatFeature(0.5f)
-      )
+    val features = List(
+      StringFeature("test instance"),
+      IntFeature(1),
+      FloatFeature(0.5f)
     )
 
     val transformer = TensorFlowFeaturesTransformer(

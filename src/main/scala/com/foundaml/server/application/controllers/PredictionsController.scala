@@ -23,6 +23,7 @@ class PredictionsController(
     HttpService[Task] {
       case req @ POST -> Root =>
         (for {
+
           predictionRequest <- req
             .attemptAs[PredictionRequest](
               PredictionRequestEntitySerializer.requestDecoder

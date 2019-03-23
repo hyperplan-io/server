@@ -1,37 +1,36 @@
 package com.foundaml.server.domain.models.features
 
-sealed trait Features {
-  def data: List[Any]
-}
-
-case class DoubleFeatures(data: List[Double]) extends Features
-object DoubleFeatures {
-  val featuresClass = "DoubleFeatures"
-}
-
-case class FloatFeatures(data: List[Float]) extends Features
-object FloatFeatures {
-  val featuresClass = "FloatFeatures"
-}
-
-case class IntFeatures(data: List[Int]) extends Features
-object IntFeatures {
-  val featuresClass = "IntFeatures"
-}
-
-case class StringFeatures(data: List[String]) extends Features
-object StringFeatures {
-  val featuresClass = "StringFeatures"
-}
-
-case class CustomFeatures(data: List[Feature]) extends Features
-object CustomFeatures {
-  val featuresClass = "CustomFeatures"
+object Features {
+  type Features = List[Feature]
 }
 
 sealed trait Feature
 
-case class DoubleFeature(value: Double) extends Feature
+case class FloatVectorFeature(data: List[Float]) extends Feature
+object FloatVectorFeature {
+  val featureClass = "FloatVector"
+}
+
+case class IntVectorFeature(data: List[Int]) extends Feature
+object IntVectorFeature {
+  val featureClass = "IntVector"
+}
+
+case class StringVectorFeature(data: List[String]) extends Feature
+object StringVectorFeature {
+  val featureClass = "StringVector"
+}
+
 case class FloatFeature(value: Float) extends Feature
+object FloatFeature {
+  val featureClass = "Float"
+}
+
 case class IntFeature(value: Int) extends Feature
+object IntFeature {
+  val featureClass = "Int"
+}
 case class StringFeature(value: String) extends Feature
+object StringFeature {
+  val featureClass = "String"
+}

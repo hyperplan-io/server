@@ -1,9 +1,16 @@
 package com.foundaml.server.domain.models
 
+case class FeatureConfiguration(
+    name: String,
+    featuresType: String,
+    description: String
+)
+
+case class FeaturesConfiguration(configuration: List[FeatureConfiguration])
+
 case class ProjectConfiguration(
     problem: ProblemType,
-    featureClass: String,
-    featuresSize: Int,
+    features: FeaturesConfiguration,
     labels: Set[String]
 )
 

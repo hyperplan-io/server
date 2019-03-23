@@ -21,8 +21,7 @@ class ProjectFactory(
             name,
             Right(policy),
             Right(problemType),
-            featuresClass,
-            featuresSize,
+            Right(featuresConfiguration),
             labels
           ),
           algorithms
@@ -33,8 +32,7 @@ class ProjectFactory(
             name,
             ProjectConfiguration(
               problemType,
-              featuresClass,
-              featuresSize,
+              featuresConfiguration,
               labels
             ),
             algorithms,

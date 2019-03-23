@@ -2,8 +2,12 @@ package com.foundaml.server.test
 
 import java.util.UUID
 
+import com.foundaml.server.domain.models
 import com.foundaml.server.domain.models._
-import com.foundaml.server.domain.models.features.CustomFeatures
+import com.foundaml.server.domain.models.features.{
+  StringFeature,
+  StringVectorFeature
+}
 import com.foundaml.server.domain.models.labels.Labels
 
 object ProjectGenerator {
@@ -37,20 +41,27 @@ object ProjectGenerator {
   val projectId = UUID.randomUUID().toString
   val defaultAlgorithmId = "algorithm id"
 
-  def withLocalBackend() = Project(
+  def withLocalBackend(algorithms: Option[List[Algorithm]] = None) = Project(
     projectId,
     "example project",
     ProjectConfiguration(
       Classification(),
-      CustomFeatures.featuresClass,
-      10,
+      models.FeaturesConfiguration(
+        List(
+          FeatureConfiguration(
+            "my feature",
+            StringFeature.featureClass,
+            "this is a description of the features"
+          )
+        )
+      ),
       Set(
         "class1",
         "class2",
         "class3"
       )
     ),
-    Nil,
+    algorithms.getOrElse(List(AlgorithmGenerator.withLocalBackend())),
     DefaultAlgorithm(defaultAlgorithmId)
   )
 }

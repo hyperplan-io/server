@@ -10,6 +10,7 @@ import scalaz.zio.interop.catz._
 import com.foundaml.server.domain.models._
 import com.foundaml.server.domain.models.backends._
 import com.foundaml.server.domain.models.errors._
+import com.foundaml.server.domain.models.features.Features.Features
 import com.foundaml.server.domain.models.features._
 import com.foundaml.server.domain.models.labels._
 import com.foundaml.server.domain.models.labels.transformers.TensorFlowLabels
@@ -177,26 +178,29 @@ class PredictionsService(
   }
 
   def validateFeatures(
-      expectedFeaturesClass: String,
-      expectedFeaturesSize: Int,
+      featuresConfiguration: FeaturesConfiguration,
       features: Features
-  ): Boolean = {
-    lazy val typeCheck = expectedFeaturesClass match {
-      case DoubleFeatures.featuresClass =>
-        features.data.count(_.isInstanceOf[Double]) == features.data.size
-      case FloatFeatures.featuresClass =>
-        features.data.count(_.isInstanceOf[Float]) == features.data.size
-      case IntFeatures.featuresClass =>
-        features.data.count(_.isInstanceOf[Int]) == features.data.size
-      case StringFeatures.featuresClass =>
-        features.data.count(_.isInstanceOf[String]) == features.data.size
-      case CustomFeatures.featuresClass =>
-        // custom features does not guarantee the features to be correct
-        true
-    }
-    lazy val sizeCheck = features.data.size == expectedFeaturesSize
+  ) = featuresConfiguration match {
+    case FeaturesConfiguration(
+        featuresConfigList: List[FeatureConfiguration]
+        ) =>
+      lazy val sameSize = features.size == featuresConfigList.size
+      lazy val sameClasses = featuresConfigList
+        .map(_.featuresType)
+        .zip(features)
+        .map {
+          case (FloatFeature.featureClass, FloatFeature(_)) => true
+          case (IntFeature.featureClass, IntFeature(_)) => true
+          case (StringFeature.featureClass, StringFeature(_)) => true
+          case (FloatVectorFeature.featureClass, FloatVectorFeature(_)) => true
+          case (IntVectorFeature.featureClass, IntVectorFeature(_)) => true
+          case (StringVectorFeature.featureClass, StringVectorFeature(_)) =>
+            true
+          case _ => false
+        }
+        .reduce(_ & _)
 
-    sizeCheck && typeCheck
+      sameSize && sameClasses
   }
 
   def validateLabels(
@@ -221,8 +225,7 @@ class PredictionsService(
   ) = {
 
     if (validateFeatures(
-        project.configuration.featureClass,
-        project.configuration.featuresSize,
+        project.configuration.features,
         features
       )) {
       optionalAlgorithmId.fold(

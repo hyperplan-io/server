@@ -48,8 +48,7 @@ object PostgresqlService {
         name VARCHAR NOT NULL,
         algorithm_policy VARCHAR(36) NOT NULL,
         problem VARCHAR NOT NULL,
-        features_class VARCHAR NOT NULL,
-        features_size INTEGER NOT NULL,
+        features_configuration VARCHAR NOT NULL,
         labels VARCHAR NOT NULL
       )
     """.update.run
