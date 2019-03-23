@@ -26,12 +26,14 @@ class ExamplesController(
           ) =>
         (for {
           example <- predictionsService.addExample(predictionId, labelId)
-        } yield example).flatMap { example =>
-          Ok(LabelSerializer.encodeJson(example))
-        }.catchAll {
-          case LabelNotFound(_) =>
-            NotFound(s"The label $labelId does not exist")
-        }
+        } yield example)
+          .flatMap { example =>
+            Ok(LabelSerializer.encodeJson(example))
+          }
+          .catchAll {
+            case LabelNotFound(_) =>
+              NotFound(s"The label $labelId does not exist")
+          }
     }
   }
 }

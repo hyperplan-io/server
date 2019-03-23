@@ -135,26 +135,31 @@ class PredictionsService(
                     _.expect[TensorFlowLabels](request)(
                       TensorFlowLabelsSerializer.entityDecoder
                     ).flatMap { tfLabels =>
-                      backend.labelsTransformer
-                        .transform(predictionId, tfLabels)
-                        .fold(
-                          err => Task.fail(err),
-                          labels =>
-                            Task.succeed(
-                              Prediction(
-                                predictionId,
-                                projectId,
-                                algorithm.id,
-                                features,
-                                labels,
-                                Set.empty
+                        backend.labelsTransformer
+                          .transform(predictionId, tfLabels)
+                          .fold(
+                            err => Task.fail(err),
+                            labels =>
+                              Task.succeed(
+                                Prediction(
+                                  predictionId,
+                                  projectId,
+                                  algorithm.id,
+                                  features,
+                                  labels,
+                                  Set.empty
+                                )
                               )
+                          )
+                      }
+                      .catchAll {
+                        case _ =>
+                          Task.fail(
+                            BackendError(
+                              "An error occurred with the backend request"
                             )
-                        )
-                    }.catchAll {
-                      case _ =>
-                        Task.fail(BackendError("An error occurred with the backend request"))
-                    }
+                          )
+                      }
                   )
               }
             )
