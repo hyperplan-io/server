@@ -180,24 +180,18 @@ class PredictionsService(
       featuresConfiguration: FeaturesConfiguration,
       features: Features
   ) = featuresConfiguration match {
-    case CustomFeaturesConfiguration(
-        featuresClasses: List[CustomFeatureConfiguration]
+    case FeaturesConfiguration(
+        featuresClasses: List[FeatureConfiguration]
         ) =>
-      features match {
-        case CustomFeatures(customFeatures) =>
-          validateCustomFeatures(
-            featuresClasses.map(_.featuresType),
-            customFeatures
-          )
-        case _ =>
-          false
-
-      }
+      validateCustomFeatures(
+        featuresClasses.map(_.featuresType),
+        features.data
+      )
   }
 
   def validateCustomFeatures(
       featuresClasses: List[String],
-      customFeatures: List[CustomFeature]
+      customFeatures: List[Feature]
   ) = {
     featuresClasses
       .zip(customFeatures)
@@ -208,27 +202,6 @@ class PredictionsService(
         case _ => false
       }
       .reduce(_ & _)
-  }
-
-  def validateStandardFeatures(
-      expectedFeaturesClass: String,
-      expectedFeaturesSize: Int,
-      features: Features
-  ): Boolean = {
-    lazy val typeCheck = expectedFeaturesClass match {
-      case FloatFeatures.featuresClass =>
-        features.data.count(_.isInstanceOf[Float]) == features.data.size
-      case IntFeatures.featuresClass =>
-        features.data.count(_.isInstanceOf[Int]) == features.data.size
-      case StringFeatures.featuresClass =>
-        features.data.count(_.isInstanceOf[String]) == features.data.size
-      case CustomFeatures.featuresClass =>
-        // custom features does not guarantee the features to be correct
-        true
-    }
-    lazy val sizeCheck = features.data.size == expectedFeaturesSize
-
-    sizeCheck && typeCheck
   }
 
   def validateLabels(

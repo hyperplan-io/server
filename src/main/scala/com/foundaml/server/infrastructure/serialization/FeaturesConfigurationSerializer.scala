@@ -1,6 +1,6 @@
 package com.foundaml.server.infrastructure.serialization
 
-import com.foundaml.server.domain.models.{CustomFeatureConfiguration, CustomFeaturesConfiguration, FeaturesConfiguration}
+import com.foundaml.server.domain.models.{FeatureConfiguration, FeaturesConfiguration}
 import io.circe
 import io.circe.{HCursor, Json}
 import io.circe.parser._
@@ -15,42 +15,34 @@ object FeaturesConfigurationSerializer {
   import io.circe.{Decoder, Encoder}
   import io.circe.syntax._
 
-  implicit val customFeatureEncoder: Encoder[CustomFeatureConfiguration] =
-    (a: CustomFeatureConfiguration) =>
+  implicit val customFeatureEncoder: Encoder[FeatureConfiguration] =
+    (a: FeatureConfiguration) =>
       Json.obj(
         ("name", Json.fromString(a.name)),
         ("type", Json.fromString(a.featuresType)),
         ("description", Json.fromString(a.description))
       )
 
-  implicit val customFeatureDecoder: Decoder[CustomFeatureConfiguration] =
+  implicit val customFeatureDecoder: Decoder[FeatureConfiguration] =
     (c: HCursor) =>
       for {
         name <- c.downField("name").as[String]
         featuresType <- c.downField("type").as[String]
         description <- c.downField("description").as[String]
       } yield {
-        CustomFeatureConfiguration(name, featuresType, description)
+        FeatureConfiguration(name, featuresType, description)
       }
 
 
-  implicit val customFeaturesDecoder: Decoder[CustomFeaturesConfiguration] =
+  implicit val decoder: Decoder[FeaturesConfiguration] =
     (c: HCursor) => {
-      c.as[List[CustomFeatureConfiguration]](Decoder.decodeList[CustomFeatureConfiguration](customFeatureDecoder))
-        .map (featureConfigurationList => CustomFeaturesConfiguration(featureConfigurationList))
+      c.as[List[FeatureConfiguration]](Decoder.decodeList[FeatureConfiguration](customFeatureDecoder))
+        .map (featureConfigurationList => FeaturesConfiguration(featureConfigurationList))
     }
 
-  implicit val customFeaturesEncoder: Encoder[CustomFeaturesConfiguration] =
-    (a: CustomFeaturesConfiguration) => Json.arr(a.featuresClasses.map(customFeatureEncoder.apply): _*)
+  implicit val encoder: Encoder[FeaturesConfiguration] =
+    (a: FeaturesConfiguration) => Json.arr(a.configuration.map(customFeatureEncoder.apply): _*)
 
-  implicit val encoder: Encoder[FeaturesConfiguration] = Encoder.instance {
-    case config @ CustomFeaturesConfiguration(_) => config.asJson(customFeaturesEncoder)
-  }
-
-  implicit val decoder: Decoder[FeaturesConfiguration] =
-    List[Decoder[FeaturesConfiguration]](
-      Decoder[CustomFeaturesConfiguration].widen
-    ).reduceLeft(_ or _)
 
   def encodeJson(featuresConfiguration: FeaturesConfiguration): String = {
     featuresConfiguration.asJson.noSpaces

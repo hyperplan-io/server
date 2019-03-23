@@ -5,6 +5,7 @@ import io.circe._
 import io.circe.parser.decode
 import io.circe.syntax._
 import com.foundaml.server.domain.models.features._
+import io.circe.Decoder.Result
 
 object FeaturesSerializer {
 
@@ -20,13 +21,13 @@ object FeaturesSerializer {
     implicit val stringEncoder: Encoder[StringFeature] = deriveEncoder
     implicit val stringDecoder: Decoder[StringFeature] = deriveDecoder
 
-    implicit val featureEncoder: Encoder[CustomFeature] = {
+    implicit val featureEncoder: Encoder[Feature] = {
       case FloatFeature(value) => Json.fromDoubleOrNull(value)
       case IntFeature(value) => Json.fromInt(value)
       case StringFeature(value) => Json.fromString(value)
     }
 
-    implicit val featureDecoder: Decoder[CustomFeature] = (c: HCursor) => {
+    def parseFeature: Decoder[Feature] = (c: HCursor) => {
       if (c.value.isNumber) {
         if (c.value.noSpaces.contains(".")) {
           c.value.as[Float].map(d => FloatFeature(d))
@@ -36,6 +37,23 @@ object FeaturesSerializer {
       } else {
         c.value.as[String].map(s => StringFeature(s))
       }
+    }
+
+    implicit val featureDecoder: Decoder[Feature] = (c: HCursor) => {
+      if(c.value.isArray) {
+        c.value.asArray.fold[Decoder.Result[Feature]](
+          Decoder.failedWithMessage[Feature]("features key is not an array")(c)
+        ) (
+          jsonArr => jsonArr.headOption.fold[Decoder.Result[Feature]](
+            Decoder.failedWithMessage[Feature]("features array is empty")(c)
+          ) (
+            head => parseFeature(head.hcursor)
+          )
+        )
+      } else {
+        parseFeature(c)
+      }
+
     }
   }
 

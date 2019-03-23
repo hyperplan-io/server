@@ -2,8 +2,9 @@ package com.foundaml.server.test
 
 import java.util.UUID
 
+import com.foundaml.server.domain.models
 import com.foundaml.server.domain.models._
-import com.foundaml.server.domain.models.features.CustomFeatures
+import com.foundaml.server.domain.models.features.{CustomFeatures, StringFeature, StringFeatures}
 import com.foundaml.server.domain.models.labels.Labels
 
 object ProjectGenerator {
@@ -42,10 +43,14 @@ object ProjectGenerator {
     "example project",
     ProjectConfiguration(
       Classification(),
-      StandardFeaturesConfiguration(
-        CustomFeatures.featuresClass,
-        10,
-        "this is a description of the features"
+      models.FeaturesConfiguration(
+        List(
+          FeatureConfiguration(
+            "my feature",
+            StringFeature.featureClass,
+            "this is a description of the features"
+          )
+        )
       ),
       Set(
         "class1",

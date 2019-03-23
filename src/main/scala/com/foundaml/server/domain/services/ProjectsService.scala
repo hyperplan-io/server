@@ -24,7 +24,7 @@ class ProjectsService(
 
   def validateFeatureClasses(featuresConfiguration: FeaturesConfiguration): List[ProjectError] =
     featuresConfiguration match {
-      case CustomFeaturesConfiguration(featureConfigurations) =>
+      case FeaturesConfiguration(featureConfigurations) =>
         val allowedFeatureClasses = List(
           FloatFeature.featureClass,
           IntFeature.featureClass,
