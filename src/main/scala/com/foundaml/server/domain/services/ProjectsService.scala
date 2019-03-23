@@ -90,8 +90,12 @@ class ProjectsService(
       )(
         err => Task.fail(err)
       )
-      _ <- projectsRepository.insert(project)
-    } yield project
+      insertResult <- projectsRepository.insert(project)
+      result <- insertResult.fold(
+        err => Task.fail(err),
+        _ => Task.succeed(project)
+      )
+    } yield result
   }
 
   def readProject(id: String) =

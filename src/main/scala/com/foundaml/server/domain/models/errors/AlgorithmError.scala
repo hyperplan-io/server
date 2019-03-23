@@ -4,3 +4,4 @@ sealed trait AlgorithmError extends Throwable
 
 case class IncompatibleFeatures(message: String) extends AlgorithmError
 case class IncompatibleLabels(message: String) extends AlgorithmError
+case class AlgorithmAlreadyExists(algorithmId: String) extends AlgorithmError

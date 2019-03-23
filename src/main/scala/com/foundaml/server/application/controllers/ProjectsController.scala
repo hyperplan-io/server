@@ -5,6 +5,7 @@ import com.foundaml.server.application.controllers.requests._
 import com.foundaml.server.domain.models.errors.{
   FeaturesConfigurationError,
   InvalidProjectIdentifier,
+  ProjectAlreadyExists,
   ProjectNotFound
 }
 import com.foundaml.server.domain.services.ProjectsService
@@ -40,6 +41,8 @@ class ProjectsController(
             Created(ProjectSerializer.encodeJson(project))
           }
           .catchAll {
+            case ProjectAlreadyExists(projectId) =>
+              Conflict(s"The project $projectId already exists")
             case InvalidProjectIdentifier(message) =>
               BadRequest(message)
             case FeaturesConfigurationError(message) =>

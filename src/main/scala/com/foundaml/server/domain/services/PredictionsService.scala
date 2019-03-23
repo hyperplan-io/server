@@ -37,7 +37,9 @@ class PredictionsService(
 ) {
 
   def persistPrediction(prediction: Prediction) =
-    predictionsRepository.insert(prediction)
+    predictionsRepository
+      .insert(prediction)
+      .fold(err => Task.fail(err), _ => Task.succeed(prediction))
 
   def publishPredictionToKinesis(prediction: Prediction) =
     if (config.kinesis.enabled) {

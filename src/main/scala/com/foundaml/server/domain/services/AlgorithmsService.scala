@@ -80,7 +80,11 @@ class AlgorithmsService(
           )
         )
       }
-      _ <- algorithmsRepository.insert(algorithm)
-    } yield algorithm
+      insertResult <- algorithmsRepository.insert(algorithm)
+      result <- insertResult.fold(
+        err => Task.fail(err),
+        _ => Task.succeed(algorithm)
+      )
+    } yield result
   }
 }

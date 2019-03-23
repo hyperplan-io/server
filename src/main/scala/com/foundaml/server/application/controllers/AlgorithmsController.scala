@@ -8,6 +8,7 @@ import scalaz.zio.Task
 import scalaz.zio.interop.catz._
 import com.foundaml.server.application.controllers.requests._
 import com.foundaml.server.domain.models.errors.{
+  AlgorithmAlreadyExists,
   IncompatibleFeatures,
   IncompatibleLabels
 }
@@ -36,6 +37,8 @@ class AlgorithmsController(
             Created(AlgorithmsSerializer.encodeJson(algorithm))
           }
           .catchAll {
+            case AlgorithmAlreadyExists(algorithmId) =>
+              Conflict(s"Algorithm $algorithmId already exists")
             case IncompatibleFeatures(message) =>
               BadRequest(message)
             case IncompatibleLabels(message) =>

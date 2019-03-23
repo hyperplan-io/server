@@ -45,6 +45,8 @@ class PredictionsController(
           .catchAll {
             case AlgorithmDoesNotExist(algorithmId) =>
               NotFound(s"the algorithm $algorithmId does not exist")
+            case PredictionAlreadyExist(predictionId) =>
+              Conflict(s"The prediction $predictionId already exists")
             case BackendError(message) =>
               InternalServerError(message)
             case FeaturesValidationFailed(message) =>

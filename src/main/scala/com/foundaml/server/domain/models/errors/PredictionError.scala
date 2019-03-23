@@ -16,3 +16,5 @@ case class AlgorithmDoesNotExist(algorithmId: String)
     extends PredictionError(s"The algorithm $algorithmId does not exist")
 
 case class BackendError(message: String) extends PredictionError(message)
+case class PredictionAlreadyExist(predictionId: String)
+    extends PredictionError(s"Prediction $predictionId already exists")
