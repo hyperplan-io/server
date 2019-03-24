@@ -28,7 +28,7 @@ class ExamplesController(
           example <- predictionsService.addExample(predictionId, labelId)
         } yield example)
           .flatMap { example =>
-            Ok(LabelSerializer.encodeJson(example))
+            Created(LabelSerializer.encodeJson(example))
           }
           .catchAll {
             case LabelNotFound(_) =>

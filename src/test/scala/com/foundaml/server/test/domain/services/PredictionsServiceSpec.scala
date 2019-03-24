@@ -89,7 +89,7 @@ class PredictionsServiceSpec
       case Left(err) =>
         assert(
           err.getMessage
-            .contains("The features are not correct for this project")
+            .contains("The features do not match the configuration of project")
         )
     }
 

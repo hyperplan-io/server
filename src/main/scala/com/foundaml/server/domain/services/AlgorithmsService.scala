@@ -1,7 +1,6 @@
 package com.foundaml.server.domain.services
 
 import scalaz.zio.{Task, ZIO}
-
 import com.foundaml.server.domain.factories.ProjectFactory
 import com.foundaml.server.domain.models._
 import com.foundaml.server.domain.models.backends.Backend
@@ -12,12 +11,13 @@ import com.foundaml.server.domain.repositories.{
   AlgorithmsRepository,
   ProjectsRepository
 }
+import com.foundaml.server.infrastructure.logging.IOLazyLogging
 
 class AlgorithmsService(
     algorithmsRepository: AlgorithmsRepository,
     projectsRepository: ProjectsRepository,
     projectFactory: ProjectFactory
-) {
+) extends IOLazyLogging {
 
   def validateEqualSize(
       expectedSize: Int,
@@ -72,17 +72,19 @@ class AlgorithmsService(
       _ <- if (errors.isEmpty) {
         Task(Unit)
       } else {
-        Task.fail(
-          InvalidArgument(
-            errors.mkString(
-              s"The following errors occurred: ${errors.mkString(", ")}"
-            )
-          )
+        val message = s"The following errors occurred: ${errors.mkString(", ")}"
+        warnLog(message) *> Task.fail(
+          InvalidArgument(message)
         )
       }
       insertResult <- algorithmsRepository.insert(algorithm)
       result <- insertResult.fold(
-        err => Task.fail(err),
+        err => {
+          warnLog(
+            s"An error occurred while inserting an algorithm: ${err.getMessage}"
+          ) *>
+            Task.fail(err)
+        },
         _ => Task.succeed(algorithm)
       )
     } yield result

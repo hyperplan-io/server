@@ -9,6 +9,7 @@ import scalaz.zio.interop.catz._
 import com.foundaml.server.application.controllers.requests._
 import com.foundaml.server.domain.models.errors._
 import com.foundaml.server.domain.services.PredictionsService
+import com.foundaml.server.infrastructure.logging.IOLazyLogging
 import com.foundaml.server.infrastructure.serialization.{
   PredictionRequestEntitySerializer,
   PredictionSerializer
@@ -16,7 +17,8 @@ import com.foundaml.server.infrastructure.serialization.{
 
 class PredictionsController(
     predictionsService: PredictionsService
-) extends Http4sDsl[Task] {
+) extends Http4sDsl[Task]
+    with IOLazyLogging {
 
   val service: HttpService[Task] = {
     HttpService[Task] {
@@ -31,10 +33,8 @@ class PredictionsController(
             predictionRequest.features,
             predictionRequest.algorithmId
           )
-          _ <- Task(
-            println(
-              s"Prediction computed for project ${prediction.projectId} using algorithm ${prediction.algorithmId}"
-            )
+          _ <- debugLog(
+            s"Prediction computed for project ${prediction.projectId} using algorithm ${prediction.algorithmId}"
           )
         } yield prediction)
           .flatMap { prediction =>

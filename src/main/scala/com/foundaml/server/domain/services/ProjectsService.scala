@@ -6,13 +6,14 @@ import com.foundaml.server.domain.models._
 import com.foundaml.server.domain.models.errors._
 import com.foundaml.server.domain.models.features._
 import com.foundaml.server.domain.repositories.ProjectsRepository
+import com.foundaml.server.infrastructure.logging.IOLazyLogging
 import doobie.util.invariant.UnexpectedEnd
 import scalaz.zio.{Task, ZIO}
 
 class ProjectsService(
     projectsRepository: ProjectsRepository,
     projectFactory: ProjectFactory
-) {
+) extends IOLazyLogging {
 
   val regex = "[0-9a-zA-Z-_]*"
   def validateAlphaNumerical(input: String): List[ProjectError] = {
@@ -84,11 +85,11 @@ class ProjectsService(
       _ <- errors.headOption.fold[Task[Unit]](
         Task.succeed(Unit)
       )(
-        err => Task.fail(err)
+        err => warnLog(err.getMessage) *> Task.fail(err)
       )
       insertResult <- projectsRepository.insert(project)
       result <- insertResult.fold(
-        err => Task.fail(err),
+        err => warnLog(err.getMessage) *> Task.fail(err),
         _ => Task.succeed(project)
       )
     } yield result

@@ -33,7 +33,9 @@ lazy val root = (project in file("."))
       "org.tpolecat" %% "doobie-postgres" % DoobieVersion,
       "org.tpolecat" %% "doobie-h2" % DoobieVersion % "test",
       "org.tpolecat" %% "doobie-scalatest" % DoobieVersion % "test",
-      "com.github.pureconfig" %% "pureconfig" % "0.10.2"
+      "com.github.pureconfig" %% "pureconfig" % "0.10.2",
+      "ch.qos.logback" % "logback-classic" % "1.2.3",
+      "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2"
     ),
     addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.6"),
     addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.2.4"),

@@ -2,10 +2,10 @@ package com.foundaml.server.domain.services
 
 import java.util.UUID
 
-import com.foundaml.server.domain.{FoundaMLConfig, models}
+import com.foundaml.server.domain.FoundaMLConfig
 import com.foundaml.server.domain.factories.ProjectFactory
 import org.http4s._
-import scalaz.zio.{IO, Task}
+import scalaz.zio.Task
 import scalaz.zio.interop.catz._
 import com.foundaml.server.domain.models._
 import com.foundaml.server.domain.models.backends._
@@ -18,6 +18,7 @@ import com.foundaml.server.domain.repositories.{
   PredictionsRepository,
   ProjectsRepository
 }
+import com.foundaml.server.infrastructure.logging.IOLazyLogging
 import com.foundaml.server.infrastructure.serialization.{
   PredictionSerializer,
   TensorFlowFeaturesSerializer,
@@ -34,12 +35,15 @@ class PredictionsService(
     kinesisService: KinesisService,
     projectFactory: ProjectFactory,
     config: FoundaMLConfig
-) {
+) extends IOLazyLogging {
 
   def persistPrediction(prediction: Prediction) =
     predictionsRepository
       .insert(prediction)
-      .fold(err => Task.fail(err), _ => Task.succeed(prediction))
+      .fold(
+        err => warnLog(err.getMessage) *> Task.fail(err),
+        _ => Task.succeed(prediction)
+      )
 
   def publishPredictionToKinesis(prediction: Prediction) =
     if (config.kinesis.enabled) {
@@ -50,12 +54,14 @@ class PredictionsService(
       )(PredictionSerializer.encoder)
     } else Task.unit
 
-  def noAlgorithm(): Task[Prediction] =
-    Task(println("No algorithm setup")).flatMap { _ =>
+  def noAlgorithm(): Task[Prediction] = {
+    val message = "No algorithms are setup"
+    infoLog(message).flatMap { _ =>
       Task.fail(
-        NoAlgorithmAvailable("No algorithms are setup")
+        NoAlgorithmAvailable(message)
       )
     }
+  }
 
   def predictWithProjectPolicy(
       features: Features,
@@ -63,14 +69,19 @@ class PredictionsService(
   ): Task[Prediction] =
     project.policy
       .take()
-      .fold(
-        noAlgorithm()
-      ) { algorithmId =>
+      .fold[Task[Prediction]] {
+        val message = s"There is no algorithm in the project ${project.id}"
+        warnLog(message) *> Task.fail(
+          NoAlgorithmAvailable(message)
+        )
+      } { algorithmId =>
         project.algorithmsMap
           .get(algorithmId)
-          .fold(
-            noAlgorithm()
-          )(
+          .fold[Task[Prediction]] {
+            val message =
+              s"The algorithm $algorithmId does not exist in the project ${project.id}"
+            debugLog(message) *> Task.fail(AlgorithmDoesNotExist(algorithmId))
+          }(
             algorithm =>
               predictWithAlgorithm(
                 project.id,
@@ -108,7 +119,7 @@ class PredictionsService(
       .transform(features)
       .fold(
         err =>
-          Task(println(err.getMessage)) *>
+          warnLog(err.getMessage) *>
             Task.fail(
               FeaturesTransformerError(
                 "The features could not be transformed to a TensorFlow compatible format"
@@ -154,13 +165,12 @@ class PredictionsService(
                               )
                           )
                       }
-                      .catchAll {
-                        case _ =>
-                          Task.fail(
-                            BackendError(
-                              "An error occurred with the backend request"
-                            )
-                          )
+                      .catchAll { err =>
+                        {
+                          val message =
+                            s"An error occurred with backend: ${err.getMessage}"
+                          errorLog(message) *> Task.fail(BackendError(message))
+                        }
                       }
                   )
               }
@@ -245,11 +255,7 @@ class PredictionsService(
           project.algorithmsMap
             .get(algorithmId)
             .fold[Task[Prediction]](
-              Task(
-                println(
-                  s"project algorithms: ${project.algorithmsMap.toString()}"
-                )
-              ) *> Task.fail(
+              Task.fail(
                 AlgorithmDoesNotExist(algorithmId)
               )
             )(
@@ -262,9 +268,11 @@ class PredictionsService(
                       )) {
                       Task.succeed(prediction)
                     } else {
-                      Task.fail(
+                      val message =
+                        s"The labels do not match the configuration of project ${project.id}"
+                      warnLog(message) *> Task.fail(
                         LabelsValidationFailed(
-                          "The labels do not match the project configuration"
+                          message
                         )
                       )
                     }
@@ -272,9 +280,11 @@ class PredictionsService(
             )
       )
     } else {
-      Task.fail(
+      val message =
+        s"The features do not match the configuration of project ${project.id}"
+      warnLog(message) *> Task.fail(
         FeaturesValidationFailed(
-          "The features are not correct for this project"
+          message
         )
       )
     }
