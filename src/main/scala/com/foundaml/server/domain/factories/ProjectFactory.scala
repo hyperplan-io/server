@@ -1,19 +1,8 @@
 package com.foundaml.server.domain.factories
 
-import com.foundaml.server.domain.models.errors.{
-  FactoryException,
-  ProjectDataInconsistent
-}
-import com.foundaml.server.domain.models.{
-  Classification,
-  ClassificationConfiguration,
-  ClassificationProject,
-  Project
-}
-import com.foundaml.server.domain.repositories.{
-  AlgorithmsRepository,
-  ProjectsRepository
-}
+import com.foundaml.server.domain.models.errors.{FactoryException, ProjectDataInconsistent}
+import com.foundaml.server.domain.models._
+import com.foundaml.server.domain.repositories.{AlgorithmsRepository, ProjectsRepository}
 import scalaz.zio.{Task, ZIO}
 
 class ProjectFactory(
@@ -35,6 +24,25 @@ class ProjectFactory(
           ) =>
         Task.succeed(
           ClassificationProject(
+            id,
+            name,
+            projectConfiguration,
+            algorithms,
+            policy
+          )
+        )
+      case (
+        (
+          id,
+          name,
+          Right(Regression()),
+          Right(policy),
+          Right(projectConfiguration: RegressionConfiguration)
+          ),
+        algorithms
+        ) =>
+        Task.succeed(
+          RegressionProject(
             id,
             name,
             projectConfiguration,

@@ -2,9 +2,9 @@ package com.foundaml.server.domain.services
 
 object ExampleUrlService {
 
-  def correctExampleUrl(predictionId: String, labelId: String) =
-    s"/examples?predictionId=$predictionId&labelId=$labelId&isCorrect=true"
+  def correctClassificationExampleUrl(predictionId: String, labelId: String) =
+    s"/examplesC?predictionId=$predictionId&labelId=$labelId&isCorrect=true"
 
-  def incorrectExampleUrl(predictionId: String, labelId: String) =
+  def incorrectClassificationExampleUrl(predictionId: String, labelId: String) =
     s"/examples?predictionId=$predictionId&labelId=$labelId&isIncorrect=true"
 }

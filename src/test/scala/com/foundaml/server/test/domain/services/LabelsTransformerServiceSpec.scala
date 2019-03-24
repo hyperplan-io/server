@@ -8,7 +8,7 @@ import org.scalatest.Inside.inside
 import org.scalatest._
 import com.foundaml.server.domain.models.labels.transformers.{
   TensorFlowLabel,
-  TensorFlowLabels,
+  TensorFlowClassificationLabels,
   TensorFlowLabelsTransformer
 }
 
@@ -18,7 +18,7 @@ class LabelsTransformerServiceSpec
     with Matchers {
 
   it should "not accept a label transformer with a different number of arguments than the labels" in {
-    val labels1 = TensorFlowLabels(
+    val labels1 = TensorFlowClassificationLabels(
       List(
         List(
           "tf_toto" -> 0.5f
@@ -45,7 +45,7 @@ class LabelsTransformerServiceSpec
         )
     }
 
-    val labels2 = TensorFlowLabels(
+    val labels2 = TensorFlowClassificationLabels(
       List(
         List(
           "tf_toto" -> 0.5f
@@ -77,7 +77,7 @@ class LabelsTransformerServiceSpec
 
   it should "transform labels to a foundaml compatible format" in {
 
-    val labels = TensorFlowLabels(
+    val labels = TensorFlowClassificationLabels(
       List(
         List(
           "tf_toto" -> 0.5f

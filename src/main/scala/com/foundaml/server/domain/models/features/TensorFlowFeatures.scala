@@ -16,7 +16,7 @@ case class TensorFlowIntVectorFeature(key: String, value: List[Int])
 case class TensorFlowStringVectorFeature(key: String, value: List[String])
     extends TensorFlowFeature
 
-case class TensorFlowClassificationFeatures(
+case class TensorFlowFeatures(
     signatureName: String,
     examples: List[TensorFlowFeature]
 )

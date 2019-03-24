@@ -18,3 +18,5 @@ case class AlgorithmDoesNotExist(algorithmId: String)
 case class BackendError(message: String) extends PredictionError(message)
 case class PredictionAlreadyExist(predictionId: String)
     extends PredictionError(s"Prediction $predictionId already exists")
+
+case class PredictionDataInconsistent(message: String) extends PredictionError(message)

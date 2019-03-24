@@ -1,6 +1,6 @@
 package com.foundaml.server.infrastructure.serialization
 
-import com.foundaml.server.domain.models.Examples.Examples
+import com.foundaml.server.domain.models.Examples.ClassificationExamples
 import com.foundaml.server.domain.models.labels.Label
 import io.circe._
 import io.circe.parser.decode
@@ -14,15 +14,15 @@ object ExamplesSerializer {
   implicit val labelsEncoder: Encoder[Label] = deriveEncoder
   implicit val labelsDecoder: Decoder[Label] = deriveDecoder
 
-  def encodeJson(examples: Examples): Json = {
+  def encodeJson(examples: ClassificationExamples): Json = {
     examples.asJson
   }
 
-  def encodeJsonNoSpaces(examples: Examples): String = {
+  def encodeJsonNoSpaces(examples: ClassificationExamples): String = {
     examples.asJson.noSpaces
   }
 
-  def decodeJson(n: String): Examples = {
-    decode[Examples](n).right.get
+  def decodeJson(n: String): Either[io.circe.Error, ClassificationExamples] = {
+    decode[ClassificationExamples](n)
   }
 }

@@ -12,9 +12,9 @@ object AlgorithmsSerializer {
 
   object Implicits {
     implicit val backendEncoder: Encoder[Backend] =
-      BackendSerializer.Implicits.encoder
+      BackendSerializer.Implicits.backendEncoder
     implicit val backendDecoder: Decoder[Backend] =
-      BackendSerializer.Implicits.decoder
+      BackendSerializer.Implicits.backendDecoder
 
     implicit val encoder: Encoder[Algorithm] = deriveEncoder
     implicit val decoder: Decoder[Algorithm] = deriveDecoder

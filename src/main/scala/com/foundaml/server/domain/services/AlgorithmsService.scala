@@ -3,14 +3,11 @@ package com.foundaml.server.domain.services
 import scalaz.zio.{Task, ZIO}
 import com.foundaml.server.domain.factories.ProjectFactory
 import com.foundaml.server.domain.models._
-import com.foundaml.server.domain.models.backends.Backend
-import com.foundaml.server.domain.models.errors.InvalidArgument
+import com.foundaml.server.domain.models.backends.{Backend, LocalClassification, TensorFlowClassificationBackend, TensorFlowRegressionBackend}
+import com.foundaml.server.domain.models.errors.{IncompatibleAlgorithm, InvalidArgument}
 import com.foundaml.server.domain.models.features.transformers.TensorFlowFeaturesTransformer
 import com.foundaml.server.domain.models.labels.transformers.TensorFlowLabelsTransformer
-import com.foundaml.server.domain.repositories.{
-  AlgorithmsRepository,
-  ProjectsRepository
-}
+import com.foundaml.server.domain.repositories.{AlgorithmsRepository, ProjectsRepository}
 import com.foundaml.server.infrastructure.logging.IOLazyLogging
 
 class AlgorithmsService(
@@ -35,8 +32,8 @@ class AlgorithmsService(
       project: ClassificationProject
   ) = {
     algorithm.backend match {
-      case com.foundaml.server.domain.models.backends.Local(computed) => Nil
-      case com.foundaml.server.domain.models.backends.TensorFlowBackend(
+      case LocalClassification(computed) => Nil
+      case TensorFlowClassificationBackend(
           _,
           _,
           TensorFlowFeaturesTransformer(signatureName, fields),
@@ -60,7 +57,10 @@ class AlgorithmsService(
             "labels"
           )
         ).flatten
+      case TensorFlowRegressionBackend(_, _, _) =>
+        List(IncompatibleAlgorithm(algorithm.id))
     }
+
   }
 
   def validateRegressionAlgorithm(
@@ -68,12 +68,11 @@ class AlgorithmsService(
       project: RegressionProject
   ) = {
     algorithm.backend match {
-      case com.foundaml.server.domain.models.backends.Local(computed) => Nil
-      case com.foundaml.server.domain.models.backends.TensorFlowBackend(
+      case LocalClassification(computed) => Nil
+      case TensorFlowRegressionBackend(
           _,
           _,
-          TensorFlowFeaturesTransformer(signatureName, fields),
-          TensorFlowLabelsTransformer(labels)
+          TensorFlowFeaturesTransformer(signatureName, fields)
           ) =>
         val size = project.configuration.features match {
           case FeaturesConfiguration(
@@ -88,6 +87,8 @@ class AlgorithmsService(
             "features"
           )
         ).flatten
+      case TensorFlowClassificationBackend(_, _, _, _) =>
+        List(IncompatibleAlgorithm(algorithm.id))
     }
   }
 

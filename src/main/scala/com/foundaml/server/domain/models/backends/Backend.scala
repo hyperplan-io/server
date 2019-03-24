@@ -6,13 +6,27 @@ import com.foundaml.server.domain.models.labels.transformers.TensorFlowLabelsTra
 
 sealed trait Backend
 
-case class Local(
-    computed: Labels
+case class LocalClassification(
+    computed: Set[ClassificationLabel]
 ) extends Backend
 
-case class TensorFlowBackend(
+object LocalClassification {
+  val backendClass = "LocalClassification"
+}
+
+case class TensorFlowClassificationBackend(
     host: String,
     port: Int,
     featuresTransformer: TensorFlowFeaturesTransformer,
     labelsTransformer: TensorFlowLabelsTransformer
 ) extends Backend
+
+object TensorFlowClassificationBackend {
+  val backendClass = "TensorFlowClassificationBackend"
+}
+
+case class TensorFlowRegressionBackend(host: String, port: Int, featuresTransformer: TensorFlowFeaturesTransformer) extends Backend
+
+object TensorFlowRegressionBackend {
+  val backendClass = "TensorFlowRegressionBackend"
+}
