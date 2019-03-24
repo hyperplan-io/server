@@ -1,13 +1,12 @@
-package com.foundaml.server.infrastructure.serialization
+package com.foundaml.server.infrastructure.serialization.examples
 
 import com.foundaml.server.domain.models.Examples.ClassificationExamples
 import com.foundaml.server.domain.models.labels.Label
-import io.circe._
-import io.circe.parser.decode
+import io.circe.{Decoder, Encoder, Json}
 import io.circe.syntax._
-import io.circe.{Decoder, Encoder}
+import io.circe.parser._
 
-object ExamplesSerializer {
+object ClassificationExamplesSerializer {
 
   import io.circe.generic.semiauto._
 

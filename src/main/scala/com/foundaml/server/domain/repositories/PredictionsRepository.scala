@@ -1,12 +1,13 @@
 package com.foundaml.server.domain.repositories
 
-import com.foundaml.server.domain.models.Examples.ClassificationExamples
+import com.foundaml.server.domain.models.Examples.{ClassificationExamples, RegressionExamples}
 import com.foundaml.server.domain.models.errors.{PredictionAlreadyExist, PredictionError}
 import com.foundaml.server.domain.models.features.Features.Features
 import com.foundaml.server.domain.models._
 import com.foundaml.server.domain.models.labels.{ClassificationLabel, Label, Labels, RegressionLabel}
 import com.foundaml.server.domain.repositories.PredictionsRepository.PredictionData
 import com.foundaml.server.infrastructure.serialization._
+import com.foundaml.server.infrastructure.serialization.examples.{ClassificationExamplesSerializer, RegressionExamplesSerializer}
 import com.foundaml.server.infrastructure.serialization.features.FeaturesSerializer
 import com.foundaml.server.infrastructure.serialization.labels.{ClassificationLabelSerializer, RegressionLabelSerializer}
 import doobie._
@@ -44,10 +45,15 @@ class PredictionsRepository(implicit xa: Transactor[Task]) {
   implicit val regressionLabelsPut: Put[Set[RegressionLabel]] =
     Put[String].contramap(RegressionLabelSerializer.encodeJsonSetNoSpaces)
 
-  implicit val examplesGet: Get[Either[io.circe.Error, ClassificationExamples]] =
-    Get[String].map(ExamplesSerializer.decodeJson)
-  implicit val examplesPut: Put[ClassificationExamples] =
-    Put[String].contramap(ExamplesSerializer.encodeJsonNoSpaces)
+  implicit val classificationExamplesGet: Get[Either[io.circe.Error, ClassificationExamples]] =
+    Get[String].map(ClassificationExamplesSerializer.decodeJson)
+  implicit val classificationExamplesPut: Put[ClassificationExamples] =
+    Put[String].contramap(ClassificationExamplesSerializer.encodeJsonNoSpaces)
+
+  implicit val regressionExamplesGet: Get[Either[io.circe.Error, RegressionExamples]] =
+    Get[String].map(RegressionExamplesSerializer.decodeJson)
+  implicit val regressionExamplesPut: Put[RegressionExamples] =
+    Put[String].contramap(RegressionExamplesSerializer.encodeJsonNoSpaces)
 
   def insertClassificationPredictionQuery(prediction: ClassificationPrediction): doobie.Update0 =
     sql"""INSERT INTO predictions(

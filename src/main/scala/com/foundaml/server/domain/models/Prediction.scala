@@ -1,6 +1,6 @@
 package com.foundaml.server.domain.models
 
-import com.foundaml.server.domain.models.Examples.ClassificationExamples
+import com.foundaml.server.domain.models.Examples.{ClassificationExamples, RegressionExamples}
 import com.foundaml.server.domain.models.features.Features.Features
 import com.foundaml.server.domain.models.labels.{ClassificationLabel, Labels, RegressionLabel}
 
@@ -26,7 +26,7 @@ case class RegressionPrediction(
                                  projectId: String,
                                  algorithmId: String,
                                  features: Features,
-                                 examples: ClassificationExamples,
+                                 examples: RegressionExamples,
                                  labels: Set[RegressionLabel]) extends Prediction {
   override def predictionType: ProblemType = Regression()
 }

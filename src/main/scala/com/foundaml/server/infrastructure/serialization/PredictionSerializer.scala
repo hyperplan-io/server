@@ -89,7 +89,7 @@ object PredictionSerializer {
             algorithmId <- c.downField("algorithmId").as[String]
             features <- c.downField("features").as[Features]
             labels <- c.downField("labels").as[Set[RegressionLabel]]
-            examples <- c.downField("examples").as[Set[String]]
+            examples <- c.downField("examples").as[List[Float]]
           } yield RegressionPrediction(id, projectId, algorithmId, features, examples, labels)
       }
 

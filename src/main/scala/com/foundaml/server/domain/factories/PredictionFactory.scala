@@ -16,7 +16,7 @@ class PredictionFactory(classificationsPredictionRepository: PredictionsReposito
         Task.succeed(prediction)
       case (id, projectId, algorithmId, Right(Regression()), Right(features), Right(labels), Right(examples)) =>
         val prediction = RegressionPrediction(
-          id,projectId,algorithmId, features, examples, labels.asInstanceOf[Set[RegressionLabel]]
+          id,projectId,algorithmId, features, examples.map(_.toFloat).toList, labels.asInstanceOf[Set[RegressionLabel]]
         )
         Task.succeed(prediction)
       case _ =>
