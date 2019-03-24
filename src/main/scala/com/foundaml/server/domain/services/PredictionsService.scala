@@ -142,7 +142,7 @@ class PredictionsService(
               uri => {
                 val request =
                   Request[Task](method = Method.POST, uri = uri)
-                    .withBody(tfFeatures)
+                    .withEntity(tfFeatures)
                 BlazeClientBuilder[Task](ExecutionContext.global).resource
                   .use(
                     _.expect[TensorFlowLabels](request)(
@@ -294,15 +294,15 @@ class PredictionsService(
   }
 
   def predictForRegressionProject(
-                                       project: RegressionProject,
-                                       features: Features,
-                                       optionalAlgorithmId: Option[String]
-                                     ) = {
+      project: RegressionProject,
+      features: Features,
+      optionalAlgorithmId: Option[String]
+  ) = {
 
     if (validateFeatures(
-      project.configuration.features,
-      features
-    )) {
+        project.configuration.features,
+        features
+      )) {
       optionalAlgorithmId.fold(
         predictWithProjectPolicy(features, project)
       )(
@@ -310,13 +310,12 @@ class PredictionsService(
           project.algorithmsMap
             .get(algorithmId)
             .fold[Task[Prediction]](
-            Task.fail(
-              AlgorithmDoesNotExist(algorithmId)
+              Task.fail(
+                AlgorithmDoesNotExist(algorithmId)
+              )
+            )(
+              algorithm => predictWithAlgorithm(project.id, algorithm, features)
             )
-          )(
-            algorithm =>
-              predictWithAlgorithm(project.id, algorithm, features)
-          )
       )
     } else {
       val message =

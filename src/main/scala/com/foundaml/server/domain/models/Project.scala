@@ -61,33 +61,32 @@ object ClassificationProject {
     ClassificationProject(id, name, configuration, Nil, NoAlgorithm())
 }
 
-
 case class RegressionProject(
-                                  id: String,
-                                  name: String,
-                                  configuration: RegressionConfiguration,
-                                  algorithms: List[Algorithm],
-                                  policy: AlgorithmPolicy
-                                ) extends Project {
+    id: String,
+    name: String,
+    configuration: RegressionConfiguration,
+    algorithms: List[Algorithm],
+    policy: AlgorithmPolicy
+) extends Project {
   override def problem: ProblemType = Regression()
 }
 
 object RegressionProject {
   def apply(
-             id: String,
-             name: String,
-             configuration: RegressionConfiguration,
-             algorithms: Option[List[Algorithm]],
-             policy: AlgorithmPolicy
-           ): RegressionProject =
+      id: String,
+      name: String,
+      configuration: RegressionConfiguration,
+      algorithms: Option[List[Algorithm]],
+      policy: AlgorithmPolicy
+  ): RegressionProject =
     RegressionProject(id, name, configuration, Nil, policy)
 
   def apply(
-             id: String,
-             name: String,
-             configuration: RegressionConfiguration,
-             algorithms: Option[List[Algorithm]],
-             policy: Option[AlgorithmPolicy]
-           ): RegressionProject =
+      id: String,
+      name: String,
+      configuration: RegressionConfiguration,
+      algorithms: Option[List[Algorithm]],
+      policy: Option[AlgorithmPolicy]
+  ): RegressionProject =
     RegressionProject(id, name, configuration, Nil, NoAlgorithm())
 }

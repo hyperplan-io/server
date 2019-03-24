@@ -50,7 +50,10 @@ object ProjectSerializer {
         ("problem", ProblemTypeSerializer.encodeJson(project.problem)),
         ("algorithms", algorithmListEncoder(project.algorithms)),
         ("policy", AlgorithmPolicySerializer.encodeJson(project.policy)),
-        ("configuration", ProjectConfigurationSerializer.encodeJson(project.configuration))
+        (
+          "configuration",
+          ProjectConfigurationSerializer.encodeJson(project.configuration)
+        )
       )
 
   implicit val decoder: Decoder[Project] =
@@ -64,34 +67,40 @@ object ProjectSerializer {
         result <- problem match {
           case Classification() =>
             c.downField("configuration")
-              .as[ClassificationConfiguration](ProjectConfigurationSerializer.classificationConfigurationDecoder)
+              .as[ClassificationConfiguration](
+                ProjectConfigurationSerializer.classificationConfigurationDecoder
+              )
               .flatMap { classificationConfiguration =>
-                Right(ClassificationProject(
-                  id,
-                  name,
-                  classificationConfiguration,
-                  algorithms,
-                  policy
-                ))
+                Right(
+                  ClassificationProject(
+                    id,
+                    name,
+                    classificationConfiguration,
+                    algorithms,
+                    policy
+                  )
+                )
               }
 
           case Regression() =>
             c.downField("configuration")
               .as[RegressionConfiguration](
-              ProjectConfigurationSerializer.regressionConfigurationDecoder
-            ).flatMap { regressionConfiguration =>
-              Right(RegressionProject(
-                id,
-                name,
-                regressionConfiguration,
-                algorithms,
-                policy
-              ))
-            }
+                ProjectConfigurationSerializer.regressionConfigurationDecoder
+              )
+              .flatMap { regressionConfiguration =>
+                Right(
+                  RegressionProject(
+                    id,
+                    name,
+                    regressionConfiguration,
+                    algorithms,
+                    policy
+                  )
+                )
+              }
         }
 
       } yield result
-
 
   implicit val entityDecoder: EntityDecoder[Task, Project] =
     jsonOf[Task, Project]
