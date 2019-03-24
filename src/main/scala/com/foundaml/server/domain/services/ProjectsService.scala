@@ -74,6 +74,14 @@ class ProjectsService(
           Nil,
           NoAlgorithm()
         )
+      case regressionConfiguration: RegressionConfiguration =>
+        RegressionProject(
+          id,
+          name,
+          regressionConfiguration,
+          Nil,
+          NoAlgorithm()
+        )
     }
 
     val errors = project match {

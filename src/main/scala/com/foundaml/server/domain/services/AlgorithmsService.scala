@@ -63,6 +63,34 @@ class AlgorithmsService(
     }
   }
 
+  def validateRegressionAlgorithm(
+                                       algorithm: Algorithm,
+                                       project: RegressionProject
+                                     ) = {
+    algorithm.backend match {
+      case com.foundaml.server.domain.models.backends.Local(computed) => Nil
+      case com.foundaml.server.domain.models.backends.TensorFlowBackend(
+      _,
+      _,
+      TensorFlowFeaturesTransformer(signatureName, fields),
+      TensorFlowLabelsTransformer(labels)
+      ) =>
+        val size = project.configuration.features match {
+          case FeaturesConfiguration(
+          featuresClasses: List[FeatureConfiguration]
+          ) =>
+            featuresClasses.size
+        }
+        List(
+          validateEqualSize(
+            size,
+            fields.size,
+            "features"
+          )
+        ).flatten
+    }
+  }
+
   def createAlgorithm(id: String, backend: Backend, projectId: String) = {
     for {
       project <- projectFactory.get(projectId)
@@ -74,6 +102,8 @@ class AlgorithmsService(
       errors = project match {
         case classificationProject: ClassificationProject =>
           validateClassificationAlgorithm(algorithm, classificationProject)
+        case regressionProject: RegressionProject =>
+          validateRegressionAlgorithm(algorithm, regressionProject)
       }
       _ <- if (errors.isEmpty) {
         Task(Unit)

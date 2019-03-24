@@ -28,13 +28,33 @@ object ProjectConfigurationSerializer {
         ClassificationConfiguration(featuresConfiguration, labels)
       }
 
+  implicit val regressionConfigurationEncoder
+      : Encoder[RegressionConfiguration] =
+    (a: RegressionConfiguration) =>
+      Json.obj(
+        ("features", FeaturesConfigurationSerializer.encoder(a.features))
+      )
+
+  implicit val regressionConfigurationDecoder
+      : Decoder[RegressionConfiguration] =
+    (c: HCursor) =>
+      for {
+        featuresConfiguration <- c
+          .downField("features")
+          .as[FeaturesConfiguration](FeaturesConfigurationSerializer.decoder)
+      } yield {
+        RegressionConfiguration(featuresConfiguration)
+      }
+
   implicit val encoder: Encoder[ProjectConfiguration] = Encoder.instance {
-    case foo: ClassificationConfiguration => foo.asJson
+    case config: ClassificationConfiguration => config.asJson
+    case config: RegressionConfiguration => config.asJson
   }
 
   implicit val decoder: Decoder[ProjectConfiguration] =
     List[Decoder[ProjectConfiguration]](
-      Decoder[ClassificationConfiguration].widen
+      Decoder[ClassificationConfiguration].widen,
+      Decoder[RegressionConfiguration].widen
     ).reduceLeft(_ or _)
 
   def encodeJson(project: ProjectConfiguration): Json = {
