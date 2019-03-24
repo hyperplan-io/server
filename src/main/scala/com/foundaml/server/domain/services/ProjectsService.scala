@@ -3,14 +3,10 @@ package com.foundaml.server.domain.services
 import com.foundaml.server.application.controllers.requests.PostProjectRequest
 import com.foundaml.server.domain.factories.ProjectFactory
 import com.foundaml.server.domain.models._
-import com.foundaml.server.domain.models.errors.{
-  FeaturesConfigurationError,
-  InvalidArgument,
-  InvalidProjectIdentifier,
-  ProjectError
-}
+import com.foundaml.server.domain.models.errors._
 import com.foundaml.server.domain.models.features._
 import com.foundaml.server.domain.repositories.ProjectsRepository
+import doobie.util.invariant.UnexpectedEnd
 import scalaz.zio.{Task, ZIO}
 
 class ProjectsService(
@@ -99,6 +95,8 @@ class ProjectsService(
   }
 
   def readProject(id: String) =
-    projectFactory.get(id)
+    projectFactory.get(id).catchAll {
+      case UnexpectedEnd => Task.fail(ProjectDoesNotExist(id))
+    }
 
 }
