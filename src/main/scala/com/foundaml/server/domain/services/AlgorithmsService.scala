@@ -64,21 +64,21 @@ class AlgorithmsService(
   }
 
   def validateRegressionAlgorithm(
-                                       algorithm: Algorithm,
-                                       project: RegressionProject
-                                     ) = {
+      algorithm: Algorithm,
+      project: RegressionProject
+  ) = {
     algorithm.backend match {
       case com.foundaml.server.domain.models.backends.Local(computed) => Nil
       case com.foundaml.server.domain.models.backends.TensorFlowBackend(
-      _,
-      _,
-      TensorFlowFeaturesTransformer(signatureName, fields),
-      TensorFlowLabelsTransformer(labels)
-      ) =>
+          _,
+          _,
+          TensorFlowFeaturesTransformer(signatureName, fields),
+          TensorFlowLabelsTransformer(labels)
+          ) =>
         val size = project.configuration.features match {
           case FeaturesConfiguration(
-          featuresClasses: List[FeatureConfiguration]
-          ) =>
+              featuresClasses: List[FeatureConfiguration]
+              ) =>
             featuresClasses.size
         }
         List(

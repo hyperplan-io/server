@@ -1,7 +1,7 @@
 package com.foundaml.server.application.controllers
 
 import cats.Functor
-import org.http4s.HttpService
+import org.http4s.{HttpRoutes, HttpService}
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
 import scalaz.zio.Task
@@ -20,8 +20,8 @@ class PredictionsController(
 ) extends Http4sDsl[Task]
     with IOLazyLogging {
 
-  val service: HttpService[Task] = {
-    HttpService[Task] {
+  val service: HttpRoutes[Task] = {
+    HttpRoutes.of[Task] {
       case req @ POST -> Root =>
         (for {
           predictionRequest <- req.as[PredictionRequest](

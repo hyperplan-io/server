@@ -64,30 +64,37 @@ object ProjectSerializer {
         result <- problem match {
           case Classification() =>
             c.downField("configuration")
-              .as[ClassificationConfiguration](ProjectConfigurationSerializer.classificationConfigurationDecoder)
+              .as[ClassificationConfiguration](
+                ProjectConfigurationSerializer.classificationConfigurationDecoder
+              )
               .flatMap { classificationConfiguration =>
-                Right(ClassificationProject(
-                  id,
-                  name,
-                  classificationConfiguration,
-                  algorithms,
-                  policy
-                ))
+                Right(
+                  ClassificationProject(
+                    id,
+                    name,
+                    classificationConfiguration,
+                    algorithms,
+                    policy
+                  )
+                )
               }
 
           case Regression() =>
             c.downField("configuration")
               .as[RegressionConfiguration](
-              ProjectConfigurationSerializer.regressionConfigurationDecoder
-            ).flatMap { regressionConfiguration =>
-              Right(RegressionProject(
-                id,
-                name,
-                regressionConfiguration,
-                algorithms,
-                policy
-              ))
-            }
+                ProjectConfigurationSerializer.regressionConfigurationDecoder
+              )
+              .flatMap { regressionConfiguration =>
+                Right(
+                  RegressionProject(
+                    id,
+                    name,
+                    regressionConfiguration,
+                    algorithms,
+                    policy
+                  )
+                )
+              }
         }
 
       } yield result
