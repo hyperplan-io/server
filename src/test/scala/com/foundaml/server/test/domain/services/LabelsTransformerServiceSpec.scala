@@ -2,15 +2,14 @@ package com.foundaml.server.test.domain.services
 
 import java.util.UUID
 
-import com.foundaml.server.domain.models.labels.ClassificationLabel
+import com.foundaml.server.domain.models.labels.{
+  ClassificationLabel,
+  TensorFlowClassificationLabels
+}
 import scalaz.zio.DefaultRuntime
 import org.scalatest.Inside.inside
 import org.scalatest._
-import com.foundaml.server.domain.models.labels.transformers.{
-  TensorFlowLabel,
-  TensorFlowClassificationLabels,
-  TensorFlowLabelsTransformer
-}
+import com.foundaml.server.domain.models.labels.transformers.TensorFlowLabelsTransformer
 
 class LabelsTransformerServiceSpec
     extends FlatSpec
@@ -102,7 +101,7 @@ class LabelsTransformerServiceSpec
 
     inside(transformedFeatures) {
       case Right(tfLabels) =>
-        inside(tfLabels.labels.toList) {
+        inside(tfLabels.toList) {
           case ClassificationLabel(_, "toto", 0.5f, _, _)
                 :: ClassificationLabel(_, "titi", 0.3f, _, _)
                 :: Nil =>

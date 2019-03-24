@@ -8,7 +8,7 @@ import com.foundaml.server.domain.models.{Algorithm, labels}
 
 object AlgorithmGenerator {
 
-  val computed = Labels(
+  val computed =
     Set(
       labels.ClassificationLabel(
         UUID.randomUUID().toString,
@@ -32,7 +32,6 @@ object AlgorithmGenerator {
         "incorrect_url"
       )
     )
-  )
 
   val defaultAlgorithm = Algorithm(
     "algorithm id",

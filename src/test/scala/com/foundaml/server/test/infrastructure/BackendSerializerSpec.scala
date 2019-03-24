@@ -23,8 +23,8 @@ class BackendSerializerSpec
     with SerializerTester
     with Matchers {
 
-  val encoder: Encoder[Backend] = BackendSerializer.Implicits.encoder
-  val decoder: Decoder[Backend] = BackendSerializer.Implicits.decoder
+  val encoder: Encoder[Backend] = BackendSerializer.encoder
+  val decoder: Decoder[Backend] = BackendSerializer.decoder
 
   val doubleQuote = "\""
 
@@ -74,7 +74,7 @@ class BackendSerializerSpec
         """{"tf_class1":"class1","tf_class2":"class2","tf_class3":"class3","tf_class4":"class4"}"""
 
       val expectedJson =
-        s"""{"host":"$host","port":$port,"featuresTransformer":{"signatureName":"$signatureName","fields":[$featuresJson]},"labelsTransformer":{"fields":$labelsJson},"class":"TensorFlowBackend"}"""
+        s"""{"class":"TensorFlowClassificationBackend","host":"$host","port":$port,"featuresTransformer":{"signatureName":"$signatureName","fields":[$featuresJson]},"labelsTransformer":{"fields":$labelsJson}}"""
       json.noSpaces should be(expectedJson)
     }(encoder)
   }
@@ -113,7 +113,7 @@ class BackendSerializerSpec
       """{"tf_class1":"class1","tf_class2":"class2","tf_class3":"class3","tf_class4":"class4"}"""
 
     val backendJson =
-      s"""{"host":"$expectedHost","port":$expectedPort,"featuresTransformer":{"signatureName":"$expectedSignatureName","fields":[$featuresJson]},"labelsTransformer":{"fields":$labelsJson},"class":"TensorFlowBackend"}"""
+      s"""{"class":"TensorFlowClassificationBackend","host":"$expectedHost","port":$expectedPort,"featuresTransformer":{"signatureName":"$expectedSignatureName","fields":[$featuresJson]},"labelsTransformer":{"fields":$labelsJson}}"""
 
     testDecoder[Backend](backendJson) { backend =>
       inside(backend) {
