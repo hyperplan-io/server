@@ -85,7 +85,7 @@ object PredictionSerializer {
       c.downField("type")
         .as[ProblemType](ProblemTypeSerializer.decoder)
         .flatMap {
-          case Classification() =>
+          case Classification =>
             for {
               id <- c.downField("id").as[String]
               projectId <- c.downField("projectId").as[String]
@@ -102,7 +102,7 @@ object PredictionSerializer {
                 examples,
                 labels
               )
-          case Regression() =>
+          case Regression =>
             for {
               id <- c.downField("id").as[String]
               projectId <- c.downField("projectId").as[String]

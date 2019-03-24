@@ -27,7 +27,7 @@ case class ClassificationPrediction(
     examples: ClassificationExamples,
     labels: Set[ClassificationLabel]
 ) extends Prediction {
-  override def predictionType: ProblemType = Classification()
+  override def predictionType: ProblemType = Classification
 }
 case class RegressionPrediction(
     id: String,
@@ -37,5 +37,5 @@ case class RegressionPrediction(
     examples: RegressionExamples,
     labels: Set[RegressionLabel]
 ) extends Prediction {
-  override def predictionType: ProblemType = Regression()
+  override def predictionType: ProblemType = Regression
 }

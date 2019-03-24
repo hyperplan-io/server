@@ -1,8 +1,13 @@
 package com.foundaml.server.domain.models
 
-sealed trait ProblemType
-object ProblemType {
-  val classification = "classification"
+sealed trait ProblemType {
+  def problemType: String
 }
-case class Classification() extends ProblemType
-case class Regression() extends ProblemType
+
+case object Classification extends ProblemType {
+  val problemType: String = "classification"
+}
+
+case object Regression extends ProblemType {
+  val problemType: String = "regression"
+}

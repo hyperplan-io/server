@@ -23,7 +23,7 @@ class ProjectFactory(
           (
             id,
             name,
-            Right(Classification()),
+            Right(Classification),
             Right(policy),
             Right(projectConfiguration: ClassificationConfiguration)
           ),
@@ -42,7 +42,7 @@ class ProjectFactory(
           (
             id,
             name,
-            Right(Regression()),
+            Right(Regression),
             Right(policy),
             Right(projectConfiguration: RegressionConfiguration)
           ),

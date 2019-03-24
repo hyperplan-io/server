@@ -65,7 +65,7 @@ object ProjectSerializer {
         algorithms <- c.downField("algorithms").as[Option[List[Algorithm]]]
         policy <- c.downField("policy").as[Option[AlgorithmPolicy]]
         result <- problem match {
-          case Classification() =>
+          case Classification =>
             c.downField("configuration")
               .as[ClassificationConfiguration](
                 ProjectConfigurationSerializer.classificationConfigurationDecoder
@@ -82,7 +82,7 @@ object ProjectSerializer {
                 )
               }
 
-          case Regression() =>
+          case Regression =>
             c.downField("configuration")
               .as[RegressionConfiguration](
                 ProjectConfigurationSerializer.regressionConfigurationDecoder

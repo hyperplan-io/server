@@ -38,7 +38,7 @@ case class ClassificationProject(
     algorithms: List[Algorithm],
     policy: AlgorithmPolicy
 ) extends Project {
-  override def problem: ProblemType = Classification()
+  override def problem: ProblemType = Classification
 }
 
 object ClassificationProject {
@@ -68,7 +68,7 @@ case class RegressionProject(
     algorithms: List[Algorithm],
     policy: AlgorithmPolicy
 ) extends Project {
-  override def problem: ProblemType = Regression()
+  override def problem: ProblemType = Regression
 }
 
 object RegressionProject {

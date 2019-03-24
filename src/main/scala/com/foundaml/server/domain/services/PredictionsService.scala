@@ -319,7 +319,7 @@ class PredictionsService(
     predictionFactory.get(predictionId).flatMap {
       case prediction: ClassificationPrediction =>
         labelIdOpt.fold[Task[Label]](
-          Task.fail(IncorrectExample(Classification()))
+          Task.fail(IncorrectExample(Classification))
         )(
           labelId =>
             prediction.labels
@@ -343,7 +343,7 @@ class PredictionsService(
 
       case prediction: RegressionPrediction =>
         valueOpt.fold[Task[Label]](
-          Task.fail(IncorrectExample(Regression()))
+          Task.fail(IncorrectExample(Regression))
         )(
           value => {
             val examples = prediction.examples :+ value

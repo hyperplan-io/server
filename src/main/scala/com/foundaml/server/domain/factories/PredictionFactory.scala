@@ -28,7 +28,7 @@ class PredictionFactory(
           id,
           projectId,
           algorithmId,
-          Right(Classification()),
+          Right(Classification),
           Right(features),
           labelsRaw,
           examplesRaw
@@ -38,14 +38,14 @@ class PredictionFactory(
           .fold(
             err =>
               warnLog(err.getMessage) *> Task
-                .fail(CouldNotDecodeLabels(predictionId, Classification())),
+                .fail(CouldNotDecodeLabels(predictionId, Classification)),
             classificationLabels => {
               ClassificationExamplesSerializer
                 .decodeJson(examplesRaw)
                 .fold(
                   err =>
                     warnLog(err.getMessage) *> Task.fail(
-                      CouldNotDecodeExamples(predictionId, Classification())
+                      CouldNotDecodeExamples(predictionId, Classification)
                     ),
                   classificationExamples => {
                     val prediction = ClassificationPrediction(
@@ -66,7 +66,7 @@ class PredictionFactory(
           id,
           projectId,
           algorithmId,
-          Right(Regression()),
+          Right(Regression),
           Right(features),
           labels,
           examplesRaw
@@ -76,14 +76,14 @@ class PredictionFactory(
           .fold(
             err =>
               warnLog(err.getMessage) *> Task
-                .fail(CouldNotDecodeLabels(predictionId, Regression())),
+                .fail(CouldNotDecodeLabels(predictionId, Regression)),
             classificationLabels => {
               RegressionExamplesSerializer
                 .decodeJson(examplesRaw)
                 .fold(
                   err =>
                     warnLog(err.getMessage) *> Task.fail(
-                      CouldNotDecodeExamples(predictionId, Classification())
+                      CouldNotDecodeExamples(predictionId, Classification)
                     ),
                   regressionExamples => {
                     val prediction = RegressionPrediction(
