@@ -49,10 +49,11 @@ object Server {
       predictionsService: PredictionsService,
       projectsService: ProjectsService,
       algorithmsService: AlgorithmsService,
-      projectsRepository: ProjectsRepository
+      projectsRepository: ProjectsRepository,
+      port: Int
   )(implicit ec: ExecutionContext) =
     BlazeBuilder[Task]
-      .bindHttp(8080, "0.0.0.0")
+      .bindHttp(port, "0.0.0.0")
       .mountService(
         new PredictionsController(
           predictionsService

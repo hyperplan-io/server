@@ -14,6 +14,7 @@ import com.foundaml.server.domain.services.{
   PredictionsService,
   ProjectsService
 }
+import com.foundaml.server.infrastructure.logging.IOLazyLogging
 import com.foundaml.server.infrastructure.storage.PostgresqlService
 import com.foundaml.server.infrastructure.streaming.KinesisService
 import scalaz.zio.clock.Clock
@@ -25,7 +26,7 @@ import scala.concurrent.duration.{FiniteDuration, NANOSECONDS, TimeUnit}
 import scala.util.{Left, Right}
 import pureconfig.generic.auto._
 
-object Main extends App {
+object Main extends App with IOLazyLogging {
 
   implicit val timer: Timer[Task] = new Timer[Task] {
     val zioClock = Clock.Live.clock
@@ -44,19 +45,24 @@ object Main extends App {
   import scala.concurrent.ExecutionContext.Implicits.global
 
   def run(args: List[String]): ZIO[Environment, Nothing, Int] =
-    loadConfigAndStart().either.map(_.fold(err => {
-      println(err)
-      1
-    }, _ => 0))
+    loadConfigAndStart()
+      .fold(
+        err => errorLog(err.getMessage) *> Task.fail(err),
+        res => Task.succeed(res)
+      )
+      .either
+      .map(_.fold(_ => {
+        1
+      }, _ => 0))
 
   def databaseConnected(
       config: FoundaMLConfig
   )(implicit xa: doobie.Transactor[Task]) =
     for {
-      _ <- printLine("Connected to database")
-      _ <- printLine("Running SQL scripts")
+      _ <- infoLog("Connected to database")
+      _ <- debugLog("Running SQL scripts")
       _ <- PostgresqlService.initSchema
-      _ <- printLine("SQL scripts have been runned successfully")
+      _ <- debugLog("SQL scripts have been runned successfully")
       projectsRepository = new ProjectsRepository
       algorithmsRepository = new AlgorithmsRepository
       predictionsRepository = new PredictionsRepository
@@ -81,13 +87,16 @@ object Main extends App {
         projectsRepository,
         projectFactory
       )
-      _ <- printLine("Services have been correctly instantiated")
+      port = 8080
+      _ <- infoLog("Services have been correctly instantiated")
+      _ <- infoLog(s"Starting http server on port $port")
       _ <- Server
         .stream(
           predictionsService,
           projectsService,
           algorithmsService,
-          projectsRepository
+          projectsRepository,
+          port
         )
         .compile
         .drain
@@ -97,14 +106,14 @@ object Main extends App {
     pureconfig
       .loadConfig[FoundaMLConfig]
       .fold(
-        err => printLine(s"Failed to load configuration because $err"),
+        err => errorLog(s"Failed to load configuration because $err"),
         config => program(config)
       )
 
   def program(config: FoundaMLConfig): Task[Unit] =
     for {
-      _ <- printLine("Starting Foundaml server")
-      _ <- printLine("Connecting to database")
+      _ <- infoLog("Starting Foundaml server")
+      _ <- infoLog("Connecting to database")
       transactor = PostgresqlService(
         config.database.postgresql.host,
         config.database.postgresql.port.toString,
@@ -118,13 +127,10 @@ object Main extends App {
             case Right(_) =>
               databaseConnected(config)
             case Left(err) =>
-              printLine(s"Could not connect to the database: $err")
+              infoLog(s"Could not connect to the database: $err")
           }
         }
       }
     } yield ()
-
-  def printLine(whatToPrint: String) =
-    IO(println(whatToPrint))
 
 }
