@@ -30,7 +30,10 @@ class AlgorithmsService(
       None
     }
 
-  def validate(algorithm: Algorithm, project: Project) = {
+  def validateClassificationAlgorithm(
+      algorithm: Algorithm,
+      project: ClassificationProject
+  ) = {
     algorithm.backend match {
       case com.foundaml.server.domain.models.backends.Local(computed) => Nil
       case com.foundaml.server.domain.models.backends.TensorFlowBackend(
@@ -68,7 +71,10 @@ class AlgorithmsService(
         backend,
         projectId
       )
-      errors = validate(algorithm, project)
+      errors = project match {
+        case classificationProject: ClassificationProject =>
+          validateClassificationAlgorithm(algorithm, classificationProject)
+      }
       _ <- if (errors.isEmpty) {
         Task(Unit)
       } else {

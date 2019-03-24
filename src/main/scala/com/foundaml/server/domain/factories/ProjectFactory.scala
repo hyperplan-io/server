@@ -4,7 +4,12 @@ import com.foundaml.server.domain.models.errors.{
   FactoryException,
   ProjectDataInconsistent
 }
-import com.foundaml.server.domain.models.{Project, ProjectConfiguration}
+import com.foundaml.server.domain.models.{
+  Classification,
+  ClassificationConfiguration,
+  ClassificationProject,
+  Project
+}
 import com.foundaml.server.domain.repositories.{
   AlgorithmsRepository,
   ProjectsRepository
@@ -22,22 +27,17 @@ class ProjectFactory(
           (
             id,
             name,
+            Right(Classification()),
             Right(policy),
-            Right(problemType),
-            Right(featuresConfiguration),
-            labels
+            Right(projectConfiguration: ClassificationConfiguration)
           ),
           algorithms
           ) =>
         Task.succeed(
-          Project(
+          ClassificationProject(
             id,
             name,
-            ProjectConfiguration(
-              problemType,
-              featuresConfiguration,
-              labels
-            ),
+            projectConfiguration,
             algorithms,
             policy
           )

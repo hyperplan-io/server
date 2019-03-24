@@ -41,27 +41,27 @@ object ProjectGenerator {
   val projectId = UUID.randomUUID().toString
   val defaultAlgorithmId = "algorithm id"
 
-  def withLocalBackend(algorithms: Option[List[Algorithm]] = None) = Project(
-    projectId,
-    "example project",
-    ProjectConfiguration(
-      Classification(),
-      models.FeaturesConfiguration(
-        List(
-          FeatureConfiguration(
-            "my feature",
-            StringFeature.featureClass,
-            "this is a description of the features"
+  def withLocalBackend(algorithms: Option[List[Algorithm]] = None) =
+    ClassificationProject(
+      projectId,
+      "example project",
+      ClassificationConfiguration(
+        models.FeaturesConfiguration(
+          List(
+            FeatureConfiguration(
+              "my feature",
+              StringFeature.featureClass,
+              "this is a description of the features"
+            )
           )
+        ),
+        Set(
+          "class1",
+          "class2",
+          "class3"
         )
       ),
-      Set(
-        "class1",
-        "class2",
-        "class3"
-      )
-    ),
-    algorithms.getOrElse(List(AlgorithmGenerator.withLocalBackend())),
-    DefaultAlgorithm(defaultAlgorithmId)
-  )
+      algorithms.getOrElse(List(AlgorithmGenerator.withLocalBackend())),
+      DefaultAlgorithm(defaultAlgorithmId)
+    )
 }

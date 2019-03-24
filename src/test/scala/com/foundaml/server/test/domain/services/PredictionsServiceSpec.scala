@@ -78,7 +78,7 @@ class PredictionsServiceSpec
     val shouldThrow = Try(
       unsafeRun(
         predictionsService
-          .predictForProject(
+          .predictForClassificationProject(
             project,
             features,
             Some(algorithmId)

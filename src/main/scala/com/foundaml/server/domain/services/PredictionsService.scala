@@ -234,12 +234,13 @@ class PredictionsService(
       projectId: String,
       features: Features,
       optionalAlgorithmId: Option[String]
-  ) = projectFactory.get(projectId).flatMap { project =>
-    predictForProject(project, features, optionalAlgorithmId)
+  ) = projectFactory.get(projectId).flatMap {
+    case project: ClassificationProject =>
+      predictForClassificationProject(project, features, optionalAlgorithmId)
   }
 
-  def predictForProject(
-      project: Project,
+  def predictForClassificationProject(
+      project: ClassificationProject,
       features: Features,
       optionalAlgorithmId: Option[String]
   ) = {

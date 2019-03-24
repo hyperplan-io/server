@@ -1,6 +1,6 @@
 package com.foundaml.server.infrastructure.serialization
 
-import io.circe.{Decoder, Encoder}
+import io.circe.{Decoder, Encoder, Json}
 import io.circe.generic.extras.Configuration
 import io.circe.parser.decode
 import io.circe.syntax._
@@ -21,8 +21,12 @@ object AlgorithmPolicySerializer {
   import io.circe.generic.extras.semiauto._
   import Implicits._
 
-  def encodeJson(policy: AlgorithmPolicy): String = {
+  def encodeJsonString(policy: AlgorithmPolicy): String = {
     policy.asJson.noSpaces
+  }
+
+  def encodeJson(policy: AlgorithmPolicy): Json = {
+    policy.asJson
   }
 
   def decodeJson(n: String): Either[io.circe.Error, AlgorithmPolicy] = {

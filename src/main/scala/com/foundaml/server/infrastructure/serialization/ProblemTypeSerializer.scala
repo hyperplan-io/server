@@ -16,8 +16,12 @@ object ProblemTypeSerializer {
   implicit val encoder: Encoder[ProblemType] = deriveEncoder
   implicit val decoder: Decoder[ProblemType] = deriveDecoder
 
-  def encodeJson(problem: ProblemType): String = {
+  def encodeJsonString(problem: ProblemType): String = {
     problem.asJson.noSpaces
+  }
+
+  def encodeJson(problem: ProblemType): Json = {
+    problem.asJson
   }
 
   def decodeJson(n: String): Either[io.circe.Error, ProblemType] = {

@@ -1,6 +1,5 @@
 package com.foundaml.server.domain.services
 
-import com.foundaml.server.application.controllers.requests.PostProjectRequest
 import com.foundaml.server.domain.factories.ProjectFactory
 import com.foundaml.server.domain.models._
 import com.foundaml.server.domain.models.errors._
@@ -55,32 +54,34 @@ class ProjectsService(
         }
     }
 
-  def validateProject(project: Project): List[ProjectError] = {
-    List(
-      validateAlphaNumerical(project.id),
-      validateFeatureClasses(project.configuration.features)
-    ).flatten
+  def validateClassificationConfiguration(
+      configuration: ClassificationConfiguration
+  ): List[ProjectError] = {
+    validateFeatureClasses(configuration.features)
   }
 
   def createEmptyProject(
       id: String,
       name: String,
-      problem: ProblemType,
-      featuresConfiguration: FeaturesConfiguration,
-      labels: Set[String]
+      configuration: ProjectConfiguration
   ): ZIO[Any, Throwable, Project] = {
-    val project = Project(
-      id,
-      name,
-      ProjectConfiguration(
-        problem,
-        featuresConfiguration,
-        labels
-      ),
-      Nil,
-      NoAlgorithm()
-    )
-    val errors = validateProject(project)
+    val project = configuration match {
+      case classificationConfiguration: ClassificationConfiguration =>
+        ClassificationProject(
+          id,
+          name,
+          classificationConfiguration,
+          Nil,
+          NoAlgorithm()
+        )
+    }
+
+    val errors = project match {
+      case classificationProject: ClassificationProject =>
+        validateClassificationConfiguration(classificationProject.configuration)
+      case _ => Nil
+    }
+
     for {
       _ <- errors.headOption.fold[Task[Unit]](
         Task.succeed(Unit)

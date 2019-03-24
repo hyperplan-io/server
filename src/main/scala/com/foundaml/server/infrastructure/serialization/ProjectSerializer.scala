@@ -2,7 +2,11 @@ package com.foundaml.server.infrastructure.serialization
 
 import io.circe.parser.decode
 import io.circe.syntax._
+import org.http4s.circe.jsonOf
 import com.foundaml.server.domain.models._
+import org.http4s.EntityDecoder
+import scalaz.zio.Task
+import scalaz.zio.interop.catz._
 
 object ProjectSerializer {
 
@@ -29,12 +33,61 @@ object ProjectSerializer {
     FeaturesConfigurationSerializer.decoder
 
   implicit val projectConfigurationEncoder: Encoder[ProjectConfiguration] =
-    deriveEncoder
+    ProjectConfigurationSerializer.encoder
   implicit val projectConfigurationDecoder: Decoder[ProjectConfiguration] =
-    deriveDecoder
+    ProjectConfigurationSerializer.decoder
 
-  implicit val encoder: Encoder[Project] = deriveEncoder
-  implicit val decoder: Decoder[Project] = deriveDecoder
+  implicit val algorithmListDecoder: Decoder[List[Algorithm]] =
+    Decoder.decodeList[Algorithm](AlgorithmsSerializer.Implicits.decoder)
+  implicit val algorithmListEncoder: Encoder[List[Algorithm]] =
+    Encoder.encodeList[Algorithm](AlgorithmsSerializer.Implicits.encoder)
+
+  implicit val encoder: Encoder[Project] =
+    (project: Project) =>
+      Json.obj(
+        ("id", Json.fromString(project.id)),
+        ("name", Json.fromString(project.name)),
+        ("problem", ProblemTypeSerializer.encodeJson(project.problem)),
+        ("algorithms", algorithmListEncoder(project.algorithms)),
+        ("policy", AlgorithmPolicySerializer.encodeJson(project.policy)),
+        (
+          "configuration",
+          ProjectConfigurationSerializer.encodeJson(project.configuration)
+        )
+      )
+
+  implicit val decoder: Decoder[Project] =
+    (c: HCursor) =>
+      for {
+        id <- c.downField("id").as[String]
+        name <- c.downField("name").as[String]
+        problem <- c.downField("problem").as[ProblemType]
+        algorithms <- c.downField("algorithms").as[Option[List[Algorithm]]]
+        policy <- c.downField("policy").as[Option[AlgorithmPolicy]]
+        configuration <- problem match {
+          case Classification() =>
+            c.downField("configuration")
+              .as[ClassificationConfiguration](
+                ProjectConfigurationSerializer.classificationConfigurationDecoder
+              )
+        }
+      } yield
+        (problem, configuration) match {
+          case (
+              Classification(),
+              classificationConfiguration: ClassificationConfiguration
+              ) =>
+            ClassificationProject(
+              id,
+              name,
+              classificationConfiguration,
+              algorithms,
+              policy
+            )
+        }
+
+  implicit val entityDecoder: EntityDecoder[Task, Project] =
+    jsonOf[Task, Project]
 
   def encodeJson(project: Project): Json = {
     project.asJson

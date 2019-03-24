@@ -14,13 +14,13 @@ class ProjectsRepository(implicit xa: Transactor[Task]) {
   implicit val problemTypeGet: Get[Either[io.circe.Error, ProblemType]] =
     Get[String].map(ProblemTypeSerializer.decodeJson)
   implicit val problemTypePut: Put[ProblemType] =
-    Put[String].contramap(ProblemTypeSerializer.encodeJson)
+    Put[String].contramap(ProblemTypeSerializer.encodeJsonString)
 
   implicit val algorithmPolicyTypeGet
       : Get[Either[io.circe.Error, AlgorithmPolicy]] =
     Get[String].map(AlgorithmPolicySerializer.decodeJson)
   implicit val algorithmPolicyTypePut: Put[AlgorithmPolicy] =
-    Put[String].contramap(AlgorithmPolicySerializer.encodeJson)
+    Put[String].contramap(AlgorithmPolicySerializer.encodeJsonString)
 
   implicit val featuresConfigurationGet
       : Get[Either[io.circe.Error, FeaturesConfiguration]] =
@@ -28,6 +28,13 @@ class ProjectsRepository(implicit xa: Transactor[Task]) {
 
   implicit val featuresConfigurationPut: Put[FeaturesConfiguration] =
     Put[String].contramap(FeaturesConfigurationSerializer.encodeJson)
+
+  implicit val projectConfigurationGet
+      : Get[Either[io.circe.Error, ProjectConfiguration]] =
+    Get[String].map(ProjectConfigurationSerializer.decodeJson)
+
+  implicit val projectConfigurationPut: Put[ProjectConfiguration] =
+    Put[String].contramap(ProjectConfigurationSerializer.encodeJsonString)
 
   val separator = ";"
   implicit val labelsTypeGet: Get[Set[String]] =
@@ -38,18 +45,16 @@ class ProjectsRepository(implicit xa: Transactor[Task]) {
   def insertQuery(project: Project) =
     sql"""INSERT INTO projects(
       id, 
-      name, 
-      algorithm_policy,
+      name,
       problem,
-      features_configuration,
-      labels
+      algorithm_policy,
+      configuration
     ) VALUES(
       ${project.id},
       ${project.name},
+      ${project.problem},
       ${project.policy},
-      ${project.configuration.problem},
-      ${project.configuration.features},
-      ${project.configuration.labels}
+      ${project.configuration}
     )""".update
 
   def insert(project: Project) =
@@ -62,7 +67,7 @@ class ProjectsRepository(implicit xa: Transactor[Task]) {
 
   def readQuery(projectId: String) =
     sql"""
-      SELECT id, name, algorithm_policy, problem, features_configuration, labels
+      SELECT id, name, problem, algorithm_policy, configuration
       FROM projects
       WHERE id=$projectId
       """
@@ -72,7 +77,7 @@ class ProjectsRepository(implicit xa: Transactor[Task]) {
 
   def readAll() =
     sql"""
-        SELECT id, name, algorithm_policy, problem, features_configuration, labels
+        SELECT id, name, problem, algorithm_policy, configuration
       FROM projects
       """
       .query[ProjectsRepository.ProjectData]
@@ -83,9 +88,8 @@ object ProjectsRepository {
   type ProjectData = (
       String,
       String,
-      Either[io.circe.Error, AlgorithmPolicy],
       Either[io.circe.Error, ProblemType],
-      Either[io.circe.Error, FeaturesConfiguration],
-      Set[String]
+      Either[io.circe.Error, AlgorithmPolicy],
+      Either[io.circe.Error, ProjectConfiguration]
   )
 }
