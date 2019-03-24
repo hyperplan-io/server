@@ -2,7 +2,7 @@ package com.foundaml.server.application
 
 import cats.effect
 import cats.effect.Timer
-import org.http4s.server.blaze.BlazeBuilder
+import org.http4s.server.blaze.{BlazeBuilder, BlazeServerBuilder}
 import scalaz.zio.Task
 import scalaz.zio.interop.catz._
 import scalaz.zio.clock.Clock
@@ -27,6 +27,7 @@ import com.foundaml.server.domain.services.{
   PredictionsService,
   ProjectsService
 }
+import org.http4s.server.Router
 
 object Server {
   val port: Int = envOrNone("HTTP_PORT").fold(9090)(_.toInt)
@@ -45,6 +46,8 @@ object Server {
       zioClock.sleep(Duration.fromScala(duration))
   }
 
+  import org.http4s.implicits._
+
   def stream(
       predictionsService: PredictionsService,
       projectsService: ProjectsService,
@@ -52,31 +55,23 @@ object Server {
       projectsRepository: ProjectsRepository,
       port: Int
   )(implicit ec: ExecutionContext) =
-    BlazeBuilder[Task]
+    BlazeServerBuilder[Task]
       .bindHttp(port, "0.0.0.0")
-      .mountService(
-        new PredictionsController(
-          predictionsService
-        ).service,
-        "/predictions"
-      )
-      .mountService(
-        new ProjectsController(
-          projectsService
-        ).service,
-        "/projects"
-      )
-      .mountService(
-        new AlgorithmsController(
-          algorithmsService
-        ).service,
-        "/algorithms"
-      )
-      .mountService(
-        new ExamplesController(
-          predictionsService
-        ).service,
-        "/examples"
+      .withHttpApp(
+        Router(
+          "/predictions" -> new PredictionsController(
+            predictionsService
+          ).service,
+          "/projects" -> new ProjectsController(
+            projectsService
+          ).service,
+          "/algorithms" -> new AlgorithmsController(
+            algorithmsService
+          ).service,
+          "/examples" -> new ExamplesController(
+            predictionsService
+          ).service
+        ).orNotFound
       )
       .serve
 

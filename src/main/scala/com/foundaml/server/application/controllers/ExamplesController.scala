@@ -5,7 +5,7 @@ import com.foundaml.server.domain.models.Prediction
 import com.foundaml.server.domain.models.errors.LabelNotFound
 import com.foundaml.server.domain.services.PredictionsService
 import com.foundaml.server.infrastructure.serialization.LabelSerializer
-import org.http4s.HttpService
+import org.http4s.{HttpRoutes, HttpService}
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
 import scalaz.zio.Task
@@ -19,8 +19,8 @@ class ExamplesController(
   object PredictionIdMatcher
       extends QueryParamDecoderMatcher[String]("predictionId")
 
-  val service: HttpService[Task] = {
-    HttpService[Task] {
+  val service: HttpRoutes[Task] = {
+    HttpRoutes.of[Task] {
       case POST -> Root :? PredictionIdMatcher(predictionId) +& LabelIdMatcher(
             labelId
           ) =>

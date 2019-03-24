@@ -1,7 +1,7 @@
 package com.foundaml.server.test
 
 import com.foundaml.server.infrastructure.storage.PostgresqlService
-import doobie.imports.Transactor
+import doobie._
 import scalaz.zio.{DefaultRuntime, Task}
 import scalaz.zio.interop.catz._
 
@@ -18,7 +18,7 @@ trait TestDatabase extends DefaultRuntime {
 
   def withInMemoryDatabase(test: Unit => Unit) = {
     unsafeRun(PostgresqlService.initSchema(xa))
-    test()
+    test
   }
 
 }

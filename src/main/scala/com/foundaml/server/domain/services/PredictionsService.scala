@@ -142,7 +142,7 @@ class PredictionsService(
               uri => {
                 val request =
                   Request[Task](method = Method.POST, uri = uri)
-                    .withBody(tfFeatures)
+                    .withEntity(tfFeatures)
                 BlazeClientBuilder[Task](ExecutionContext.global).resource
                   .use(
                     _.expect[TensorFlowLabels](request)(
@@ -237,6 +237,8 @@ class PredictionsService(
   ) = projectFactory.get(projectId).flatMap {
     case project: ClassificationProject =>
       predictForClassificationProject(project, features, optionalAlgorithmId)
+    case project: RegressionProject =>
+      predictForRegressionProject(project, features, optionalAlgorithmId)
   }
 
   def predictForClassificationProject(
@@ -278,6 +280,41 @@ class PredictionsService(
                       )
                     }
                 }
+            )
+      )
+    } else {
+      val message =
+        s"The features do not match the configuration of project ${project.id}"
+      warnLog(message) *> Task.fail(
+        FeaturesValidationFailed(
+          message
+        )
+      )
+    }
+  }
+
+  def predictForRegressionProject(
+      project: RegressionProject,
+      features: Features,
+      optionalAlgorithmId: Option[String]
+  ) = {
+
+    if (validateFeatures(
+        project.configuration.features,
+        features
+      )) {
+      optionalAlgorithmId.fold(
+        predictWithProjectPolicy(features, project)
+      )(
+        algorithmId =>
+          project.algorithmsMap
+            .get(algorithmId)
+            .fold[Task[Prediction]](
+              Task.fail(
+                AlgorithmDoesNotExist(algorithmId)
+              )
+            )(
+              algorithm => predictWithAlgorithm(project.id, algorithm, features)
             )
       )
     } else {

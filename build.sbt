@@ -12,7 +12,13 @@ lazy val root = (project in file("."))
     version := "0.0.1-SNAPSHOT",
     scalaVersion := "2.12.8",
     fork in run := true,
-    scalacOptions += "-Ypartial-unification",
+    scalacOptions ++= Seq(
+      "-Ypartial-unification",
+      "-unchecked",
+      "-deprecation",
+      "-feature",
+      "-Xfatal-warnings"
+    ),
     libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-blaze-server" % Http4sVersion,
       "org.http4s" %% "http4s-blaze-client" % Http4sVersion,

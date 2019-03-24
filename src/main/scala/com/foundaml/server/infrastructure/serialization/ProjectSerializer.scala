@@ -64,27 +64,43 @@ object ProjectSerializer {
         problem <- c.downField("problem").as[ProblemType]
         algorithms <- c.downField("algorithms").as[Option[List[Algorithm]]]
         policy <- c.downField("policy").as[Option[AlgorithmPolicy]]
-        configuration <- problem match {
+        result <- problem match {
           case Classification() =>
             c.downField("configuration")
               .as[ClassificationConfiguration](
                 ProjectConfigurationSerializer.classificationConfigurationDecoder
               )
+              .flatMap { classificationConfiguration =>
+                Right(
+                  ClassificationProject(
+                    id,
+                    name,
+                    classificationConfiguration,
+                    algorithms,
+                    policy
+                  )
+                )
+              }
+
+          case Regression() =>
+            c.downField("configuration")
+              .as[RegressionConfiguration](
+                ProjectConfigurationSerializer.regressionConfigurationDecoder
+              )
+              .flatMap { regressionConfiguration =>
+                Right(
+                  RegressionProject(
+                    id,
+                    name,
+                    regressionConfiguration,
+                    algorithms,
+                    policy
+                  )
+                )
+              }
         }
-      } yield
-        (problem, configuration) match {
-          case (
-              Classification(),
-              classificationConfiguration: ClassificationConfiguration
-              ) =>
-            ClassificationProject(
-              id,
-              name,
-              classificationConfiguration,
-              algorithms,
-              policy
-            )
-        }
+
+      } yield result
 
   implicit val entityDecoder: EntityDecoder[Task, Project] =
     jsonOf[Task, Project]
