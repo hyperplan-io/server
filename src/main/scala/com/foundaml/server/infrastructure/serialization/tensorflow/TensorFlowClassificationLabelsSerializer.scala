@@ -16,7 +16,8 @@ object TensorFlowClassificationLabelsSerializer {
   implicit val encoder: Encoder[TensorFlowClassificationLabels] = deriveEncoder
   implicit val decoder: Decoder[TensorFlowClassificationLabels] = deriveDecoder
 
-  implicit val entityDecoder: EntityDecoder[Task, TensorFlowClassificationLabels] =
+  implicit val entityDecoder
+      : EntityDecoder[Task, TensorFlowClassificationLabels] =
     jsonOf[Task, TensorFlowClassificationLabels]
 
   def encodeJson(project: TensorFlowClassificationLabels): Json = {

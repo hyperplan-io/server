@@ -61,7 +61,6 @@ object ClassificationProject {
     ClassificationProject(id, name, configuration, Nil, NoAlgorithm())
 }
 
-
 case class RegressionProject(
     id: String,
     name: String,

@@ -25,7 +25,11 @@ object TensorFlowClassificationBackend {
   val backendClass = "TensorFlowClassificationBackend"
 }
 
-case class TensorFlowRegressionBackend(host: String, port: Int, featuresTransformer: TensorFlowFeaturesTransformer) extends Backend
+case class TensorFlowRegressionBackend(
+    host: String,
+    port: Int,
+    featuresTransformer: TensorFlowFeaturesTransformer
+) extends Backend
 
 object TensorFlowRegressionBackend {
   val backendClass = "TensorFlowRegressionBackend"

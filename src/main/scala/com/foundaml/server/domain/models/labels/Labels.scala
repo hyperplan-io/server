@@ -14,4 +14,5 @@ case class ClassificationLabel(
     incorrectExampleUrl: String
 ) extends Label
 
-case class RegressionLabel(id: String, label: Float, correctExampleUrl: String) extends Label
+case class RegressionLabel(id: String, label: Float, correctExampleUrl: String)
+    extends Label

@@ -12,19 +12,15 @@ import scalaz.zio.interop.catz._
 
 object PostAlgorithmRequestEntitySerializer {
 
-
-  implicit val backendDecoder: Decoder[Backend] =
-    BackendSerializer.Implicits.backendDecoder
-
+  implicit val backendDecoder: Decoder[Backend] = BackendSerializer.decoder
 
   implicit val decoder: Decoder[PostAlgorithmRequest] =
     (c: HCursor) =>
       for {
         id <- c.downField("id").as[String]
         projectId <- c.downField("projectId").as[String]
-        backend <- c.downField("problem").as[Backend]
+        backend <- c.downField("backend").as[Backend]
       } yield PostAlgorithmRequest(id, projectId, backend)
-
 
   implicit val entityDecoder: EntityDecoder[Task, PostAlgorithmRequest] =
     jsonOf[Task, PostAlgorithmRequest]

@@ -1,15 +1,32 @@
 package com.foundaml.server.domain.repositories
 
-import com.foundaml.server.domain.models.Examples.{ClassificationExamples, RegressionExamples}
-import com.foundaml.server.domain.models.errors.{PredictionAlreadyExist, PredictionError}
+import com.foundaml.server.domain.models.Examples.{
+  ClassificationExamples,
+  RegressionExamples
+}
+import com.foundaml.server.domain.models.errors.{
+  PredictionAlreadyExist,
+  PredictionError
+}
 import com.foundaml.server.domain.models.features.Features.Features
 import com.foundaml.server.domain.models._
-import com.foundaml.server.domain.models.labels.{ClassificationLabel, Label, Labels, RegressionLabel}
+import com.foundaml.server.domain.models.labels.{
+  ClassificationLabel,
+  Label,
+  Labels,
+  RegressionLabel
+}
 import com.foundaml.server.domain.repositories.PredictionsRepository.PredictionData
 import com.foundaml.server.infrastructure.serialization._
-import com.foundaml.server.infrastructure.serialization.examples.{ClassificationExamplesSerializer, RegressionExamplesSerializer}
+import com.foundaml.server.infrastructure.serialization.examples.{
+  ClassificationExamplesSerializer,
+  RegressionExamplesSerializer
+}
 import com.foundaml.server.infrastructure.serialization.features.FeaturesSerializer
-import com.foundaml.server.infrastructure.serialization.labels.{ClassificationLabelSerializer, RegressionLabelSerializer}
+import com.foundaml.server.infrastructure.serialization.labels.{
+  ClassificationLabelSerializer,
+  RegressionLabelSerializer
+}
 import doobie._
 import doobie.implicits._
 import doobie.postgres.sqlstate
@@ -24,7 +41,6 @@ class PredictionsRepository(implicit xa: Transactor[Task]) {
   implicit val featuresPut: Put[Features] =
     Put[String].contramap(FeaturesSerializer.encodeJsonNoSpaces)
 
-
   implicit val problemTypeGet: Get[Either[io.circe.Error, ProblemType]] =
     Get[String].map(ProblemTypeSerializer.decodeJson)
   implicit val problemTypePut: Put[ProblemType] =
@@ -35,27 +51,33 @@ class PredictionsRepository(implicit xa: Transactor[Task]) {
   implicit val labelsPut: Put[Set[Label]] =
     Put[String].contramap(LabelSerializer.encodeJsonSetNoSpaces)
 
-  implicit val classificationLabelsGet: Get[Either[io.circe.Error, Set[ClassificationLabel]]] =
+  implicit val classificationLabelsGet
+      : Get[Either[io.circe.Error, Set[ClassificationLabel]]] =
     Get[String].map(ClassificationLabelSerializer.decodeJsonSet)
   implicit val classificationLabelsPut: Put[Set[ClassificationLabel]] =
     Put[String].contramap(ClassificationLabelSerializer.encodeJsonSetNoSpaces)
 
-  implicit val regressionLabelsGet: Get[Either[io.circe.Error, Set[RegressionLabel]]] =
+  implicit val regressionLabelsGet
+      : Get[Either[io.circe.Error, Set[RegressionLabel]]] =
     Get[String].map(RegressionLabelSerializer.decodeJsonSet)
   implicit val regressionLabelsPut: Put[Set[RegressionLabel]] =
     Put[String].contramap(RegressionLabelSerializer.encodeJsonSetNoSpaces)
 
-  implicit val classificationExamplesGet: Get[Either[io.circe.Error, ClassificationExamples]] =
+  implicit val classificationExamplesGet
+      : Get[Either[io.circe.Error, ClassificationExamples]] =
     Get[String].map(ClassificationExamplesSerializer.decodeJson)
   implicit val classificationExamplesPut: Put[ClassificationExamples] =
     Put[String].contramap(ClassificationExamplesSerializer.encodeJsonNoSpaces)
 
-  implicit val regressionExamplesGet: Get[Either[io.circe.Error, RegressionExamples]] =
+  implicit val regressionExamplesGet
+      : Get[Either[io.circe.Error, RegressionExamples]] =
     Get[String].map(RegressionExamplesSerializer.decodeJson)
   implicit val regressionExamplesPut: Put[RegressionExamples] =
     Put[String].contramap(RegressionExamplesSerializer.encodeJsonNoSpaces)
 
-  def insertClassificationPredictionQuery(prediction: ClassificationPrediction): doobie.Update0 =
+  def insertClassificationPredictionQuery(
+      prediction: ClassificationPrediction
+  ): doobie.Update0 =
     sql"""INSERT INTO predictions(
       id,
       project_id,
@@ -74,7 +96,9 @@ class PredictionsRepository(implicit xa: Transactor[Task]) {
       ${prediction.examples}
     )""".update
 
-  def insertClassificationPrediction(prediction: ClassificationPrediction): Task[Either[PredictionError, Int]] =
+  def insertClassificationPrediction(
+      prediction: ClassificationPrediction
+  ): Task[Either[PredictionError, Int]] =
     insertClassificationPredictionQuery(prediction).run
       .attemptSomeSqlState {
         case sqlstate.class23.UNIQUE_VIOLATION =>
@@ -82,7 +106,9 @@ class PredictionsRepository(implicit xa: Transactor[Task]) {
       }
       .transact(xa)
 
-  def insertRegressionPredictionQuery(prediction: RegressionPrediction): doobie.Update0 =
+  def insertRegressionPredictionQuery(
+      prediction: RegressionPrediction
+  ): doobie.Update0 =
     sql"""INSERT INTO predictions(
       id,
       project_id,
@@ -101,7 +127,9 @@ class PredictionsRepository(implicit xa: Transactor[Task]) {
       ${prediction.examples}
     )""".update
 
-  def insertRegressionPrediction(prediction: RegressionPrediction): Task[Either[PredictionError, Int]] =
+  def insertRegressionPrediction(
+      prediction: RegressionPrediction
+  ): Task[Either[PredictionError, Int]] =
     insertRegressionPredictionQuery(prediction).run
       .attemptSomeSqlState {
         case sqlstate.class23.UNIQUE_VIOLATION =>
@@ -111,7 +139,7 @@ class PredictionsRepository(implicit xa: Transactor[Task]) {
 
   def readQuery(predictionId: String) =
     sql"""
-      SELECT id, project_id, algorithm_id, prediction_type, features, labels, examples
+      SELECT id, project_id, algorithm_id, type, features, labels, examples
       FROM predictions
       WHERE id=$predictionId
       """
@@ -120,13 +148,39 @@ class PredictionsRepository(implicit xa: Transactor[Task]) {
   def read(predictionId: String) =
     readQuery(predictionId).unique.transact(xa)
 
-  def updateExamplesQuery(predictionId: String, examples: ClassificationExamples) =
+  def updateClassificationExamplesQuery(
+      predictionId: String,
+      examples: ClassificationExamples
+  ) =
     sql"""UPDATE predictions SET examples = $examples WHERE id=$predictionId""".update
 
-  def updateExamples(predictionId: String, examples: ClassificationExamples) =
-    updateExamplesQuery(predictionId, examples).run.transact(xa)
+  def updateClassificationExamples(
+      predictionId: String,
+      examples: ClassificationExamples
+  ) =
+    updateClassificationExamplesQuery(predictionId, examples).run.transact(xa)
+
+  def updateRegressionExamplesQuery(
+      predictionId: String,
+      examples: RegressionExamples
+  ) =
+    sql"""UPDATE predictions SET examples = $examples WHERE id=$predictionId""".update
+
+  def updateRegressionExamples(
+      predictionId: String,
+      examples: RegressionExamples
+  ) =
+    updateRegressionExamplesQuery(predictionId, examples).run.transact(xa)
 }
 
 object PredictionsRepository {
-  type PredictionData = (String, String, String, Either[io.circe.Error, ProblemType], Either[io.circe.Error, Features], Either[io.circe.Error, Set[Label]], Either[io.circe.Error, ClassificationExamples])
+  type PredictionData = (
+      String,
+      String,
+      String,
+      Either[io.circe.Error, ProblemType],
+      Either[io.circe.Error, Features],
+      String,
+      String
+  )
 }

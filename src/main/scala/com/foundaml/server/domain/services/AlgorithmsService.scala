@@ -3,18 +3,29 @@ package com.foundaml.server.domain.services
 import scalaz.zio.{Task, ZIO}
 import com.foundaml.server.domain.factories.ProjectFactory
 import com.foundaml.server.domain.models._
-import com.foundaml.server.domain.models.backends.{Backend, LocalClassification, TensorFlowClassificationBackend, TensorFlowRegressionBackend}
-import com.foundaml.server.domain.models.errors.{IncompatibleAlgorithm, InvalidArgument}
+import com.foundaml.server.domain.models.backends.{
+  Backend,
+  LocalClassification,
+  TensorFlowClassificationBackend,
+  TensorFlowRegressionBackend
+}
+import com.foundaml.server.domain.models.errors.{
+  IncompatibleAlgorithm,
+  InvalidArgument
+}
 import com.foundaml.server.domain.models.features.transformers.TensorFlowFeaturesTransformer
 import com.foundaml.server.domain.models.labels.transformers.TensorFlowLabelsTransformer
-import com.foundaml.server.domain.repositories.{AlgorithmsRepository, ProjectsRepository}
-import com.foundaml.server.infrastructure.logging.IOLazyLogging
+import com.foundaml.server.domain.repositories.{
+  AlgorithmsRepository,
+  ProjectsRepository
+}
+import com.foundaml.server.infrastructure.logging.IOLogging
 
 class AlgorithmsService(
     algorithmsRepository: AlgorithmsRepository,
     projectsRepository: ProjectsRepository,
     projectFactory: ProjectFactory
-) extends IOLazyLogging {
+) extends IOLogging {
 
   def validateEqualSize(
       expectedSize: Int,

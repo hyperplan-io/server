@@ -4,9 +4,9 @@ import com.typesafe.scalalogging.Logger
 import org.slf4j.LoggerFactory
 import scalaz.zio.Task
 
-trait IOLazyLogging {
+trait IOLogging {
 
-  protected lazy val logger: Logger =
+  protected val logger: Logger =
     Logger(LoggerFactory.getLogger(getClass.getName))
 
   def debugLog(message: String) = Task(logger.debug(message))

@@ -65,6 +65,7 @@ object PostgresqlService {
       CREATE TABLE IF NOT EXISTS predictions(
         id VARCHAR(36) PRIMARY KEY,
         project_id VARCHAR(36) NOT NULL,
+        type VARCHAR(50) NOT NULL,
         algorithm_id VARCHAR(36) NOT NULL,
         features VARCHAR NOT NULL,
         labels VARCHAR NOT NULL,

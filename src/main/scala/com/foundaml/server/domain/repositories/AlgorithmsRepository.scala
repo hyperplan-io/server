@@ -7,15 +7,16 @@ import scalaz.zio.interop.catz._
 import com.foundaml.server.domain.models.Algorithm
 import com.foundaml.server.domain.models.backends._
 import com.foundaml.server.domain.models.errors.AlgorithmAlreadyExists
+import com.foundaml.server.domain.repositories.AlgorithmsRepository.AlgorithmData
 import com.foundaml.server.infrastructure.serialization._
 import doobie.postgres.sqlstate
 
 class AlgorithmsRepository(implicit xa: Transactor[Task]) {
 
-  implicit val backendGet: Get[Backend] =
+  implicit val backendGet: Get[Either[io.circe.Error, Backend]] =
     Get[String].map(BackendSerializer.decodeJson)
   implicit val backendPut: Put[Backend] =
-    Put[String].contramap(BackendSerializer.encodeJson)
+    Put[String].contramap(BackendSerializer.encodeJsonNoSpaces)
 
   def insertQuery(algorithm: Algorithm): doobie.Update0 =
     sql"""INSERT INTO algorithms(
@@ -36,35 +37,40 @@ class AlgorithmsRepository(implicit xa: Transactor[Task]) {
       }
       .transact(xa)
 
-  def readQuery(algorithmId: String): doobie.Query0[Algorithm] =
+  def readQuery(algorithmId: String): doobie.Query0[AlgorithmData] =
     sql"""
       SELECT id, backend, project_id 
       FROM algorithms 
       WHERE id=$algorithmId
       """
-      .query[Algorithm]
+      .query[AlgorithmData]
 
-  def read(algorithmId: String): Task[Algorithm] =
+  def read(algorithmId: String): Task[AlgorithmData] =
     readQuery(algorithmId).unique.transact(xa)
 
-  def readForProjectQuery(projectId: String): doobie.Query0[Algorithm] =
+  def readForProjectQuery(projectId: String): doobie.Query0[AlgorithmData] =
     sql"""
       SELECT id, backend, project_id 
       FROM algorithms 
       WHERE project_id=$projectId
       """
-      .query[Algorithm]
+      .query[AlgorithmData]
 
-  def readForProject(projectId: String): Task[List[Algorithm]] =
+  def readForProject(projectId: String): Task[List[AlgorithmData]] =
     readForProjectQuery(projectId).to[List].transact(xa)
 
-  def readAllQuery(): doobie.Query0[Algorithm] =
+  def readAllQuery(): doobie.Query0[AlgorithmData] =
     sql"""
       SELECT id, backend, project_id 
       FROM algorithms 
       """
-      .query[Algorithm]
+      .query[AlgorithmData]
 
-  def readAll(): Task[List[Algorithm]] = readAllQuery().to[List].transact(xa)
+  def readAll(): Task[List[AlgorithmData]] =
+    readAllQuery().to[List].transact(xa)
 
+}
+
+object AlgorithmsRepository {
+  type AlgorithmData = (String, Either[io.circe.Error, Backend], String)
 }

@@ -10,7 +10,7 @@ import scalaz.zio.interop.catz._
 
 object ProjectSerializer {
 
-  import io.circe._, io.circe.generic.semiauto._
+  import io.circe._
 
   implicit val algorithmPolicyEncoder: Encoder[AlgorithmPolicy] =
     AlgorithmPolicySerializer.Implicits.encoder
@@ -23,9 +23,9 @@ object ProjectSerializer {
     ProblemTypeSerializer.decoder
 
   implicit val algorithmEncoder: Encoder[Algorithm] =
-    AlgorithmsSerializer.Implicits.encoder
+    AlgorithmsSerializer.encoder
   implicit val algorithmDecoder: Decoder[Algorithm] =
-    AlgorithmsSerializer.Implicits.decoder
+    AlgorithmsSerializer.decoder
 
   implicit val featuresConfigurationEncoder: Encoder[FeaturesConfiguration] =
     FeaturesConfigurationSerializer.encoder
@@ -38,9 +38,9 @@ object ProjectSerializer {
     ProjectConfigurationSerializer.decoder
 
   implicit val algorithmListDecoder: Decoder[List[Algorithm]] =
-    Decoder.decodeList[Algorithm](AlgorithmsSerializer.Implicits.decoder)
+    Decoder.decodeList[Algorithm](AlgorithmsSerializer.decoder)
   implicit val algorithmListEncoder: Encoder[List[Algorithm]] =
-    Encoder.encodeList[Algorithm](AlgorithmsSerializer.Implicits.encoder)
+    Encoder.encodeList[Algorithm](AlgorithmsSerializer.encoder)
 
   implicit val encoder: Encoder[Project] =
     (project: Project) =>
@@ -50,7 +50,10 @@ object ProjectSerializer {
         ("problem", ProblemTypeSerializer.encodeJson(project.problem)),
         ("algorithms", algorithmListEncoder(project.algorithms)),
         ("policy", AlgorithmPolicySerializer.encodeJson(project.policy)),
-        ("configuration", ProjectConfigurationSerializer.encodeJson(project.configuration))
+        (
+          "configuration",
+          ProjectConfigurationSerializer.encodeJson(project.configuration)
+        )
       )
 
   implicit val decoder: Decoder[Project] =
@@ -98,7 +101,6 @@ object ProjectSerializer {
         }
 
       } yield result
-
 
   implicit val entityDecoder: EntityDecoder[Task, Project] =
     jsonOf[Task, Project]

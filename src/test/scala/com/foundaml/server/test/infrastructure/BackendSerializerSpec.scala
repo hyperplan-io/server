@@ -3,7 +3,10 @@ package com.foundaml.server.test.infrastructure
 import java.util.UUID
 
 import com.foundaml.server.domain.models.Prediction
-import com.foundaml.server.domain.models.backends.{Backend, TensorFlowClassificationBackend}
+import com.foundaml.server.domain.models.backends.{
+  Backend,
+  TensorFlowClassificationBackend
+}
 import com.foundaml.server.domain.models.features.transformers.TensorFlowFeaturesTransformer
 import com.foundaml.server.domain.models.labels.transformers.TensorFlowLabelsTransformer
 import com.foundaml.server.infrastructure.serialization.{
@@ -55,7 +58,12 @@ class BackendSerializerSpec
     )
 
     val backend =
-      TensorFlowClassificationBackend(host, port, featuresTransformer, labelsTransformer)
+      TensorFlowClassificationBackend(
+        host,
+        port,
+        featuresTransformer,
+        labelsTransformer
+      )
 
     testEncoder(backend: Backend) { json =>
       val featuresJson = featureFields

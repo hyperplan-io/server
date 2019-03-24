@@ -4,7 +4,12 @@ import io.circe._
 import io.circe.parser.decode
 import io.circe.syntax._
 import io.circe.{Decoder, Encoder}
-import com.foundaml.server.domain.models.backends.{Backend, LocalClassification, TensorFlowClassificationBackend, TensorFlowRegressionBackend}
+import com.foundaml.server.domain.models.backends.{
+  Backend,
+  LocalClassification,
+  TensorFlowClassificationBackend,
+  TensorFlowRegressionBackend
+}
 import com.foundaml.server.domain.models.features.transformers.TensorFlowFeaturesTransformer
 import com.foundaml.server.domain.models.labels.Labels
 import com.foundaml.server.domain.models.labels.transformers.TensorFlowLabelsTransformer
@@ -15,79 +20,81 @@ object BackendSerializer {
 
   object Implicits {
 
-
-
     val tensorFlowClassificationBackendEncoder
-    : Encoder[TensorFlowClassificationBackend] =  (backend: TensorFlowClassificationBackend) =>
-      Json.obj(
-        ("class", Json.fromString(TensorFlowClassificationBackend.backendClass)),
-        ("host", Json.fromString(backend.host)),
-        ("port", Json.fromInt(backend.port)),
-        ("featuresTransformer", tfTransformerEncoder.apply(backend.featuresTransformer)),
-        ("labelsTransformer", tfLabelsTransformerEncoder.apply(backend.labelsTransformer))
-      )
-
+        : Encoder[TensorFlowClassificationBackend] =
+      (backend: TensorFlowClassificationBackend) =>
+        Json.obj(
+          (
+            "class",
+            Json.fromString(TensorFlowClassificationBackend.backendClass)
+          ),
+          ("host", Json.fromString(backend.host)),
+          ("port", Json.fromInt(backend.port)),
+          (
+            "featuresTransformer",
+            tfTransformerEncoder.apply(backend.featuresTransformer)
+          ),
+          (
+            "labelsTransformer",
+            tfLabelsTransformerEncoder.apply(backend.labelsTransformer)
+          )
+        )
 
     val tensorFlowClassificationBackendDecoder
-    : Decoder[TensorFlowClassificationBackend] =
+        : Decoder[TensorFlowClassificationBackend] =
       (c: HCursor) =>
         for {
           host <- c.downField("host").as[String]
           port <- c.downField("port").as[Int]
-          featuresTransformer <- c.downField("featuresTransformer").as[TensorFlowFeaturesTransformer]
-          labelsTransformer <- c.downField("labelsTransformer").as[TensorFlowLabelsTransformer]
-        } yield TensorFlowClassificationBackend(host, port, featuresTransformer, labelsTransformer)
+          featuresTransformer <- c
+            .downField("featuresTransformer")
+            .as[TensorFlowFeaturesTransformer]
+          labelsTransformer <- c
+            .downField("labelsTransformer")
+            .as[TensorFlowLabelsTransformer]
+        } yield
+          TensorFlowClassificationBackend(
+            host,
+            port,
+            featuresTransformer,
+            labelsTransformer
+          )
 
     val tensorFlowRegressionBackendEncoder
-    : Encoder[TensorFlowRegressionBackend] =  (backend: TensorFlowRegressionBackend) =>
-      Json.obj(
-        ("class", Json.fromString(TensorFlowClassificationBackend.backendClass)),
-        ("host", Json.fromString(backend.host)),
-        ("port", Json.fromInt(backend.port)),
-        ("featuresTransformer", tfTransformerEncoder.apply(backend.featuresTransformer))
-      )
-
+        : Encoder[TensorFlowRegressionBackend] =
+      (backend: TensorFlowRegressionBackend) =>
+        Json.obj(
+          ("class", Json.fromString(TensorFlowRegressionBackend.backendClass)),
+          ("host", Json.fromString(backend.host)),
+          ("port", Json.fromInt(backend.port)),
+          (
+            "featuresTransformer",
+            tfTransformerEncoder.apply(backend.featuresTransformer)
+          )
+        )
 
     val tensorFlowRegressionBackendDecoder
-    : Decoder[TensorFlowRegressionBackend] =
+        : Decoder[TensorFlowRegressionBackend] =
       (c: HCursor) =>
         for {
           host <- c.downField("host").as[String]
           port <- c.downField("port").as[Int]
-          featuresTransformer <- c.downField("featuresTransformer").as[TensorFlowFeaturesTransformer]
+          featuresTransformer <- c
+            .downField("featuresTransformer")
+            .as[TensorFlowFeaturesTransformer]
         } yield TensorFlowRegressionBackend(host, port, featuresTransformer)
 
-
-    implicit val backendEncoder
-    : Encoder[Backend] = {
-      case backend: TensorFlowClassificationBackend =>
-        tensorFlowClassificationBackendEncoder(backend)
-      case backend: TensorFlowRegressionBackend =>
-        tensorFlowRegressionBackendEncoder(backend)
-      case backend: LocalClassification => ???
-    }
-
-
-    implicit val backendDecoder
-    : Decoder[Backend] =
-      (c: HCursor) =>
-        c.downField("class").as[String].flatMap {
-          case TensorFlowClassificationBackend.backendClass =>
-            tensorFlowClassificationBackendDecoder(c)
-          case TensorFlowRegressionBackend.backendClass =>
-            tensorFlowRegressionBackendDecoder(c)
-          case LocalClassification.backendClass => ???
-
-        }
-
-
-    implicit val tfTransformerEncoder: Encoder[TensorFlowFeaturesTransformer] = FeaturesTransformerSerializer.tfTransformerEncoder
-    implicit val ftTransformerDecoder: Decoder[TensorFlowFeaturesTransformer] = FeaturesTransformerSerializer.tfTransformerDecoder
+    implicit val tfTransformerEncoder: Encoder[TensorFlowFeaturesTransformer] =
+      FeaturesTransformerSerializer.tfTransformerEncoder
+    implicit val ftTransformerDecoder: Decoder[TensorFlowFeaturesTransformer] =
+      FeaturesTransformerSerializer.tfTransformerDecoder
 
     implicit val tfLabelsTransformerEncoder
-        : Encoder[TensorFlowLabelsTransformer] = LabelsTransformerSerializer.tfLabelsTransformerEncoder
+        : Encoder[TensorFlowLabelsTransformer] =
+      LabelsTransformerSerializer.tfLabelsTransformerEncoder
     implicit val labelsTransformerDecoder
-        : Decoder[TensorFlowLabelsTransformer] = LabelsTransformerSerializer.labelsTransformerDecoder
+        : Decoder[TensorFlowLabelsTransformer] =
+      LabelsTransformerSerializer.labelsTransformerDecoder
 
     implicit val labelsEncoder: Encoder[Labels] = LabelsSerializer.encoder
     implicit val labelsDecoder: Decoder[Labels] = LabelsSerializer.decoder
@@ -95,11 +102,34 @@ object BackendSerializer {
 
   import Implicits._
 
-  def encodeJson(backend: Backend): String = {
+  implicit val decoder: Decoder[Backend] =
+    (c: HCursor) =>
+      c.downField("class").as[String].flatMap {
+        case TensorFlowClassificationBackend.backendClass =>
+          tensorFlowClassificationBackendDecoder(c)
+        case TensorFlowRegressionBackend.backendClass =>
+          tensorFlowRegressionBackendDecoder(c)
+        case LocalClassification.backendClass => ???
+
+      }
+
+  implicit val encoder: Encoder[Backend] = {
+    case backend: TensorFlowClassificationBackend =>
+      tensorFlowClassificationBackendEncoder(backend)
+    case backend: TensorFlowRegressionBackend =>
+      tensorFlowRegressionBackendEncoder(backend)
+    case backend: LocalClassification => ???
+  }
+
+  def encodeJsonNoSpaces(backend: Backend): String = {
     backend.asJson.noSpaces
   }
 
-  def decodeJson(n: String): Backend = {
-    decode[Backend](n).right.get
+  def encodeJson(backend: Backend): Json = {
+    backend.asJson
+  }
+
+  def decodeJson(n: String): Either[io.circe.Error, Backend] = {
+    decode[Backend](n)
   }
 }

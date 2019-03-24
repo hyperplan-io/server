@@ -24,9 +24,15 @@ case class TensorFlowLabelsTransformer(fields: Map[String, String]) {
             .map { label =>
               val labelId = UUID.randomUUID().toString
               val correctUrl =
-                ExampleUrlService.correctClassificationExampleUrl(predictionId, labelId)
+                ExampleUrlService.correctClassificationExampleUrl(
+                  predictionId,
+                  labelId
+                )
               val incorrectUrl =
-                ExampleUrlService.incorrectClassificationExampleUrl(predictionId, labelId)
+                ExampleUrlService.incorrectClassificationExampleUrl(
+                  predictionId,
+                  labelId
+                )
               ClassificationLabel(
                 labelId,
                 label,

@@ -5,14 +5,14 @@ import com.foundaml.server.domain.models._
 import com.foundaml.server.domain.models.errors._
 import com.foundaml.server.domain.models.features._
 import com.foundaml.server.domain.repositories.ProjectsRepository
-import com.foundaml.server.infrastructure.logging.IOLazyLogging
+import com.foundaml.server.infrastructure.logging.IOLogging
 import doobie.util.invariant.UnexpectedEnd
 import scalaz.zio.{Task, ZIO}
 
 class ProjectsService(
     projectsRepository: ProjectsRepository,
     projectFactory: ProjectFactory
-) extends IOLazyLogging {
+) extends IOLogging {
 
   val regex = "[0-9a-zA-Z-_]*"
   def validateAlphaNumerical(input: String): List[ProjectError] = {

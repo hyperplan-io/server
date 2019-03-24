@@ -5,17 +5,16 @@ import io.circe.{Decoder, Encoder, HCursor, Json}
 
 object LabelsTransformerSerializer {
 
+  val tfLabelsTransformerEncoder: Encoder[TensorFlowLabelsTransformer] =
+    (transformer: TensorFlowLabelsTransformer) =>
+      Json.obj(
+        ("fields", Json.fromFields(transformer.fields.toList.map {
+          case (key, value) =>
+            key -> Json.fromString(value)
+        }))
+      )
 
-  val tfLabelsTransformerEncoder
-  : Encoder[TensorFlowLabelsTransformer] =  (transformer: TensorFlowLabelsTransformer) =>
-    Json.obj(
-      ("fields", Json.fromFields(transformer.fields.toList.map { case (key, value) =>
-          key -> Json.fromString(value)
-      }))
-    )
-
-  val labelsTransformerDecoder
-  : Decoder[TensorFlowLabelsTransformer] =
+  val labelsTransformerDecoder: Decoder[TensorFlowLabelsTransformer] =
     (c: HCursor) =>
       for {
         fields <- c.downField("fields").as[Map[String, String]]

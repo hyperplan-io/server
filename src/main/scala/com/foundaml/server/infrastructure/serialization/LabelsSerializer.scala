@@ -44,12 +44,8 @@ object LabelSerializer {
   implicit val discriminator: Configuration =
     Configuration.default.withDiscriminator("class")
 
-
-
-
   implicit val encoder: Encoder[Label] = deriveEncoder
   implicit val decoder: Decoder[Label] = deriveDecoder
-
 
   implicit val labelEntityDecoder: EntityEncoder[Task, Label] =
     jsonEncoderOf[Task, Label]

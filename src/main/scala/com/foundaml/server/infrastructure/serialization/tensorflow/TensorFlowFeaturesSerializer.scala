@@ -10,8 +10,7 @@ import scalaz.zio.interop.catz._
 
 object TensorFlowFeaturesSerializer {
 
-  implicit val encodeTFClassificationFeatures
-      : Encoder[TensorFlowFeatures] =
+  implicit val encodeTFClassificationFeatures: Encoder[TensorFlowFeatures] =
     (features: TensorFlowFeatures) =>
       Json.obj(
         ("signature_name", Json.fromString(features.signatureName)),
@@ -31,8 +30,7 @@ object TensorFlowFeaturesSerializer {
         })))
       )
 
-  implicit val entityEncoder
-      : EntityEncoder[Task, TensorFlowFeatures] =
+  implicit val entityEncoder: EntityEncoder[Task, TensorFlowFeatures] =
     jsonEncoderOf[Task, TensorFlowFeatures]
 
   def encodeJson(features: TensorFlowFeatures): Json =

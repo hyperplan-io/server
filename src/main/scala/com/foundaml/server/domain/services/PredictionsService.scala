@@ -10,21 +10,25 @@ import com.foundaml.server.domain.models.errors._
 import com.foundaml.server.domain.models.features.Features.Features
 import com.foundaml.server.domain.models.features._
 import com.foundaml.server.domain.models.labels._
-import com.foundaml.server.domain.repositories.{PredictionsRepository, ProjectsRepository}
-import com.foundaml.server.infrastructure.logging.IOLazyLogging
+import com.foundaml.server.domain.repositories.{
+  PredictionsRepository,
+  ProjectsRepository
+}
+import com.foundaml.server.infrastructure.logging.IOLogging
 import com.foundaml.server.infrastructure.serialization.PredictionSerializer
 import com.foundaml.server.infrastructure.streaming.KinesisService
 import scalaz.zio.Task
 import scalaz.zio.interop.catz._
 
 class PredictionsService(
-                          projectsRepository: ProjectsRepository,
-                          predictionsRepository: PredictionsRepository,
-                          kinesisService: KinesisService,
-                          projectFactory: ProjectFactory,
-                          predictionFactory: PredictionFactory,
-                          config: FoundaMLConfig
-) extends IOLazyLogging with TensorFlowBackendSupport {
+    projectsRepository: ProjectsRepository,
+    predictionsRepository: PredictionsRepository,
+    kinesisService: KinesisService,
+    projectFactory: ProjectFactory,
+    predictionFactory: PredictionFactory,
+    config: FoundaMLConfig
+) extends IOLogging
+    with TensorFlowBackendSupport {
 
   def persistClassificationPrediction(prediction: ClassificationPrediction) =
     predictionsRepository
@@ -112,14 +116,62 @@ class PredictionsService(
   ): Task[ClassificationPrediction] = {
     val predictionTask = algorithm.backend match {
       case local: LocalClassification =>
-        predictWithLocalClassificationBackend(projectId, algorithm, features, local)
+        predictWithLocalClassificationBackend(
+          projectId,
+          algorithm,
+          features,
+          local
+        )
       case tfBackend: TensorFlowClassificationBackend =>
-        predictWithTensorFlowClassificationBackend(projectId, algorithm, features, tfBackend)
+        predictWithTensorFlowClassificationBackend(
+          projectId,
+          algorithm,
+          features,
+          tfBackend
+        )
       case tfBackend: TensorFlowRegressionBackend =>
-        Task.fail(IncompatibleBackend("TensorFlowRegressionBackend can not do regression, use TensorFlowClassificationBackend instead"))
+        Task.fail(
+          IncompatibleBackend(
+            "TensorFlowRegressionBackend can not do regression, use TensorFlowClassificationBackend instead"
+          )
+        )
     }
     predictionTask.flatMap { prediction =>
-      persistClassificationPrediction(prediction) *> publishPredictionToKinesis(prediction) *> Task
+      persistClassificationPrediction(prediction) *> publishPredictionToKinesis(
+        prediction
+      ) *> Task
+        .succeed(prediction)
+    }
+  }
+
+  def predictRegressionWithAlgorithm(
+      projectId: String,
+      algorithm: Algorithm,
+      features: Features
+  ): Task[RegressionPrediction] = {
+    val predictionTask = algorithm.backend match {
+      case local: LocalClassification =>
+        Task.fail(
+          IncompatibleBackend("LocalClassification can not do regression")
+        )
+      case tfBackend: TensorFlowRegressionBackend =>
+        predictWithTensorFlowRegressionBackend(
+          projectId,
+          algorithm,
+          features,
+          tfBackend
+        )
+      case tfBackend: TensorFlowClassificationBackend =>
+        Task.fail(
+          IncompatibleBackend(
+            "TensorFlowRegressionBackend can not do regression, use TensorFlowClassificationBackend instead"
+          )
+        )
+    }
+    predictionTask.flatMap { prediction =>
+      persistRegressionPrediction(prediction) *> publishPredictionToKinesis(
+        prediction
+      ) *> Task
         .succeed(prediction)
     }
   }
@@ -190,22 +242,25 @@ class PredictionsService(
               )
             )(
               algorithm =>
-                predictClassificationWithAlgorithm(project.id, algorithm, features).flatMap {
-                  prediction =>
-                    if (validateClassificationLabels(
-                        project.configuration.labels,
-                        prediction.labels
-                      )) {
-                      Task.succeed(prediction)
-                    } else {
-                      val message =
-                        s"The labels do not match the configuration of project ${project.id}"
-                      warnLog(message) *> Task.fail(
-                        LabelsValidationFailed(
-                          message
-                        )
+                predictClassificationWithAlgorithm(
+                  project.id,
+                  algorithm,
+                  features
+                ).flatMap { prediction =>
+                  if (validateClassificationLabels(
+                      project.configuration.labels,
+                      prediction.labels
+                    )) {
+                    Task.succeed(prediction)
+                  } else {
+                    val message =
+                      s"The labels do not match the configuration of project ${project.id}"
+                    warnLog(message) *> Task.fail(
+                      LabelsValidationFailed(
+                        message
                       )
-                    }
+                    )
+                  }
                 }
             )
       )
@@ -241,7 +296,8 @@ class PredictionsService(
                 AlgorithmDoesNotExist(algorithmId)
               )
             )(
-              algorithm => predictClassificationWithAlgorithm(project.id, algorithm, features)
+              algorithm =>
+                predictRegressionWithAlgorithm(project.id, algorithm, features)
             )
       )
     } else {
@@ -255,24 +311,52 @@ class PredictionsService(
     }
   }
 
-  def addExample(predictionId: String, labelId: String) =
+  def addExample(
+      predictionId: String,
+      labelIdOpt: Option[String],
+      valueOpt: Option[Float]
+  ) =
     predictionFactory.get(predictionId).flatMap {
       case prediction: ClassificationPrediction =>
-        prediction.labels
-          .find(_.id == labelId)
-          .fold[Task[Label]](
-            Task.fail(LabelNotFound(labelId))
-          )(
-            label => {
-              val examples = prediction.examples + label.id
-              predictionsRepository
-                .updateExamples(predictionId, examples) *> kinesisService.put(
-                examples,
-                config.kinesis.examplesStream,
+        labelIdOpt.fold[Task[Label]](
+          Task.fail(IncorrectExample(Classification()))
+        )(
+          labelId =>
+            prediction.labels
+              .find(_.id == labelId)
+              .fold[Task[Label]](
+                Task.fail(LabelNotFound(labelId))
+              )(
+                label => {
+                  val examples = prediction.examples + label.id
+                  predictionsRepository
+                    .updateClassificationExamples(predictionId, examples) *> kinesisService
+                    .put(
+                      prediction.copy(examples = examples),
+                      config.kinesis.predictionsStream,
+                      predictionId
+                    )(PredictionSerializer.classificationPredictionEncoder) *> Task
+                    .succeed(label)
+                }
+              )
+        )
+
+      case prediction: RegressionPrediction =>
+        valueOpt.fold[Task[Label]](
+          Task.fail(IncorrectExample(Regression()))
+        )(
+          value => {
+            val examples = prediction.examples :+ value
+            predictionsRepository
+              .updateRegressionExamples(predictionId, examples) *> kinesisService
+              .put(
+                prediction.copy(examples = examples),
+                config.kinesis.predictionsStream,
                 predictionId
-              ) *> Task.succeed(label)
-            }
-          )
-      case prediction: RegressionPrediction => ???
+              )(PredictionSerializer.regressionPredictionEncoder) *> Task
+              .succeed(prediction.labels.head)
+          }
+        )
+
     }
 }

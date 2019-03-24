@@ -15,7 +15,9 @@ class ExamplesController(
     predictionsService: PredictionsService
 ) extends Http4sDsl[Task] {
 
-  object LabelIdMatcher extends QueryParamDecoderMatcher[String]("labelId")
+  object ValueIdMatcher extends OptionalQueryParamDecoderMatcher[Float]("value")
+  object LabelIdMatcher
+      extends OptionalQueryParamDecoderMatcher[String]("labelId")
   object PredictionIdMatcher
       extends QueryParamDecoderMatcher[String]("predictionId")
 
@@ -23,9 +25,9 @@ class ExamplesController(
     HttpRoutes.of[Task] {
       case POST -> Root :? PredictionIdMatcher(predictionId) +& LabelIdMatcher(
             labelId
-          ) =>
+          ) +& ValueIdMatcher(value) =>
         (for {
-          example <- predictionsService.addExample(predictionId, labelId)
+          example <- predictionsService.addExample(predictionId, labelId, value)
         } yield example)
           .flatMap { example =>
             Created(LabelSerializer.encodeJson(example))
