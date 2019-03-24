@@ -2,12 +2,12 @@ package com.foundaml.server.domain.repositories
 
 import doobie._
 import doobie.implicits._
-
 import scalaz.zio.Task
 import scalaz.zio.interop.catz._
-
 import com.foundaml.server.domain.models._
+import com.foundaml.server.domain.models.errors.ProjectAlreadyExists
 import com.foundaml.server.infrastructure.serialization._
+import doobie.postgres.sqlstate
 
 class ProjectsRepository(implicit xa: Transactor[Task]) {
 
@@ -52,7 +52,13 @@ class ProjectsRepository(implicit xa: Transactor[Task]) {
       ${project.configuration.labels}
     )""".update
 
-  def insert(project: Project) = insertQuery(project: Project).run.transact(xa)
+  def insert(project: Project) =
+    insertQuery(project: Project).run
+      .attemptSomeSqlState {
+        case sqlstate.class23.UNIQUE_VIOLATION =>
+          ProjectAlreadyExists(project.id)
+      }
+      .transact(xa)
 
   def readQuery(projectId: String) =
     sql"""

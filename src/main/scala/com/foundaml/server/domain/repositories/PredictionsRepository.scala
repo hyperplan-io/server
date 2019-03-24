@@ -1,12 +1,17 @@
 package com.foundaml.server.domain.repositories
 
 import com.foundaml.server.domain.models.Examples.Examples
+import com.foundaml.server.domain.models.errors.{
+  PredictionAlreadyExist,
+  PredictionError
+}
 import com.foundaml.server.domain.models.features.Features.Features
 import com.foundaml.server.domain.models.{Examples, Prediction}
 import com.foundaml.server.domain.models.labels.Labels
 import com.foundaml.server.infrastructure.serialization._
 import doobie._
 import doobie.implicits._
+import doobie.postgres.sqlstate
 import scalaz.zio.Task
 import scalaz.zio.interop.catz._
 
@@ -44,8 +49,13 @@ class PredictionsRepository(implicit xa: Transactor[Task]) {
       ${prediction.examples}
     )""".update
 
-  def insert(prediction: Prediction): Task[Int] =
-    insertQuery(prediction).run.transact(xa)
+  def insert(prediction: Prediction): Task[Either[PredictionError, Int]] =
+    insertQuery(prediction).run
+      .attemptSomeSqlState {
+        case sqlstate.class23.UNIQUE_VIOLATION =>
+          PredictionAlreadyExist(prediction.id)
+      }
+      .transact(xa)
 
   def readQuery(predictionId: String) =
     sql"""

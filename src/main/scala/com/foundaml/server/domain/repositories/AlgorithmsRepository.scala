@@ -2,13 +2,13 @@ package com.foundaml.server.domain.repositories
 
 import doobie._
 import doobie.implicits._
-
 import scalaz.zio.Task
 import scalaz.zio.interop.catz._
-
 import com.foundaml.server.domain.models.Algorithm
 import com.foundaml.server.domain.models.backends._
+import com.foundaml.server.domain.models.errors.AlgorithmAlreadyExists
 import com.foundaml.server.infrastructure.serialization._
+import doobie.postgres.sqlstate
 
 class AlgorithmsRepository(implicit xa: Transactor[Task]) {
 
@@ -28,8 +28,13 @@ class AlgorithmsRepository(implicit xa: Transactor[Task]) {
       ${algorithm.projectId}
     )""".update
 
-  def insert(algorithm: Algorithm): Task[Int] =
-    insertQuery(algorithm).run.transact(xa)
+  def insert(algorithm: Algorithm) =
+    insertQuery(algorithm).run
+      .attemptSomeSqlState {
+        case sqlstate.class23.UNIQUE_VIOLATION =>
+          AlgorithmAlreadyExists(algorithm.id)
+      }
+      .transact(xa)
 
   def readQuery(algorithmId: String): doobie.Query0[Algorithm] =
     sql"""

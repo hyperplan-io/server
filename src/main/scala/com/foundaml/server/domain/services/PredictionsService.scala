@@ -37,7 +37,9 @@ class PredictionsService(
 ) {
 
   def persistPrediction(prediction: Prediction) =
-    predictionsRepository.insert(prediction)
+    predictionsRepository
+      .insert(prediction)
+      .fold(err => Task.fail(err), _ => Task.succeed(prediction))
 
   def publishPredictionToKinesis(prediction: Prediction) =
     if (config.kinesis.enabled) {
@@ -135,23 +137,31 @@ class PredictionsService(
                     _.expect[TensorFlowLabels](request)(
                       TensorFlowLabelsSerializer.entityDecoder
                     ).flatMap { tfLabels =>
-                      backend.labelsTransformer
-                        .transform(predictionId, tfLabels)
-                        .fold(
-                          err => Task.fail(err),
-                          labels =>
-                            Task.succeed(
-                              Prediction(
-                                predictionId,
-                                projectId,
-                                algorithm.id,
-                                features,
-                                labels,
-                                Set.empty
+                        backend.labelsTransformer
+                          .transform(predictionId, tfLabels)
+                          .fold(
+                            err => Task.fail(err),
+                            labels =>
+                              Task.succeed(
+                                Prediction(
+                                  predictionId,
+                                  projectId,
+                                  algorithm.id,
+                                  features,
+                                  labels,
+                                  Set.empty
+                                )
                               )
+                          )
+                      }
+                      .catchAll {
+                        case _ =>
+                          Task.fail(
+                            BackendError(
+                              "An error occurred with the backend request"
                             )
-                        )
-                    }
+                          )
+                      }
                   )
               }
             )
@@ -240,9 +250,7 @@ class PredictionsService(
                   s"project algorithms: ${project.algorithmsMap.toString()}"
                 )
               ) *> Task.fail(
-                InvalidArgument(
-                  s"The algorithm $algorithmId does not exist in the project ${project.id}"
-                )
+                AlgorithmDoesNotExist(algorithmId)
               )
             )(
               algorithm =>
@@ -277,7 +285,7 @@ class PredictionsService(
       prediction.labels.labels
         .find(_.id == labelId)
         .fold[Task[Label]](
-          Task.fail(NotFound(s"The label $labelId does not exist"))
+          Task.fail(LabelNotFound(labelId))
         )(
           label => {
             val examples = prediction.examples + label.id
