@@ -6,10 +6,11 @@ import com.foundaml.server.domain.models.errors.{
   FeaturesConfigurationError,
   InvalidProjectIdentifier,
   ProjectAlreadyExists,
-  ProjectNotFound
+  ProjectDataInconsistent
 }
 import com.foundaml.server.domain.services.ProjectsService
 import com.foundaml.server.infrastructure.serialization._
+import doobie.util.invariant.UnexpectedEnd
 import org.http4s.HttpService
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
@@ -62,8 +63,14 @@ class ProjectsController(
             )
           }
           .catchAll {
-            case ProjectNotFound(_) =>
+            case UnexpectedEnd =>
               NotFound(s"The project $projectId does not exist")
+            case ProjectDataInconsistent(_) =>
+              InternalServerError(
+                s"The project $projectId has inconsistent data"
+              )
+            case err =>
+              InternalServerError("An unknown error occurred")
           }
     }
   }

@@ -2,7 +2,7 @@ package com.foundaml.server.domain.factories
 
 import com.foundaml.server.domain.models.errors.{
   FactoryException,
-  ProjectNotFound
+  ProjectDataInconsistent
 }
 import com.foundaml.server.domain.models.{Project, ProjectConfiguration}
 import com.foundaml.server.domain.repositories.{
@@ -43,6 +43,6 @@ class ProjectFactory(
           )
         )
       case _ =>
-        Task.fail(ProjectNotFound(projectId))
+        Task.fail(ProjectDataInconsistent(projectId))
     }
 }
