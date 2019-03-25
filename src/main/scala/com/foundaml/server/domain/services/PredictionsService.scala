@@ -330,12 +330,10 @@ class PredictionsService(
                 label => {
                   val examples = prediction.examples + label.id
                   predictionsRepository
-                    .updateClassificationExamples(predictionId, examples) *> kinesisService
-                    .put(
-                      prediction.copy(examples = examples),
-                      config.kinesis.predictionsStream,
-                      predictionId
-                    )(PredictionSerializer.classificationPredictionEncoder) *> Task
+                    .updateClassificationExamples(predictionId, examples) *>
+                    publishPredictionToKinesis(
+                      prediction.copy(examples = examples)
+                    ) *> Task
                     .succeed(label)
                 }
               )
@@ -348,13 +346,9 @@ class PredictionsService(
           value => {
             val examples = prediction.examples :+ value
             predictionsRepository
-              .updateRegressionExamples(predictionId, examples) *> kinesisService
-              .put(
-                prediction.copy(examples = examples),
-                config.kinesis.predictionsStream,
-                predictionId
-              )(PredictionSerializer.regressionPredictionEncoder) *> Task
-              .succeed(prediction.labels.head)
+              .updateRegressionExamples(predictionId, examples) *>
+              publishPredictionToKinesis(prediction.copy(examples = examples)) *>
+              Task.succeed(prediction.labels.head)
           }
         )
 
