@@ -10,7 +10,7 @@ case class TensorFlowFeaturesTransformer(
 
   def transform(
       features: Features
-  ): Either[Throwable, TensorFlowClassificationFeatures] = {
+  ): Either[Throwable, TensorFlowFeatures] = {
     if (features.size == fields.size) {
 
       val examples = features.zip(fields).map {
@@ -28,7 +28,7 @@ case class TensorFlowFeaturesTransformer(
           TensorFlowStringVectorFeature(field, value)
       }
 
-      Right(TensorFlowClassificationFeatures(signatureName, examples))
+      Right(TensorFlowFeatures(signatureName, examples))
     } else {
       Left(new IllegalArgumentException("Feature transformer failed"))
     }

@@ -47,9 +47,8 @@ object PostgresqlService {
         id VARCHAR(36) PRIMARY KEY,
         name VARCHAR NOT NULL,
         algorithm_policy VARCHAR(36) NOT NULL,
-        problem VARCHAR NOT NULL,
-        features_configuration VARCHAR NOT NULL,
-        labels VARCHAR NOT NULL
+        configuration VARCHAR NOT NULL,
+        problem VARCHAR NOT NULL
       )
     """.update.run
 
@@ -66,6 +65,7 @@ object PostgresqlService {
       CREATE TABLE IF NOT EXISTS predictions(
         id VARCHAR(36) PRIMARY KEY,
         project_id VARCHAR(36) NOT NULL,
+        type VARCHAR(50) NOT NULL,
         algorithm_id VARCHAR(36) NOT NULL,
         features VARCHAR NOT NULL,
         labels VARCHAR NOT NULL,

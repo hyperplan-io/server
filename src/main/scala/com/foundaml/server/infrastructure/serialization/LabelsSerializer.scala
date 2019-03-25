@@ -58,7 +58,19 @@ object LabelSerializer {
     labels.asJson
   }
 
-  def decodeJson(n: String): Label = {
-    decode[Label](n).right.get
+  def encodeJsonSet(labels: Set[Label]): Json = {
+    labels.asJson
+  }
+
+  def encodeJsonSetNoSpaces(labels: Set[Label]): String = {
+    labels.asJson.noSpaces
+  }
+
+  def decodeJson(n: String): Either[io.circe.Error, Label] = {
+    decode[Label](n)
+  }
+
+  def decodeJsonSet(n: String): Either[io.circe.Error, Set[Label]] = {
+    decode[Set[Label]](n)
   }
 }

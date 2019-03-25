@@ -4,10 +4,8 @@ import org.scalatest._
 import org.scalatest.Inside.inside
 import com.foundaml.server.domain.models.features._
 import com.foundaml.server.domain.models.features.transformers.TensorFlowFeaturesTransformer
-import com.foundaml.server.infrastructure.serialization.{
-  FeaturesSerializer,
-  TensorFlowFeaturesSerializer
-}
+import com.foundaml.server.infrastructure.serialization.features.FeaturesSerializer
+import com.foundaml.server.infrastructure.serialization.tensorflow.TensorFlowFeaturesSerializer
 import io.circe._
 import io.circe.syntax._
 import io.circe.parser._

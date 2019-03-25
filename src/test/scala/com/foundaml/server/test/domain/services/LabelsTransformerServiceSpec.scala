@@ -2,15 +2,14 @@ package com.foundaml.server.test.domain.services
 
 import java.util.UUID
 
-import com.foundaml.server.domain.models.labels.ClassificationLabel
+import com.foundaml.server.domain.models.labels.{
+  ClassificationLabel,
+  TensorFlowClassificationLabels
+}
 import scalaz.zio.DefaultRuntime
 import org.scalatest.Inside.inside
 import org.scalatest._
-import com.foundaml.server.domain.models.labels.transformers.{
-  TensorFlowLabel,
-  TensorFlowLabels,
-  TensorFlowLabelsTransformer
-}
+import com.foundaml.server.domain.models.labels.transformers.TensorFlowLabelsTransformer
 
 class LabelsTransformerServiceSpec
     extends FlatSpec
@@ -18,7 +17,7 @@ class LabelsTransformerServiceSpec
     with Matchers {
 
   it should "not accept a label transformer with a different number of arguments than the labels" in {
-    val labels1 = TensorFlowLabels(
+    val labels1 = TensorFlowClassificationLabels(
       List(
         List(
           "tf_toto" -> 0.5f
@@ -45,7 +44,7 @@ class LabelsTransformerServiceSpec
         )
     }
 
-    val labels2 = TensorFlowLabels(
+    val labels2 = TensorFlowClassificationLabels(
       List(
         List(
           "tf_toto" -> 0.5f
@@ -77,7 +76,7 @@ class LabelsTransformerServiceSpec
 
   it should "transform labels to a foundaml compatible format" in {
 
-    val labels = TensorFlowLabels(
+    val labels = TensorFlowClassificationLabels(
       List(
         List(
           "tf_toto" -> 0.5f
@@ -102,7 +101,7 @@ class LabelsTransformerServiceSpec
 
     inside(transformedFeatures) {
       case Right(tfLabels) =>
-        inside(tfLabels.labels.toList) {
+        inside(tfLabels.toList) {
           case ClassificationLabel(_, "toto", 0.5f, _, _)
                 :: ClassificationLabel(_, "titi", 0.3f, _, _)
                 :: Nil =>

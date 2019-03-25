@@ -1,20 +1,17 @@
-package com.foundaml.server.infrastructure.serialization
+package com.foundaml.server.infrastructure.serialization.tensorflow
 
 import com.foundaml.server.domain.models.features._
-import io.circe.syntax._
-import io.circe.{Encoder, _}
+import io.circe.{Encoder, Json}
 import org.http4s.EntityEncoder
 import org.http4s.circe.jsonEncoderOf
+import io.circe.syntax._
 import scalaz.zio.Task
 import scalaz.zio.interop.catz._
 
 object TensorFlowFeaturesSerializer {
 
-  import io.circe.generic.extras.semiauto._
-
-  implicit val encodeTFClassificationFeatures
-      : Encoder[TensorFlowClassificationFeatures] =
-    (features: TensorFlowClassificationFeatures) =>
+  implicit val encodeTFClassificationFeatures: Encoder[TensorFlowFeatures] =
+    (features: TensorFlowFeatures) =>
       Json.obj(
         ("signature_name", Json.fromString(features.signatureName)),
         ("examples", Json.arr(Json.fromFields(features.examples.flatMap {
@@ -33,11 +30,10 @@ object TensorFlowFeaturesSerializer {
         })))
       )
 
-  implicit val entityEncoder
-      : EntityEncoder[Task, TensorFlowClassificationFeatures] =
-    jsonEncoderOf[Task, TensorFlowClassificationFeatures]
+  implicit val entityEncoder: EntityEncoder[Task, TensorFlowFeatures] =
+    jsonEncoderOf[Task, TensorFlowFeatures]
 
-  def encodeJson(features: TensorFlowClassificationFeatures): Json =
+  def encodeJson(features: TensorFlowFeatures): Json =
     features.asJson
 
 }

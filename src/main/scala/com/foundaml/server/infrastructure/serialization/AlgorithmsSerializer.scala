@@ -1,6 +1,6 @@
 package com.foundaml.server.infrastructure.serialization
 
-import com.foundaml.server.domain.models.Algorithm
+import com.foundaml.server.domain.models._
 import com.foundaml.server.domain.models.backends.Backend
 import io.circe._
 import io.circe.syntax._
@@ -8,19 +8,21 @@ import io.circe.parser.decode
 
 object AlgorithmsSerializer {
 
-  import io.circe._, io.circe.generic.semiauto._
+  implicit val encoder: Encoder[Algorithm] =
+    (algorithm: Algorithm) =>
+      Json.obj(
+        "id" -> Json.fromString(algorithm.id),
+        "projectId" -> Json.fromString(algorithm.projectId),
+        "backend" -> BackendSerializer.encodeJson(algorithm.backend)
+      )
 
-  object Implicits {
-    implicit val backendEncoder: Encoder[Backend] =
-      BackendSerializer.Implicits.encoder
-    implicit val backendDecoder: Decoder[Backend] =
-      BackendSerializer.Implicits.decoder
-
-    implicit val encoder: Encoder[Algorithm] = deriveEncoder
-    implicit val decoder: Decoder[Algorithm] = deriveDecoder
-  }
-
-  import Implicits._
+  implicit val decoder: Decoder[Algorithm] =
+    (c: HCursor) =>
+      for {
+        id <- c.downField("id").as[String]
+        projectId <- c.downField("projectId").as[String]
+        backend <- c.downField("backend").as[Backend](BackendSerializer.decoder)
+      } yield Algorithm(id, backend, projectId)
 
   def encodeJson(algorithm: Algorithm): Json = {
     algorithm.asJson

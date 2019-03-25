@@ -1,5 +1,6 @@
 package com.foundaml.server.domain.models
 
 object Examples {
-  type Examples = Set[String]
+  type ClassificationExamples = Set[String]
+  type RegressionExamples = List[Float]
 }

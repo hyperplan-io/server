@@ -4,9 +4,6 @@ case class Labels(labels: Set[Label])
 
 sealed trait Label {
   def id: String
-  def label: String
-  def correctExampleUrl: String
-  def incorrectExampleUrl: String
 }
 
 case class ClassificationLabel(
@@ -16,3 +13,6 @@ case class ClassificationLabel(
     correctExampleUrl: String,
     incorrectExampleUrl: String
 ) extends Label
+
+case class RegressionLabel(id: String, label: Float, correctExampleUrl: String)
+    extends Label

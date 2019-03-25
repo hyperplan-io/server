@@ -1,19 +1,18 @@
 package com.foundaml.server.domain.services
 
-import com.foundaml.server.application.controllers.requests.PostProjectRequest
 import com.foundaml.server.domain.factories.ProjectFactory
 import com.foundaml.server.domain.models._
 import com.foundaml.server.domain.models.errors._
 import com.foundaml.server.domain.models.features._
 import com.foundaml.server.domain.repositories.ProjectsRepository
-import com.foundaml.server.infrastructure.logging.IOLazyLogging
+import com.foundaml.server.infrastructure.logging.IOLogging
 import doobie.util.invariant.UnexpectedEnd
 import scalaz.zio.{Task, ZIO}
 
 class ProjectsService(
     projectsRepository: ProjectsRepository,
     projectFactory: ProjectFactory
-) extends IOLazyLogging {
+) extends IOLogging {
 
   val regex = "[0-9a-zA-Z-_]*"
   def validateAlphaNumerical(input: String): List[ProjectError] = {
@@ -55,32 +54,42 @@ class ProjectsService(
         }
     }
 
-  def validateProject(project: Project): List[ProjectError] = {
-    List(
-      validateAlphaNumerical(project.id),
-      validateFeatureClasses(project.configuration.features)
-    ).flatten
+  def validateClassificationConfiguration(
+      configuration: ClassificationConfiguration
+  ): List[ProjectError] = {
+    validateFeatureClasses(configuration.features)
   }
 
   def createEmptyProject(
       id: String,
       name: String,
-      problem: ProblemType,
-      featuresConfiguration: FeaturesConfiguration,
-      labels: Set[String]
+      configuration: ProjectConfiguration
   ): ZIO[Any, Throwable, Project] = {
-    val project = Project(
-      id,
-      name,
-      ProjectConfiguration(
-        problem,
-        featuresConfiguration,
-        labels
-      ),
-      Nil,
-      NoAlgorithm()
-    )
-    val errors = validateProject(project)
+    val project = configuration match {
+      case classificationConfiguration: ClassificationConfiguration =>
+        ClassificationProject(
+          id,
+          name,
+          classificationConfiguration,
+          Nil,
+          NoAlgorithm()
+        )
+      case regressionConfiguration: RegressionConfiguration =>
+        RegressionProject(
+          id,
+          name,
+          regressionConfiguration,
+          Nil,
+          NoAlgorithm()
+        )
+    }
+
+    val errors = project match {
+      case classificationProject: ClassificationProject =>
+        validateClassificationConfiguration(classificationProject.configuration)
+      case _ => Nil
+    }
+
     for {
       _ <- errors.headOption.fold[Task[Unit]](
         Task.succeed(Unit)

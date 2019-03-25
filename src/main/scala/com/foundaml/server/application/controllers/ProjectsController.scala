@@ -4,13 +4,11 @@ import com.foundaml.server.application.controllers.requests._
 import com.foundaml.server.domain.models.errors._
 import com.foundaml.server.domain.services.ProjectsService
 import com.foundaml.server.infrastructure.serialization._
-
-import org.http4s.HttpService
+import org.http4s.{HttpRoutes, HttpService}
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
-
 import cats.Functor
-
+import com.foundaml.server.domain.models.Project
 import scalaz.zio.Task
 import scalaz.zio.interop.catz._
 
@@ -18,21 +16,19 @@ class ProjectsController(
     projectsService: ProjectsService
 ) extends Http4sDsl[Task] {
 
-  val service: HttpService[Task] = {
+  val service: HttpRoutes[Task] = {
 
-    HttpService[Task] {
+    HttpRoutes.of[Task] {
       case req @ POST -> Root =>
         (for {
-          request <- req.as[PostProjectRequest](
+          request <- req.as[Project](
             Functor[Task],
-            PostProjectRequestEntitySerializer.entityDecoder
+            ProjectSerializer.entityDecoder
           )
           project <- projectsService.createEmptyProject(
             request.id,
             request.name,
-            request.configuration.problem,
-            request.configuration.features,
-            request.configuration.labels
+            request.configuration
           )
         } yield project)
           .flatMap { project =>

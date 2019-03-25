@@ -4,45 +4,64 @@ import com.foundaml.server.domain.models.errors.{
   FactoryException,
   ProjectDataInconsistent
 }
-import com.foundaml.server.domain.models.{Project, ProjectConfiguration}
+import com.foundaml.server.domain.models._
 import com.foundaml.server.domain.repositories.{
   AlgorithmsRepository,
   ProjectsRepository
 }
+import com.foundaml.server.infrastructure.logging.IOLogging
 import scalaz.zio.{Task, ZIO}
 
 class ProjectFactory(
     projectsRepository: ProjectsRepository,
-    algorithmsRepository: AlgorithmsRepository
-) {
-  def get(projectId: String): ZIO[Any, Throwable, Project] =
-    (projectsRepository.read(projectId) zipPar algorithmsRepository
-      .readForProject(projectId)).flatMap {
+    algorithmsRepository: AlgorithmsRepository,
+    algorithmFactory: AlgorithmFactory
+) extends IOLogging {
+  def get(projectId: String): ZIO[Any, Throwable, Project] = {
+    (projectsRepository.read(projectId) zipPar algorithmFactory
+      .getForProject(projectId)).flatMap {
       case (
           (
             id,
             name,
+            Right(Classification),
             Right(policy),
-            Right(problemType),
-            Right(featuresConfiguration),
-            labels
+            Right(projectConfiguration: ClassificationConfiguration)
           ),
           algorithms
           ) =>
         Task.succeed(
-          Project(
+          ClassificationProject(
             id,
             name,
-            ProjectConfiguration(
-              problemType,
-              featuresConfiguration,
-              labels
-            ),
+            projectConfiguration,
             algorithms,
             policy
           )
         )
-      case _ =>
-        Task.fail(ProjectDataInconsistent(projectId))
+      case (
+          (
+            id,
+            name,
+            Right(Regression),
+            Right(policy),
+            Right(projectConfiguration: RegressionConfiguration)
+          ),
+          algorithms
+          ) =>
+        Task.succeed(
+          RegressionProject(
+            id,
+            name,
+            projectConfiguration,
+            algorithms,
+            policy
+          )
+        )
+      case projectData =>
+        warnLog(s"Could not build project with factory, data is $projectData") *> Task
+          .fail(ProjectDataInconsistent(projectId))
     }
+  }
+
 }

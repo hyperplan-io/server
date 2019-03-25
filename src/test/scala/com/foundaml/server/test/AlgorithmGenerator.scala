@@ -2,13 +2,13 @@ package com.foundaml.server.test
 
 import java.util.UUID
 
-import com.foundaml.server.domain.models.backends.Local
+import com.foundaml.server.domain.models.backends.LocalClassification
 import com.foundaml.server.domain.models.labels.Labels
 import com.foundaml.server.domain.models.{Algorithm, labels}
 
 object AlgorithmGenerator {
 
-  val computed = Labels(
+  val computed =
     Set(
       labels.ClassificationLabel(
         UUID.randomUUID().toString,
@@ -32,18 +32,17 @@ object AlgorithmGenerator {
         "incorrect_url"
       )
     )
-  )
 
   val defaultAlgorithm = Algorithm(
     "algorithm id",
-    Local(computed),
+    LocalClassification(computed),
     "test project id"
   )
 
   def withLocalBackend(algorithmId: Option[String] = None) =
     Algorithm(
       algorithmId.getOrElse(UUID.randomUUID().toString),
-      Local(computed),
+      LocalClassification(computed),
       UUID.randomUUID().toString
     )
 

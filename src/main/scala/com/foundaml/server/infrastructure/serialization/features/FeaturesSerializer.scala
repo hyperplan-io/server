@@ -1,12 +1,11 @@
-package com.foundaml.server.infrastructure.serialization
+package com.foundaml.server.infrastructure.serialization.features
 
 import com.foundaml.server.domain.models.features.Features.Features
-import io.circe.Encoder
-import io.circe._
+import com.foundaml.server.domain.models.features._
+import io.circe.{Decoder, Encoder, HCursor, Json}
 import io.circe.parser.decode
 import io.circe.syntax._
-import com.foundaml.server.domain.models.features._
-import io.circe.Decoder.Result
+import org.http4s.circe.jsonOf
 
 object FeaturesSerializer {
 
@@ -108,10 +107,8 @@ object FeaturesSerializer {
   }
 
   object Implicits {
-    import io.circe.generic.extras.Configuration
-    import io.circe.generic.extras.semiauto._
-
     import FeatureSerializer._
+    import io.circe.generic.extras.Configuration
 
     implicit val discriminator: Configuration =
       Configuration.default.withDiscriminator("class")
@@ -124,16 +121,16 @@ object FeaturesSerializer {
 
   import Implicits._
 
-  def encodeJson(labels: Features): Json = {
-    labels.asJson
+  def encodeJson(features: Features): Json = {
+    features.asJson
   }
 
-  def encodeJsonNoSpaces(labels: Features): String = {
-    labels.asJson.noSpaces
+  def encodeJsonNoSpaces(features: Features): String = {
+    features.asJson.noSpaces
   }
 
-  def decodeJson(n: String): Features = {
-    decode[Features](n).right.get
+  def decodeJson(n: String): Either[io.circe.Error, Features] = {
+    decode[Features](n)
   }
 
 }

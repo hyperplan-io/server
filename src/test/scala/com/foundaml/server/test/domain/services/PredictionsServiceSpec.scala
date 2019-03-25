@@ -2,7 +2,11 @@ package com.foundaml.server.test.domain.services
 
 import java.util.UUID
 
-import com.foundaml.server.domain.factories.ProjectFactory
+import com.foundaml.server.domain.factories.{
+  AlgorithmFactory,
+  PredictionFactory,
+  ProjectFactory
+}
 import com.foundaml.server.domain.{
   DatabaseConfig,
   FoundaMLConfig,
@@ -25,8 +29,7 @@ import com.foundaml.server.test.{
   ProjectGenerator,
   TestDatabase
 }
-import org.http4s.client.blaze.Http1Client
-import scalaz.zio.{DefaultRuntime, Task}
+import scalaz.zio.DefaultRuntime
 import scalaz.zio.interop.catz._
 
 import scala.util.Try
@@ -52,14 +55,21 @@ class PredictionsServiceSpec
   val projectsRepository = new ProjectsRepository()(xa)
   val algorithmsRepository = new AlgorithmsRepository()(xa)
   val predictionsRepository = new PredictionsRepository()(xa)
-  val projectFactory =
-    new ProjectFactory(projectsRepository, algorithmsRepository)
+
+  val algorithmFactory = new AlgorithmFactory(algorithmsRepository)
+  val projectFactory = new ProjectFactory(
+    projectsRepository,
+    algorithmsRepository,
+    algorithmFactory
+  )
+  val predictionFactory = new PredictionFactory(predictionsRepository)
   val predictionsService =
     new PredictionsService(
       projectsRepository,
       predictionsRepository,
       kinesisService,
       projectFactory,
+      predictionFactory,
       config
     )
 
@@ -78,7 +88,7 @@ class PredictionsServiceSpec
     val shouldThrow = Try(
       unsafeRun(
         predictionsService
-          .predictForProject(
+          .predictForClassificationProject(
             project,
             features,
             Some(algorithmId)

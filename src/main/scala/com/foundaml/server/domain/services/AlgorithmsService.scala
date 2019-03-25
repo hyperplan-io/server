@@ -3,21 +3,29 @@ package com.foundaml.server.domain.services
 import scalaz.zio.{Task, ZIO}
 import com.foundaml.server.domain.factories.ProjectFactory
 import com.foundaml.server.domain.models._
-import com.foundaml.server.domain.models.backends.Backend
-import com.foundaml.server.domain.models.errors.InvalidArgument
+import com.foundaml.server.domain.models.backends.{
+  Backend,
+  LocalClassification,
+  TensorFlowClassificationBackend,
+  TensorFlowRegressionBackend
+}
+import com.foundaml.server.domain.models.errors.{
+  IncompatibleAlgorithm,
+  InvalidArgument
+}
 import com.foundaml.server.domain.models.features.transformers.TensorFlowFeaturesTransformer
 import com.foundaml.server.domain.models.labels.transformers.TensorFlowLabelsTransformer
 import com.foundaml.server.domain.repositories.{
   AlgorithmsRepository,
   ProjectsRepository
 }
-import com.foundaml.server.infrastructure.logging.IOLazyLogging
+import com.foundaml.server.infrastructure.logging.IOLogging
 
 class AlgorithmsService(
     algorithmsRepository: AlgorithmsRepository,
     projectsRepository: ProjectsRepository,
     projectFactory: ProjectFactory
-) extends IOLazyLogging {
+) extends IOLogging {
 
   def validateEqualSize(
       expectedSize: Int,
@@ -30,10 +38,13 @@ class AlgorithmsService(
       None
     }
 
-  def validate(algorithm: Algorithm, project: Project) = {
+  def validateClassificationAlgorithm(
+      algorithm: Algorithm,
+      project: ClassificationProject
+  ) = {
     algorithm.backend match {
-      case com.foundaml.server.domain.models.backends.Local(computed) => Nil
-      case com.foundaml.server.domain.models.backends.TensorFlowBackend(
+      case LocalClassification(computed) => Nil
+      case TensorFlowClassificationBackend(
           _,
           _,
           TensorFlowFeaturesTransformer(signatureName, fields),
@@ -57,6 +68,38 @@ class AlgorithmsService(
             "labels"
           )
         ).flatten
+      case TensorFlowRegressionBackend(_, _, _) =>
+        List(IncompatibleAlgorithm(algorithm.id))
+    }
+
+  }
+
+  def validateRegressionAlgorithm(
+      algorithm: Algorithm,
+      project: RegressionProject
+  ) = {
+    algorithm.backend match {
+      case LocalClassification(computed) => Nil
+      case TensorFlowRegressionBackend(
+          _,
+          _,
+          TensorFlowFeaturesTransformer(signatureName, fields)
+          ) =>
+        val size = project.configuration.features match {
+          case FeaturesConfiguration(
+              featuresClasses: List[FeatureConfiguration]
+              ) =>
+            featuresClasses.size
+        }
+        List(
+          validateEqualSize(
+            size,
+            fields.size,
+            "features"
+          )
+        ).flatten
+      case TensorFlowClassificationBackend(_, _, _, _) =>
+        List(IncompatibleAlgorithm(algorithm.id))
     }
   }
 
@@ -68,7 +111,12 @@ class AlgorithmsService(
         backend,
         projectId
       )
-      errors = validate(algorithm, project)
+      errors = project match {
+        case classificationProject: ClassificationProject =>
+          validateClassificationAlgorithm(algorithm, classificationProject)
+        case regressionProject: RegressionProject =>
+          validateRegressionAlgorithm(algorithm, regressionProject)
+      }
       _ <- if (errors.isEmpty) {
         Task(Unit)
       } else {

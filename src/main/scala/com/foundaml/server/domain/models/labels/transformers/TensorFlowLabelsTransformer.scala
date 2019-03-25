@@ -5,38 +5,34 @@ import java.util.UUID
 import com.foundaml.server.domain.models.errors.LabelsTransformerError
 import com.foundaml.server.domain.models.labels._
 import com.foundaml.server.domain.services.ExampleUrlService
-import com.foundaml.server.infrastructure.serialization.TensorFlowLabelsSerializer
-
-case class TensorFlowLabels(result: List[List[(String, Float)]])
-
-case class TensorFlowLabel(label: String, probability: Float) {
-  override def equals(o: Any): Boolean = o match {
-    case that: TensorFlowLabel => that.label.equalsIgnoreCase(this.label)
-    case _ => false
-  }
-  override def hashCode: Int = label.toUpperCase.hashCode
-}
+import com.foundaml.server.infrastructure.serialization.tensorflow.TensorFlowClassificationLabelsSerializer
 
 case class TensorFlowLabelsTransformer(fields: Map[String, String]) {
 
   def transform(
       predictionId: String,
-      tfLabels: TensorFlowLabels
-  ): Either[LabelsTransformerError, Labels] = {
+      tfLabels: TensorFlowClassificationLabels
+  ): Either[LabelsTransformerError, Set[ClassificationLabel]] = {
 
     val labelsString = tfLabels.result.flatten.map(_._1).toSet
 
     if (labelsString == fields.keys) {
-      val labels: Set[Label] = tfLabels.result.flatten.flatMap {
+      val labels: Set[ClassificationLabel] = tfLabels.result.flatten.flatMap {
         case (label, probability) =>
           fields
             .get(label)
             .map { label =>
               val labelId = UUID.randomUUID().toString
               val correctUrl =
-                ExampleUrlService.correctExampleUrl(predictionId, labelId)
+                ExampleUrlService.correctClassificationExampleUrl(
+                  predictionId,
+                  labelId
+                )
               val incorrectUrl =
-                ExampleUrlService.incorrectExampleUrl(predictionId, labelId)
+                ExampleUrlService.incorrectClassificationExampleUrl(
+                  predictionId,
+                  labelId
+                )
               ClassificationLabel(
                 labelId,
                 label,
@@ -49,7 +45,7 @@ case class TensorFlowLabelsTransformer(fields: Map[String, String]) {
       }.toSet
 
       if (labels.size == fields.keys.size) {
-        Right(Labels(labels))
+        Right(labels)
       } else {
         Left(
           LabelsTransformerError(

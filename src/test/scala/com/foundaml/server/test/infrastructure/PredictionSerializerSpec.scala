@@ -7,7 +7,11 @@ import com.foundaml.server.domain.models.features.{
   FloatVectorFeature
 }
 import com.foundaml.server.domain.models.labels.{ClassificationLabel, Labels}
-import com.foundaml.server.domain.models.{Examples, Prediction}
+import com.foundaml.server.domain.models.{
+  ClassificationPrediction,
+  Examples,
+  Prediction
+}
 import com.foundaml.server.infrastructure.serialization.PredictionSerializer
 import com.foundaml.server.test.SerializerTester
 import io.circe.{Decoder, Encoder}
@@ -18,7 +22,8 @@ class PredictionSerializerSpec
     with SerializerTester
     with Matchers {
 
-  val encoder: Encoder[Prediction] = PredictionSerializer.encoder
+  val encoder: Encoder[ClassificationPrediction] =
+    PredictionSerializer.classificationPredictionEncoder
   val decoder: Decoder[Prediction] = PredictionSerializer.decoder
 
   it should "correctly encode a prediction" in {
@@ -27,7 +32,7 @@ class PredictionSerializerSpec
     val projectId = "test-project-encode"
     val algorithmId = "test-algorithm-encode"
     val labelId = UUID.randomUUID().toString
-    val prediction = Prediction(
+    val prediction = ClassificationPrediction(
       predictionId,
       projectId,
       algorithmId,
@@ -36,23 +41,21 @@ class PredictionSerializerSpec
         FloatFeature(0.0f),
         FloatFeature(0.5f)
       ),
-      Labels(
-        Set(
-          ClassificationLabel(
-            labelId,
-            "",
-            0.5f,
-            "correct_example_url",
-            "incorrect_example_url"
-          )
+      Set.empty,
+      Set(
+        ClassificationLabel(
+          labelId,
+          "",
+          0.5f,
+          "correct_example_url",
+          "incorrect_example_url"
         )
-      ),
-      Set.empty
+      )
     )
 
     testEncoder(prediction) { json =>
       val expectedJson =
-        s"""{"id":"$predictionId","projectId":"$projectId","algorithmId":"$algorithmId","features":[0.0,0.0,0.5],"labels":{"labels":[{"id":"$labelId","label":"","probability":0.5,"correctExampleUrl":"correct_example_url","incorrectExampleUrl":"incorrect_example_url","class":"ClassificationLabel"}]},"examples":[]}"""
+        s"""{"type":"classification","id":"$predictionId","projectId":"$projectId","algorithmId":"$algorithmId","features":[0.0,0.0,0.5],"labels":[{"id":"$labelId","label":"","probability":0.5,"correctExampleUrl":"correct_example_url","incorrectExampleUrl":"incorrect_example_url"}],"examples":[]}"""
       json.noSpaces should be(expectedJson)
     }(encoder)
   }
@@ -64,10 +67,13 @@ class PredictionSerializerSpec
     val projectId = "test-project-decode"
     val algorithmId = "test-algorithm-decode"
     val predictionJson =
-      s"""{"id":"$predictionId","projectId":"$projectId","algorithmId":"$algorithmId","features":[0.0,0.2,0.5],"labels":{"labels":[{"id":"$labelId","label":"","probability":0.5,"correctExampleUrl":"correct_example_url","incorrectExampleUrl":"incorrect_example_url","class":"ClassificationLabel"}]},"examples":[]}"""
-    testDecoder[Prediction](predictionJson) { prediction =>
-      prediction.id should be(predictionId)
-      prediction.labels.labels.head.id should be(labelId)
+      s"""{"type":"classification","id":"$predictionId","projectId":"$projectId","algorithmId":"$algorithmId","features":[0.0,0.0,0.5],"labels":[{"id":"$labelId","label":"","probability":0.5,"correctExampleUrl":"correct_example_url","incorrectExampleUrl":"incorrect_example_url"}],"examples":[]}"""
+    testDecoder[Prediction](predictionJson) {
+      case prediction: ClassificationPrediction =>
+        prediction.id should be(predictionId)
+        prediction.labels.head.id should be(labelId)
+      case _ =>
+        fail()
     }(decoder)
   }
 }

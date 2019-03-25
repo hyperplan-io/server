@@ -7,6 +7,7 @@ import scalaz.zio.Task
 import scalaz.zio.interop.catz._
 import com.foundaml.server.application.controllers.requests.PredictionRequest
 import com.foundaml.server.domain.models.features.Features.Features
+import com.foundaml.server.infrastructure.serialization.features.FeaturesSerializer
 
 object PredictionRequestEntitySerializer {
 

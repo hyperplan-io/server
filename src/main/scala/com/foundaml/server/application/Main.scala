@@ -3,7 +3,11 @@ package com.foundaml.server.application
 import cats.effect
 import cats.effect.Timer
 import com.foundaml.server.domain.FoundaMLConfig
-import com.foundaml.server.domain.factories.ProjectFactory
+import com.foundaml.server.domain.factories.{
+  AlgorithmFactory,
+  PredictionFactory,
+  ProjectFactory
+}
 import com.foundaml.server.domain.repositories.{
   AlgorithmsRepository,
   PredictionsRepository,
@@ -14,7 +18,7 @@ import com.foundaml.server.domain.services.{
   PredictionsService,
   ProjectsService
 }
-import com.foundaml.server.infrastructure.logging.IOLazyLogging
+import com.foundaml.server.infrastructure.logging.IOLogging
 import com.foundaml.server.infrastructure.storage.PostgresqlService
 import com.foundaml.server.infrastructure.streaming.KinesisService
 import scalaz.zio.clock.Clock
@@ -26,7 +30,7 @@ import scala.concurrent.duration.{FiniteDuration, NANOSECONDS, TimeUnit}
 import scala.util.{Left, Right}
 import pureconfig.generic.auto._
 
-object Main extends App with IOLazyLogging {
+object Main extends App with IOLogging {
 
   implicit val timer: Timer[Task] = new Timer[Task] {
     val zioClock = Clock.Live.clock
@@ -66,9 +70,16 @@ object Main extends App with IOLazyLogging {
       projectsRepository = new ProjectsRepository
       algorithmsRepository = new AlgorithmsRepository
       predictionsRepository = new PredictionsRepository
+      algorithmFactory = new AlgorithmFactory(
+        algorithmsRepository
+      )
       projectFactory = new ProjectFactory(
         projectsRepository,
-        algorithmsRepository
+        algorithmsRepository,
+        algorithmFactory
+      )
+      predictionFactory = new PredictionFactory(
+        predictionsRepository
       )
       kinesisService <- KinesisService("us-east-2")
       predictionsService = new PredictionsService(
@@ -76,6 +87,7 @@ object Main extends App with IOLazyLogging {
         predictionsRepository,
         kinesisService,
         projectFactory,
+        predictionFactory,
         config
       )
       projectsService = new ProjectsService(
