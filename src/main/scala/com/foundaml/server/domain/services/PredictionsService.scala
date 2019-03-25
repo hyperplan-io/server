@@ -132,7 +132,7 @@ class PredictionsService(
       case tfBackend: TensorFlowRegressionBackend =>
         Task.fail(
           IncompatibleBackend(
-            "TensorFlowRegressionBackend can not do regression, use TensorFlowClassificationBackend instead"
+            "TensorFlowRegressionBackend can not do classification, use TensorFlowClassificationBackend instead"
           )
         )
     }

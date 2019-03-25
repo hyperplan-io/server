@@ -24,7 +24,9 @@ class AlgorithmFactory(
         )
 
       case algorithmData =>
-        warnLog(s"Could not build algorithm with factory, data is $algorithmData") *> Task.fail(AlgorithmDataIncorrect(algorithmId))
+        warnLog(
+          s"Could not build algorithm with factory, data is $algorithmData"
+        ) *> Task.fail(AlgorithmDataIncorrect(algorithmId))
     }
   }
 
