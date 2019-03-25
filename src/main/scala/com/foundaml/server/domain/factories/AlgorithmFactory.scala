@@ -3,13 +3,9 @@ package com.foundaml.server.domain.factories
 import com.foundaml.server.domain.models._
 import com.foundaml.server.domain.models.errors.{
   AlgorithmDataIncorrect,
-  AlgorithmError,
-  ProjectDataInconsistent
+  AlgorithmError
 }
-import com.foundaml.server.domain.repositories.{
-  AlgorithmsRepository,
-  ProjectsRepository
-}
+import com.foundaml.server.domain.repositories.AlgorithmsRepository
 import com.foundaml.server.infrastructure.logging.IOLogging
 import scalaz.zio.{Task, ZIO}
 
@@ -27,9 +23,8 @@ class AlgorithmFactory(
           Algorithm(id, backend, projectId)
         )
 
-      case err =>
-        println(err)
-        Task.fail(AlgorithmDataIncorrect(algorithmId))
+      case algorithmData =>
+        warnLog(s"Could not build algorithm with factory, data is $algorithmData") *> Task.fail(AlgorithmDataIncorrect(algorithmId))
     }
   }
 
@@ -46,8 +41,7 @@ class AlgorithmFactory(
                 _
                 ) =>
               (errors, algorithms :+ Algorithm(id, backend, projectId))
-            case err =>
-              println(err)
+            case _ =>
               (errors :+ AlgorithmDataIncorrect(elem._1), algorithms)
           }
       } match {

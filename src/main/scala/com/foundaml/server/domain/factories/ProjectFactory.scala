@@ -1,21 +1,16 @@
 package com.foundaml.server.domain.factories
 
-import com.foundaml.server.domain.models.errors.{
-  FactoryException,
-  ProjectDataInconsistent
-}
+import com.foundaml.server.domain.models.errors.{FactoryException, ProjectDataInconsistent}
 import com.foundaml.server.domain.models._
-import com.foundaml.server.domain.repositories.{
-  AlgorithmsRepository,
-  ProjectsRepository
-}
+import com.foundaml.server.domain.repositories.{AlgorithmsRepository, ProjectsRepository}
+import com.foundaml.server.infrastructure.logging.IOLogging
 import scalaz.zio.{Task, ZIO}
 
 class ProjectFactory(
     projectsRepository: ProjectsRepository,
     algorithmsRepository: AlgorithmsRepository,
     algorithmFactory: AlgorithmFactory
-) {
+) extends IOLogging {
   def get(projectId: String): ZIO[Any, Throwable, Project] = {
     (projectsRepository.read(projectId) zipPar algorithmFactory
       .getForProject(projectId)).flatMap {
@@ -57,9 +52,8 @@ class ProjectFactory(
             policy
           )
         )
-      case err =>
-        println(err)
-        Task.fail(ProjectDataInconsistent(projectId))
+      case projectData =>
+        warnLog(s"Could not build project with factory, data is $projectData") *> Task.fail(ProjectDataInconsistent(projectId))
     }
   }
 
