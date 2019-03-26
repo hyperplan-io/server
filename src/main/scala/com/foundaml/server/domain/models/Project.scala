@@ -8,11 +8,25 @@ case class FeatureConfiguration(
 
 case class FeaturesConfiguration(configuration: List[FeatureConfiguration])
 
+sealed trait LabelsConfiguration {
+  def description: String
+}
+case class OneOfLabelsConfiguration(oneOf: Set[String], description: String)
+    extends LabelsConfiguration
+object OneOfLabelsConfiguration {
+  val labelsType = "oneOf"
+}
+case class DynamicLabelsConfiguration(description: String)
+    extends LabelsConfiguration
+object DynamicLabelsConfiguration {
+  val labelsType = "dynamic"
+}
+
 sealed trait ProjectConfiguration
 
 case class ClassificationConfiguration(
     features: FeaturesConfiguration,
-    labels: Set[String]
+    labels: LabelsConfiguration
 ) extends ProjectConfiguration
 
 case class RegressionConfiguration(

@@ -63,9 +63,37 @@ class PredictionsService(
     }
   }
 
-  def predictWithProjectPolicy(
+  def predictRegressionWithProjectPolicy(
       features: Features,
-      project: Project
+      project: RegressionProject
+  ): Task[Prediction] =
+    project.policy
+      .take()
+      .fold[Task[Prediction]] {
+        val message = s"There is no algorithm in the project ${project.id}"
+        warnLog(message) *> Task.fail(
+          NoAlgorithmAvailable(message)
+        )
+      } { algorithmId =>
+        project.algorithmsMap
+          .get(algorithmId)
+          .fold[Task[Prediction]] {
+            val message =
+              s"The algorithm $algorithmId does not exist in the project ${project.id}"
+            debugLog(message) *> Task.fail(AlgorithmDoesNotExist(algorithmId))
+          }(
+            algorithm =>
+              predictRegressionWithAlgorithm(
+                project,
+                algorithm,
+                features
+              )
+          )
+      }
+
+  def predictClassificationWithProjectPolicy(
+      features: Features,
+      project: ClassificationProject
   ): Task[Prediction] =
     project.policy
       .take()
@@ -84,7 +112,7 @@ class PredictionsService(
           }(
             algorithm =>
               predictClassificationWithAlgorithm(
-                project.id,
+                project,
                 algorithm,
                 features
               )
@@ -110,24 +138,25 @@ class PredictionsService(
   }
 
   def predictClassificationWithAlgorithm(
-      projectId: String,
+      project: ClassificationProject,
       algorithm: Algorithm,
       features: Features
   ): Task[ClassificationPrediction] = {
     val predictionTask = algorithm.backend match {
       case local: LocalClassification =>
         predictWithLocalClassificationBackend(
-          projectId,
+          project.id,
           algorithm,
           features,
           local
         )
       case tfBackend: TensorFlowClassificationBackend =>
         predictWithTensorFlowClassificationBackend(
-          projectId,
+          project.id,
           algorithm,
           features,
-          tfBackend
+          tfBackend,
+          project.configuration.labels
         )
       case tfBackend: TensorFlowRegressionBackend =>
         Task.fail(
@@ -145,7 +174,7 @@ class PredictionsService(
   }
 
   def predictRegressionWithAlgorithm(
-      projectId: String,
+      project: RegressionProject,
       algorithm: Algorithm,
       features: Features
   ): Task[RegressionPrediction] = {
@@ -156,7 +185,7 @@ class PredictionsService(
         )
       case tfBackend: TensorFlowRegressionBackend =>
         predictWithTensorFlowRegressionBackend(
-          projectId,
+          project.id,
           algorithm,
           features,
           tfBackend
@@ -203,10 +232,12 @@ class PredictionsService(
   }
 
   def validateClassificationLabels(
-      expectedLabelsClass: Set[String],
+      labelsConfiguration: LabelsConfiguration,
       labels: Set[ClassificationLabel]
-  ): Boolean = {
-    expectedLabelsClass == labels.map(_.label)
+  ): Boolean = labelsConfiguration match {
+    case OneOfLabelsConfiguration(oneOf, _) =>
+      oneOf == labels.map(_.label)
+    case DynamicLabelsConfiguration(description) => true
   }
 
   def predict(
@@ -231,7 +262,7 @@ class PredictionsService(
         features
       )) {
       optionalAlgorithmId.fold(
-        predictWithProjectPolicy(features, project)
+        predictClassificationWithProjectPolicy(features, project)
       )(
         algorithmId =>
           project.algorithmsMap
@@ -243,7 +274,7 @@ class PredictionsService(
             )(
               algorithm =>
                 predictClassificationWithAlgorithm(
-                  project.id,
+                  project,
                   algorithm,
                   features
                 ).flatMap { prediction =>
@@ -286,7 +317,7 @@ class PredictionsService(
         features
       )) {
       optionalAlgorithmId.fold(
-        predictWithProjectPolicy(features, project)
+        predictRegressionWithProjectPolicy(features, project)
       )(
         algorithmId =>
           project.algorithmsMap
@@ -297,7 +328,7 @@ class PredictionsService(
               )
             )(
               algorithm =>
-                predictRegressionWithAlgorithm(project.id, algorithm, features)
+                predictRegressionWithAlgorithm(project, algorithm, features)
             )
       )
     } else {
@@ -313,22 +344,22 @@ class PredictionsService(
 
   def addExample(
       predictionId: String,
-      labelIdOpt: Option[String],
+      labelOpt: Option[String],
       valueOpt: Option[Float]
   ) =
     predictionFactory.get(predictionId).flatMap {
       case prediction: ClassificationPrediction =>
-        labelIdOpt.fold[Task[Label]](
+        labelOpt.fold[Task[Label]](
           Task.fail(IncorrectExample(Classification))
         )(
-          labelId =>
+          label =>
             prediction.labels
-              .find(_.id == labelId)
+              .find(_.label == label)
               .fold[Task[Label]](
-                Task.fail(LabelNotFound(labelId))
+                Task.fail(LabelNotFound(label))
               )(
                 label => {
-                  val examples = prediction.examples + label.id
+                  val examples = prediction.examples + label.label
                   predictionsRepository
                     .updateClassificationExamples(predictionId, examples) *>
                     publishPredictionToKinesis(

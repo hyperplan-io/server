@@ -13,7 +13,7 @@ object ProjectConfigurationSerializer {
     (a: ClassificationConfiguration) =>
       Json.obj(
         ("features", FeaturesConfigurationSerializer.encoder(a.features)),
-        ("labels", Json.fromValues(a.labels.map(Json.fromString)))
+        ("labels", LabelsConfigurationSerializer.encodeJson(a.labels))
       )
 
   implicit val classificationConfigurationDecoder
@@ -23,7 +23,9 @@ object ProjectConfigurationSerializer {
         featuresConfiguration <- c
           .downField("features")
           .as[FeaturesConfiguration](FeaturesConfigurationSerializer.decoder)
-        labels <- c.downField("labels").as[Set[String]]
+        labels <- c
+          .downField("labels")
+          .as[LabelsConfiguration](LabelsConfigurationSerializer.decoder)
       } yield {
         ClassificationConfiguration(featuresConfiguration, labels)
       }
