@@ -2,6 +2,8 @@
 Foundaml is a service that enables machine learning predictions to be stored, predicted and associated to their labels.
 Data is the core problem of machine learning. Foundaml helps you to manage your machine learning pipeline and to develop successful machine learning projects.
 
+[Getting started](https://foundaml.github.io/server/)
+
 ## Predict
 Foundaml does not execute algorithms on its own. It needs to be paired with other software, such as TensorFlow Serving, to be able to generate predictions.
 
