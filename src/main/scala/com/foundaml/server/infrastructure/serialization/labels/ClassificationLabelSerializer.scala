@@ -11,7 +11,6 @@ object ClassificationLabelSerializer {
   implicit val classificationlabelEncoder: Encoder[ClassificationLabel] =
     (label: ClassificationLabel) =>
       Json.obj(
-        ("id", Json.fromString(label.id)),
         ("label", Json.fromString(label.label)),
         ("probability", Json.fromFloatOrNull(label.probability)),
         ("correctExampleUrl", Json.fromString(label.correctExampleUrl)),
@@ -21,14 +20,12 @@ object ClassificationLabelSerializer {
   implicit val classificationLabelDecoder: Decoder[ClassificationLabel] =
     (c: HCursor) =>
       for {
-        id <- c.downField("id").as[String]
         label <- c.downField("label").as[String]
         probability <- c.downField("probability").as[Float]
         correctExampleUrl <- c.downField("correctExampleUrl").as[String]
         incorrectExampleUrl <- c.downField("incorrectExampleUrl").as[String]
       } yield
         ClassificationLabel(
-          id,
           label,
           probability,
           correctExampleUrl,

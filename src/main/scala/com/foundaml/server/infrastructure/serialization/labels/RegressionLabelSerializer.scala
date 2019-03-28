@@ -12,7 +12,6 @@ object RegressionLabelSerializer {
   implicit val regressionlabelEncoder: Encoder[RegressionLabel] =
     (label: RegressionLabel) =>
       Json.obj(
-        ("id", Json.fromString(label.id)),
         ("label", Json.fromFloatOrNull(label.label)),
         ("correctExampleUrl", Json.fromString(label.correctExampleUrl))
       )
@@ -20,10 +19,9 @@ object RegressionLabelSerializer {
   implicit val regressionLabelDecoder: Decoder[RegressionLabel] =
     (c: HCursor) =>
       for {
-        id <- c.downField("id").as[String]
         label <- c.downField("label").as[Float]
         correctExampleUrl <- c.downField("correctExampleUrl").as[String]
-      } yield RegressionLabel(id, label, correctExampleUrl)
+      } yield RegressionLabel(label, correctExampleUrl)
 
   implicit val regressionLabelsSetEncoder: ArrayEncoder[Set[RegressionLabel]] =
     Encoder.encodeSet[RegressionLabel]

@@ -17,7 +17,7 @@ class ExamplesController(
 
   object ValueIdMatcher extends OptionalQueryParamDecoderMatcher[Float]("value")
   object LabelIdMatcher
-      extends OptionalQueryParamDecoderMatcher[String]("labelId")
+      extends OptionalQueryParamDecoderMatcher[String]("label")
   object PredictionIdMatcher
       extends QueryParamDecoderMatcher[String]("predictionId")
 

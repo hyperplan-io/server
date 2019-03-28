@@ -11,6 +11,8 @@ import com.foundaml.server.domain.models.backends.{
 }
 import com.foundaml.server.domain.models.errors.{
   IncompatibleAlgorithm,
+  IncompatibleFeatures,
+  IncompatibleLabels,
   InvalidArgument
 }
 import com.foundaml.server.domain.models.features.transformers.TensorFlowFeaturesTransformer
@@ -27,16 +29,38 @@ class AlgorithmsService(
     projectFactory: ProjectFactory
 ) extends IOLogging {
 
-  def validateEqualSize(
+  def validateFeaturesConfiguration(
       expectedSize: Int,
       actualSize: Int,
       featureName: String
   ) =
     if (expectedSize != actualSize) {
-      Some(s"The $featureName size is incorrect for the project")
+      Some(
+        IncompatibleFeatures(
+          s"The features dimension is incorrect for the project"
+        )
+      )
     } else {
       None
     }
+
+  def validateLabelsConfiguration(
+      labels: Map[String, String],
+      labelsConfiguration: LabelsConfiguration
+  ) = labelsConfiguration match {
+    case OneOfLabelsConfiguration(oneOf, _) =>
+      if (labels.size != oneOf.size) {
+        Some(
+          IncompatibleLabels(
+            s"The labels dimension is incorrect for the project"
+          )
+        )
+      } else {
+        None
+      }
+    case DynamicLabelsConfiguration(description) =>
+      None
+  }
 
   def validateClassificationAlgorithm(
       algorithm: Algorithm,
@@ -57,15 +81,14 @@ class AlgorithmsService(
             featuresClasses.size
         }
         List(
-          validateEqualSize(
+          validateFeaturesConfiguration(
             size,
             fields.size,
             "features"
           ),
-          validateEqualSize(
-            project.configuration.labels.size,
-            labels.size,
-            "labels"
+          validateLabelsConfiguration(
+            labels,
+            project.configuration.labels
           )
         ).flatten
       case TensorFlowRegressionBackend(_, _, _) =>
@@ -92,7 +115,7 @@ class AlgorithmsService(
             featuresClasses.size
         }
         List(
-          validateEqualSize(
+          validateFeaturesConfiguration(
             size,
             fields.size,
             "features"

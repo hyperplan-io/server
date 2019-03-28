@@ -2,12 +2,7 @@ package com.foundaml.server.domain.services
 
 import java.util.UUID
 
-import com.foundaml.server.domain.models.{
-  Algorithm,
-  ClassificationPrediction,
-  Prediction,
-  RegressionPrediction
-}
+import com.foundaml.server.domain.models._
 import com.foundaml.server.domain.models.backends.{
   TensorFlowClassificationBackend,
   TensorFlowRegressionBackend
@@ -44,7 +39,8 @@ trait TensorFlowBackendSupport extends IOLogging {
       projectId: String,
       algorithm: Algorithm,
       features: Features,
-      backend: TensorFlowClassificationBackend
+      backend: TensorFlowClassificationBackend,
+      labelsConfiguration: LabelsConfiguration
   ) = {
     val predictionId = UUID.randomUUID().toString
     backend.featuresTransformer
@@ -80,7 +76,11 @@ trait TensorFlowBackendSupport extends IOLogging {
                       TensorFlowClassificationLabelsSerializer.entityDecoder
                     ).flatMap { tfLabels =>
                         backend.labelsTransformer
-                          .transform(predictionId, tfLabels)
+                          .transform(
+                            labelsConfiguration,
+                            predictionId,
+                            tfLabels
+                          )
                           .fold(
                             err => Task.fail(err),
                             labels =>
@@ -176,7 +176,6 @@ trait TensorFlowBackendSupport extends IOLogging {
                                       Nil,
                                       Set(
                                         RegressionLabel(
-                                          UUID.randomUUID().toString,
                                           tfLabel,
                                           ExampleUrlService
                                             .correctRegressionExampleUrl(
