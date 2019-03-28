@@ -7,15 +7,14 @@ import com.foundaml.server.domain.factories.{PredictionFactory, ProjectFactory}
 import com.foundaml.server.domain.models._
 import com.foundaml.server.domain.models.backends._
 import com.foundaml.server.domain.models.errors._
+import com.foundaml.server.domain.models.events.{ClassificationPredictionEvent, PredictionEvent, RegressionPredictionEvent}
 import com.foundaml.server.domain.models.features.Features.Features
 import com.foundaml.server.domain.models.features._
 import com.foundaml.server.domain.models.labels._
-import com.foundaml.server.domain.repositories.{
-  PredictionsRepository,
-  ProjectsRepository
-}
+import com.foundaml.server.domain.repositories.{PredictionsRepository, ProjectsRepository}
 import com.foundaml.server.infrastructure.logging.IOLogging
 import com.foundaml.server.infrastructure.serialization.PredictionSerializer
+import com.foundaml.server.infrastructure.serialization.events.PredictionEventSerializer
 import com.foundaml.server.infrastructure.streaming.KinesisService
 import scalaz.zio.Task
 import scalaz.zio.interop.catz._
@@ -45,13 +44,13 @@ class PredictionsService(
         _ => Task.succeed(prediction)
       )
 
-  def publishPredictionToKinesis(prediction: Prediction) =
+  def publishPredictionEventToKinesis(prediction: PredictionEvent) =
     if (config.kinesis.enabled) {
       kinesisService.put(
         prediction,
         config.kinesis.predictionsStream,
         prediction.projectId
-      )(PredictionSerializer.encoder)
+      )(PredictionEventSerializer.encoder)
     } else Task.unit
 
   def noAlgorithm(): Task[Prediction] = {
@@ -166,9 +165,7 @@ class PredictionsService(
         )
     }
     predictionTask.flatMap { prediction =>
-      persistClassificationPrediction(prediction) *> publishPredictionToKinesis(
-        prediction
-      ) *> Task
+      persistClassificationPrediction(prediction) *> Task
         .succeed(prediction)
     }
   }
@@ -198,9 +195,7 @@ class PredictionsService(
         )
     }
     predictionTask.flatMap { prediction =>
-      persistRegressionPrediction(prediction) *> publishPredictionToKinesis(
-        prediction
-      ) *> Task
+      persistRegressionPrediction(prediction) *> Task
         .succeed(prediction)
     }
   }
@@ -359,11 +354,22 @@ class PredictionsService(
                 Task.fail(LabelNotFound(label))
               )(
                 label => {
-                  val examples = prediction.examples + label.label
+                  val example = label.label
+                  val examples = prediction.examples + example
+                  val predictionEvent = ClassificationPredictionEvent(
+                    UUID.randomUUID().toString,
+                    predictionId,
+                    prediction.projectId,
+                    prediction.algorithmId,
+                    prediction.features,
+                    prediction.labels,
+                    example
+                  )
+                  println(PredictionEventSerializer.encodeJsonNoSpaces(predictionEvent))
                   predictionsRepository
                     .updateClassificationExamples(predictionId, examples) *>
-                    publishPredictionToKinesis(
-                      prediction.copy(examples = examples)
+                    publishPredictionEventToKinesis(
+                      predictionEvent
                     ) *> Task
                     .succeed(label)
                 }
@@ -375,10 +381,25 @@ class PredictionsService(
           Task.fail(IncorrectExample(Regression))
         )(
           value => {
-            val examples = prediction.examples :+ value
+            val example = value
+            val examples = prediction.examples :+ example
+
+            val predictionEvent = RegressionPredictionEvent(
+              UUID.randomUUID().toString,
+              predictionId,
+              prediction.projectId,
+              prediction.algorithmId,
+              prediction.features,
+              prediction.labels,
+              example
+            )
+            println(PredictionEventSerializer.encodeJsonNoSpaces(predictionEvent))
+
             predictionsRepository
               .updateRegressionExamples(predictionId, examples) *>
-              publishPredictionToKinesis(prediction.copy(examples = examples)) *>
+              publishPredictionEventToKinesis(
+                predictionEvent
+              ) *>
               Task.succeed(prediction.labels.head)
           }
         )

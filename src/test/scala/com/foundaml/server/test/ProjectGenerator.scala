@@ -15,21 +15,18 @@ object ProjectGenerator {
   val computed = Labels(
     Set(
       labels.ClassificationLabel(
-        UUID.randomUUID().toString,
         "class1",
         0.1f,
         "correct_url",
         "incorrect_url"
       ),
       labels.ClassificationLabel(
-        UUID.randomUUID().toString,
         "class2",
         0.2f,
         "correct_url",
         "incorrect_url"
       ),
       labels.ClassificationLabel(
-        UUID.randomUUID().toString,
         "class3",
         0.3f,
         "correct_url",
@@ -55,10 +52,13 @@ object ProjectGenerator {
             )
           )
         ),
-        Set(
-          "class1",
-          "class2",
-          "class3"
+        OneOfLabelsConfiguration(
+          Set(
+            "class1",
+            "class2",
+            "class3"
+          ),
+          "Either class1, class2 or class3"
         )
       ),
       algorithms.getOrElse(List(AlgorithmGenerator.withLocalBackend())),

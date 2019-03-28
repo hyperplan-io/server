@@ -44,8 +44,7 @@ class PredictionSerializerSpec
       Set.empty,
       Set(
         ClassificationLabel(
-          labelId,
-          "",
+          "mylabel",
           0.5f,
           "correct_example_url",
           "incorrect_example_url"
@@ -55,7 +54,7 @@ class PredictionSerializerSpec
 
     testEncoder(prediction) { json =>
       val expectedJson =
-        s"""{"type":"classification","id":"$predictionId","projectId":"$projectId","algorithmId":"$algorithmId","features":[0.0,0.0,0.5],"labels":[{"id":"$labelId","label":"","probability":0.5,"correctExampleUrl":"correct_example_url","incorrectExampleUrl":"incorrect_example_url"}],"examples":[]}"""
+        s"""{"type":"classification","id":"$predictionId","projectId":"$projectId","algorithmId":"$algorithmId","features":[0.0,0.0,0.5],"labels":[{"label":"mylabel","probability":0.5,"correctExampleUrl":"correct_example_url","incorrectExampleUrl":"incorrect_example_url"}],"examples":[]}"""
       json.noSpaces should be(expectedJson)
     }(encoder)
   }
@@ -63,15 +62,16 @@ class PredictionSerializerSpec
   it should "correctly decode a prediction" in {
 
     val predictionId = UUID.randomUUID().toString
-    val labelId = UUID.randomUUID().toString
+    val label = "mylabel"
     val projectId = "test-project-decode"
     val algorithmId = "test-algorithm-decode"
     val predictionJson =
-      s"""{"type":"classification","id":"$predictionId","projectId":"$projectId","algorithmId":"$algorithmId","features":[0.0,0.0,0.5],"labels":[{"id":"$labelId","label":"","probability":0.5,"correctExampleUrl":"correct_example_url","incorrectExampleUrl":"incorrect_example_url"}],"examples":[]}"""
+      s"""{"type":"classification","id":"$predictionId","projectId":"$projectId","algorithmId":"$algorithmId","features":[0.0,0.0,0.5],"labels":[{"label":"mylabel","probability":0.5,"correctExampleUrl":"correct_example_url","incorrectExampleUrl":"incorrect_example_url"}],"examples":[]}"""
+
     testDecoder[Prediction](predictionJson) {
       case prediction: ClassificationPrediction =>
         prediction.id should be(predictionId)
-        prediction.labels.head.id should be(labelId)
+        prediction.labels.head.label should be(label)
       case _ =>
         fail()
     }(decoder)
