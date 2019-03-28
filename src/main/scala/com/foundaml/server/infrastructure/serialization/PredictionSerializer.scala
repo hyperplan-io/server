@@ -92,7 +92,7 @@ object PredictionSerializer {
               algorithmId <- c.downField("algorithmId").as[String]
               features <- c.downField("features").as[Features]
               labels <- c.downField("labels").as[Set[ClassificationLabel]]
-              examples <- c.downField("examples").as[Set[String]]
+              examples <- c.downField("examples").as[List[String]]
             } yield
               ClassificationPrediction(
                 id,

@@ -1,12 +1,22 @@
 package com.foundaml.server.infrastructure.serialization.events
 
 import com.foundaml.server.domain.models._
-import com.foundaml.server.domain.models.events.{ClassificationPredictionEvent, PredictionEvent, RegressionPredictionEvent}
+import com.foundaml.server.domain.models.events.{
+  ClassificationPredictionEvent,
+  PredictionEvent,
+  RegressionPredictionEvent
+}
 import com.foundaml.server.domain.models.features.Features.Features
-import com.foundaml.server.domain.models.labels.{ClassificationLabel, RegressionLabel}
+import com.foundaml.server.domain.models.labels.{
+  ClassificationLabel,
+  RegressionLabel
+}
 import com.foundaml.server.infrastructure.serialization.PredictionSerializer
 import com.foundaml.server.infrastructure.serialization.features.FeaturesSerializer
-import com.foundaml.server.infrastructure.serialization.labels.{ClassificationLabelSerializer, RegressionLabelSerializer}
+import com.foundaml.server.infrastructure.serialization.labels.{
+  ClassificationLabelSerializer,
+  RegressionLabelSerializer
+}
 import io.circe.parser.decode
 import io.circe.syntax._
 
@@ -19,14 +29,17 @@ object PredictionEventSerializer {
   implicit val featuresDecoder: Decoder[Features] =
     FeaturesSerializer.Implicits.decoder
 
+  implicit val classificationLabelsEncoder: Encoder[Set[ClassificationLabel]] =
+    PredictionSerializer.classificationLabelsEncoder
 
-  implicit val classificationLabelsEncoder: Encoder[Set[ClassificationLabel]] = PredictionSerializer.classificationLabelsEncoder
+  implicit val classificationLabelsDecoder: Decoder[Set[ClassificationLabel]] =
+    PredictionSerializer.classificationLabelsDecoder
 
-  implicit val classificationLabelsDecoder: Decoder[Set[ClassificationLabel]] = PredictionSerializer.classificationLabelsDecoder
+  implicit val regressionLabelsEncoder: Encoder[Set[RegressionLabel]] =
+    PredictionSerializer.regressionLabelsEncoder
 
-  implicit val regressionLabelsEncoder: Encoder[Set[RegressionLabel]] = PredictionSerializer.regressionLabelsEncoder
-
-  implicit val regressionLabelsDecoder: Decoder[Set[RegressionLabel]] = PredictionSerializer.regressionLabelsDecoder
+  implicit val regressionLabelsDecoder: Decoder[Set[RegressionLabel]] =
+    PredictionSerializer.regressionLabelsDecoder
 
   implicit val classificationPredictionEncoder
       : Encoder[ClassificationPredictionEvent] =

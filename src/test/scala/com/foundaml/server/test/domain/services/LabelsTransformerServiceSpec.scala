@@ -3,7 +3,10 @@ package com.foundaml.server.test.domain.services
 import java.util.UUID
 
 import com.foundaml.server.domain.models.OneOfLabelsConfiguration
-import com.foundaml.server.domain.models.labels.{ClassificationLabel, TensorFlowClassificationLabels}
+import com.foundaml.server.domain.models.labels.{
+  ClassificationLabel,
+  TensorFlowClassificationLabels
+}
 import scalaz.zio.DefaultRuntime
 import org.scalatest.Inside.inside
 import org.scalatest._

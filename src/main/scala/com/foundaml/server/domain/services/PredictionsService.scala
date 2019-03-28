@@ -7,11 +7,18 @@ import com.foundaml.server.domain.factories.{PredictionFactory, ProjectFactory}
 import com.foundaml.server.domain.models._
 import com.foundaml.server.domain.models.backends._
 import com.foundaml.server.domain.models.errors._
-import com.foundaml.server.domain.models.events.{ClassificationPredictionEvent, PredictionEvent, RegressionPredictionEvent}
+import com.foundaml.server.domain.models.events.{
+  ClassificationPredictionEvent,
+  PredictionEvent,
+  RegressionPredictionEvent
+}
 import com.foundaml.server.domain.models.features.Features.Features
 import com.foundaml.server.domain.models.features._
 import com.foundaml.server.domain.models.labels._
-import com.foundaml.server.domain.repositories.{PredictionsRepository, ProjectsRepository}
+import com.foundaml.server.domain.repositories.{
+  PredictionsRepository,
+  ProjectsRepository
+}
 import com.foundaml.server.infrastructure.logging.IOLogging
 import com.foundaml.server.infrastructure.serialization.PredictionSerializer
 import com.foundaml.server.infrastructure.serialization.events.PredictionEventSerializer
@@ -130,7 +137,7 @@ class PredictionsService(
         projectId,
         algorithm.id,
         features,
-        Set.empty,
+        List.empty,
         local.computed
       )
     )
@@ -355,7 +362,7 @@ class PredictionsService(
               )(
                 label => {
                   val example = label.label
-                  val examples = prediction.examples + example
+                  val examples = prediction.examples :+ example
                   val predictionEvent = ClassificationPredictionEvent(
                     UUID.randomUUID().toString,
                     predictionId,
@@ -365,7 +372,10 @@ class PredictionsService(
                     prediction.labels,
                     example
                   )
-                  println(PredictionEventSerializer.encodeJsonNoSpaces(predictionEvent))
+                  println(
+                    PredictionEventSerializer
+                      .encodeJsonNoSpaces(predictionEvent)
+                  )
                   predictionsRepository
                     .updateClassificationExamples(predictionId, examples) *>
                     publishPredictionEventToKinesis(
@@ -393,7 +403,9 @@ class PredictionsService(
               prediction.labels,
               example
             )
-            println(PredictionEventSerializer.encodeJsonNoSpaces(predictionEvent))
+            println(
+              PredictionEventSerializer.encodeJsonNoSpaces(predictionEvent)
+            )
 
             predictionsRepository
               .updateRegressionExamples(predictionId, examples) *>

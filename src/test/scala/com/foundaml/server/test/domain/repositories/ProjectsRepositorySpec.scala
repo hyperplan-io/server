@@ -13,8 +13,7 @@ class ProjectsRepositorySpec
 
   val projectRepository = new ProjectsRepository()(xa)
 
-  it should "insert project correctly" in {
-
+  it should "insert and read projects correctly" in {
     withInMemoryDatabase { _ =>
       val project = ProjectGenerator.withLocalBackend()
       val insertIO = projectRepository.insertQuery(project)

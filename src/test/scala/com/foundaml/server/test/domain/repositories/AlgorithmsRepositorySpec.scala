@@ -13,7 +13,7 @@ class AlgorithmsRepositorySpec
 
   val algorithmRepository = new AlgorithmsRepository()(xa)
 
-  it should "insert and read algorithm correctly" in {
+  it should "insert and read algorithms correctly" in {
 
     withInMemoryDatabase { _ =>
       val algorithm = AlgorithmGenerator.withLocalBackend()

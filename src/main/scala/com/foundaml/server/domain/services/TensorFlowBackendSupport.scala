@@ -90,7 +90,7 @@ trait TensorFlowBackendSupport extends IOLogging {
                                   projectId,
                                   algorithm.id,
                                   features,
-                                  Set.empty,
+                                  List.empty,
                                   labels
                                 )
                               )
