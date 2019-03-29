@@ -41,7 +41,7 @@ class PredictionSerializerSpec
         FloatFeature(0.0f),
         FloatFeature(0.5f)
       ),
-      Set.empty,
+      List.empty,
       Set(
         ClassificationLabel(
           "mylabel",
