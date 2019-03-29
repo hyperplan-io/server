@@ -372,10 +372,7 @@ class PredictionsService(
                     prediction.labels,
                     example
                   )
-                  println(
-                    PredictionEventSerializer
-                      .encodeJsonNoSpaces(predictionEvent)
-                  )
+
                   predictionsRepository
                     .updateClassificationExamples(predictionId, examples) *>
                     publishPredictionEventToKinesis(
@@ -402,9 +399,6 @@ class PredictionsService(
               prediction.features,
               prediction.labels,
               example
-            )
-            println(
-              PredictionEventSerializer.encodeJsonNoSpaces(predictionEvent)
             )
 
             predictionsRepository
