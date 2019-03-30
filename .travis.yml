@@ -42,7 +42,7 @@ jobs:
   - stage: validations-and-test
     script: sbt ++$TRAVIS_SCALA_VERSION scalafmtCheck test:scalafmtCheck scalafmtSbtCheck
     name: "Code validations (format, binary compatibilty, whitesource, etc.)"
-  - script: sbt ++$TRAVIS_SCALA_VERSION test package packageSrc publishLocal
+  - script: sbt ++$TRAVIS_SCALA_VERSION coverage test coverageReport coverageOff package packageSrc publishLocal
     name: "Run tests for Scala 2.12"
   - script: sbt ++$TRAVIS_SCALA_VERSION
 
