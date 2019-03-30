@@ -1,6 +1,5 @@
 package com.foundaml.server.infrastructure.serialization.events
 
-import com.foundaml.server.domain.models._
 import com.foundaml.server.domain.models.events.{
   ClassificationPredictionEvent,
   PredictionEvent,
@@ -11,12 +10,8 @@ import com.foundaml.server.domain.models.labels.{
   ClassificationLabel,
   RegressionLabel
 }
-import com.foundaml.server.infrastructure.serialization.PredictionSerializer
 import com.foundaml.server.infrastructure.serialization.features.FeaturesSerializer
-import com.foundaml.server.infrastructure.serialization.labels.{
-  ClassificationLabelSerializer,
-  RegressionLabelSerializer
-}
+
 import io.circe.parser.decode
 import io.circe.syntax._
 
@@ -29,17 +24,42 @@ object PredictionEventSerializer {
   implicit val featuresDecoder: Decoder[Features] =
     FeaturesSerializer.Implicits.decoder
 
+  implicit val classificationLabelEncoder: Encoder[ClassificationLabel] =
+    (label: ClassificationLabel) =>
+      Json.obj(
+        ("label", Json.fromString(label.label)),
+        ("probability", Json.fromFloatOrNull(label.probability))
+      )
+
+  implicit val classificationLabelDecoder: Decoder[ClassificationLabel] =
+    (c: HCursor) =>
+      for {
+        label <- c.downField("label").as[String]
+        probability <- c.downField("probability").as[Float]
+      } yield ClassificationLabel(label, probability, "", "")
+
+  implicit val regressionLabelEncoder: Encoder[RegressionLabel] =
+    (label: RegressionLabel) =>
+      Json.obj(
+        ("label", Json.fromFloatOrNull(label.label))
+      )
+  implicit val regressionLabelDecoder: Decoder[RegressionLabel] =
+    (c: HCursor) =>
+      for {
+        label <- c.downField("label").as[Float]
+      } yield RegressionLabel(label, "")
+
   implicit val classificationLabelsEncoder: Encoder[Set[ClassificationLabel]] =
-    PredictionSerializer.classificationLabelsEncoder
+    Encoder.encodeSet[ClassificationLabel]
 
   implicit val classificationLabelsDecoder: Decoder[Set[ClassificationLabel]] =
-    PredictionSerializer.classificationLabelsDecoder
+    (c: HCursor) => Decoder.decodeSet[ClassificationLabel].apply(c)
 
   implicit val regressionLabelsEncoder: Encoder[Set[RegressionLabel]] =
-    PredictionSerializer.regressionLabelsEncoder
+    Encoder.encodeSet[RegressionLabel]
 
   implicit val regressionLabelsDecoder: Decoder[Set[RegressionLabel]] =
-    PredictionSerializer.regressionLabelsDecoder
+    (c: HCursor) => Decoder.decodeSet[RegressionLabel].apply(c)
 
   implicit val classificationPredictionEncoder
       : Encoder[ClassificationPredictionEvent] =
