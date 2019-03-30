@@ -52,3 +52,6 @@ after_success:
   scripts/publish-microsite.sh; fi
 - if [ "$TRAVIS_PULL_REQUEST" = "true" ]; then echo "Not in master branch, skipping
   deploy and release"; fi
+
+notifications:
+  slack: foundaml:Gyf4WIYVB5wmf3g03NCc7iuU
