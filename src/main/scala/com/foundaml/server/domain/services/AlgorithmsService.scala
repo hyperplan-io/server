@@ -31,8 +31,7 @@ class AlgorithmsService(
 
   def validateFeaturesConfiguration(
       expectedSize: Int,
-      actualSize: Int,
-      featureName: String
+      actualSize: Int
   ) =
     if (expectedSize != actualSize) {
       Some(
@@ -83,8 +82,7 @@ class AlgorithmsService(
         List(
           validateFeaturesConfiguration(
             size,
-            fields.size,
-            "features"
+            fields.size
           ),
           validateLabelsConfiguration(
             labels,
@@ -117,8 +115,7 @@ class AlgorithmsService(
         List(
           validateFeaturesConfiguration(
             size,
-            fields.size,
-            "features"
+            fields.size
           )
         ).flatten
       case TensorFlowClassificationBackend(_, _, _, _) =>
