@@ -20,7 +20,10 @@ import com.foundaml.server.domain.services.{
 }
 import com.foundaml.server.infrastructure.logging.IOLogging
 import com.foundaml.server.infrastructure.storage.PostgresqlService
-import com.foundaml.server.infrastructure.streaming.KinesisService
+import com.foundaml.server.infrastructure.streaming.{
+  KinesisService,
+  PubSubService
+}
 import scalaz.zio.clock.Clock
 import scalaz.zio.duration.Duration
 import scalaz.zio.interop.catz._
@@ -81,11 +84,21 @@ object Main extends App with IOLogging {
       predictionFactory = new PredictionFactory(
         predictionsRepository
       )
+      _ = logger.info("Starting GCP Pubsub service")
+      pubSubService <- if (config.gcp.pubsub.enabled) {
+        infoLog("Starting GCP PubSub service") *> PubSubService(
+          config.gcp.projectId,
+          config.gcp.pubsub.predictionsTopicId
+        ).map(Some(_))
+      } else {
+        Task.succeed(None)
+      }
       kinesisService <- KinesisService("us-east-2")
       predictionsService = new PredictionsService(
         projectsRepository,
         predictionsRepository,
         kinesisService,
+        pubSubService,
         projectFactory,
         predictionFactory,
         config
