@@ -22,14 +22,18 @@ import com.foundaml.server.domain.repositories.{
 import com.foundaml.server.infrastructure.logging.IOLogging
 import com.foundaml.server.infrastructure.serialization.PredictionSerializer
 import com.foundaml.server.infrastructure.serialization.events.PredictionEventSerializer
-import com.foundaml.server.infrastructure.streaming.KinesisService
-import scalaz.zio.Task
+import com.foundaml.server.infrastructure.streaming.{
+  KinesisService,
+  PubSubService
+}
+import scalaz.zio.{Task, ZIO}
 import scalaz.zio.interop.catz._
 
 class PredictionsService(
     projectsRepository: ProjectsRepository,
     predictionsRepository: PredictionsRepository,
     kinesisService: KinesisService,
+    pubSubService: Option[PubSubService],
     projectFactory: ProjectFactory,
     predictionFactory: PredictionFactory,
     config: FoundaMLConfig
@@ -50,6 +54,14 @@ class PredictionsService(
         err => warnLog(err.getMessage) *> Task.fail(err),
         _ => Task.succeed(prediction)
       )
+
+  def publishToStream(prediction: PredictionEvent): Task[Unit] =
+    for {
+      _ <- pubSubService.fold[Task[Unit]](Task.unit)(
+        _.publish(prediction)(PredictionEventSerializer.encoder)
+      )
+      _ <- publishPredictionEventToKinesis(prediction)
+    } yield ()
 
   def publishPredictionEventToKinesis(prediction: PredictionEvent) =
     if (config.kinesis.enabled) {
@@ -375,7 +387,7 @@ class PredictionsService(
 
                   predictionsRepository
                     .updateClassificationExamples(predictionId, examples) *>
-                    publishPredictionEventToKinesis(
+                    publishToStream(
                       predictionEvent
                     ) *> Task
                     .succeed(label)
@@ -403,7 +415,7 @@ class PredictionsService(
 
             predictionsRepository
               .updateRegressionExamples(predictionId, examples) *>
-              publishPredictionEventToKinesis(
+              publishToStream(
                 predictionEvent
               ) *>
               Task.succeed(prediction.labels.head)

@@ -7,12 +7,7 @@ import com.foundaml.server.domain.factories.{
   PredictionFactory,
   ProjectFactory
 }
-import com.foundaml.server.domain.{
-  DatabaseConfig,
-  FoundaMLConfig,
-  KinesisConfig,
-  PostgreSqlConfig
-}
+import com.foundaml.server.domain._
 import com.foundaml.server.domain.models.errors.FeaturesValidationFailed
 import com.foundaml.server.domain.services.PredictionsService
 import org.scalatest._
@@ -23,7 +18,10 @@ import com.foundaml.server.domain.repositories.{
   PredictionsRepository,
   ProjectsRepository
 }
-import com.foundaml.server.infrastructure.streaming.KinesisService
+import com.foundaml.server.infrastructure.streaming.{
+  KinesisService,
+  PubSubService
+}
 import com.foundaml.server.test.{
   AlgorithmGenerator,
   ProjectGenerator,
@@ -41,6 +39,13 @@ class PredictionsServiceSpec
 
   val config = FoundaMLConfig(
     KinesisConfig(enabled = false, "predictionsStream", "examplesStream"),
+    GCPConfig(
+      "myProjectId",
+      PubSubConfig(
+        enabled = false,
+        "myTopic"
+      )
+    ),
     DatabaseConfig(
       PostgreSqlConfig(
         "host",
@@ -51,7 +56,10 @@ class PredictionsServiceSpec
       )
     )
   )
-  val kinesisService = unsafeRun(KinesisService("fake-region"))
+  val kinesisService: KinesisService = unsafeRun(KinesisService("fake-region"))
+  val pubSubService: PubSubService = unsafeRun(
+    PubSubService("myProjectId", "myTopic")
+  )
   val projectsRepository = new ProjectsRepository()(xa)
   val algorithmsRepository = new AlgorithmsRepository()(xa)
   val predictionsRepository = new PredictionsRepository()(xa)
@@ -68,6 +76,7 @@ class PredictionsServiceSpec
       projectsRepository,
       predictionsRepository,
       kinesisService,
+      Some(pubSubService),
       projectFactory,
       predictionFactory,
       config
