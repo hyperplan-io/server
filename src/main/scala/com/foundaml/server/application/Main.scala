@@ -3,11 +3,7 @@ package com.foundaml.server.application
 import cats.effect
 import cats.effect.Timer
 import com.foundaml.server.domain.FoundaMLConfig
-import com.foundaml.server.domain.factories.{
-  AlgorithmFactory,
-  PredictionFactory,
-  ProjectFactory
-}
+import com.foundaml.server.domain.factories.{AlgorithmFactory, ProjectFactory}
 import com.foundaml.server.domain.repositories.{
   AlgorithmsRepository,
   PredictionsRepository,
@@ -81,9 +77,6 @@ object Main extends App with IOLogging {
         algorithmsRepository,
         algorithmFactory
       )
-      predictionFactory = new PredictionFactory(
-        predictionsRepository
-      )
       _ = logger.info("Starting GCP Pubsub service")
       pubSubService <- if (config.gcp.pubsub.enabled) {
         infoLog("Starting GCP PubSub service") *> PubSubService(
@@ -100,7 +93,6 @@ object Main extends App with IOLogging {
         kinesisService,
         pubSubService,
         projectFactory,
-        predictionFactory,
         config
       )
       projectsService = new ProjectsService(

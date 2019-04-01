@@ -3,7 +3,7 @@ package com.foundaml.server.domain.services
 import java.util.UUID
 
 import com.foundaml.server.domain.{FoundaMLConfig, models}
-import com.foundaml.server.domain.factories.{PredictionFactory, ProjectFactory}
+import com.foundaml.server.domain.factories.ProjectFactory
 import com.foundaml.server.domain.models._
 import com.foundaml.server.domain.models.backends._
 import com.foundaml.server.domain.models.errors._
@@ -35,7 +35,6 @@ class PredictionsService(
     kinesisService: KinesisService,
     pubSubService: Option[PubSubService],
     projectFactory: ProjectFactory,
-    predictionFactory: PredictionFactory,
     config: FoundaMLConfig
 ) extends IOLogging
     with TensorFlowBackendSupport {
@@ -361,7 +360,7 @@ class PredictionsService(
       labelOpt: Option[String],
       valueOpt: Option[Float]
   ) =
-    predictionFactory.get(predictionId).flatMap {
+    predictionsRepository.read(predictionId).flatMap {
       case prediction: ClassificationPrediction =>
         labelOpt.fold[Task[Label]](
           Task.fail(IncorrectExample(Classification))
