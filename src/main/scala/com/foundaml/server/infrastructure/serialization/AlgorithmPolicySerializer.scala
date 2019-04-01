@@ -1,11 +1,10 @@
 package com.foundaml.server.infrastructure.serialization
 
-import io.circe.{Decoder, Encoder, Json}
+import io.circe.{Decoder, Encoder, HCursor, Json}
 import io.circe.generic.extras.Configuration
 import io.circe.parser.decode
 import io.circe.syntax._
 import com.foundaml.server.domain.models._
-import io.circe.generic.extras.semiauto.{deriveDecoder, deriveEncoder}
 
 object AlgorithmPolicySerializer {
 
@@ -13,12 +12,27 @@ object AlgorithmPolicySerializer {
     implicit val discriminator: Configuration =
       Configuration.default.withDiscriminator("class")
 
-    implicit val encoder: Encoder[AlgorithmPolicy] = deriveEncoder
-    implicit val decoder: Decoder[AlgorithmPolicy] = deriveDecoder
+    implicit val encoder: Encoder[AlgorithmPolicy] = {
+      case policy: NoAlgorithm =>
+        Json.obj("class" -> Json.fromString(policy.name))
+      case policy: DefaultAlgorithm =>
+        Json.obj(
+          "class" -> Json.fromString(policy.name),
+          "algorithmId" -> Json.fromString(policy.algorithmId)
+        )
 
+    }
+    implicit val decoder: Decoder[AlgorithmPolicy] =
+      (c: HCursor) =>
+        c.downField("class").as[String].flatMap {
+          case NoAlgorithm.name => Right(NoAlgorithm())
+          case DefaultAlgorithm.name =>
+            c.downField("algorithmId").as[String].map { algorithmId =>
+              DefaultAlgorithm(algorithmId)
+            }
+        }
   }
 
-  import io.circe.generic.extras.semiauto._
   import Implicits._
 
   def encodeJsonString(policy: AlgorithmPolicy): String = {
