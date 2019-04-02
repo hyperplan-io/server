@@ -1,4 +1,7 @@
 # Foundaml
+[![Build Status](https://travis-ci.org/scoverage/sbt-scoverage.png?branch=master)](https://travis-ci.org/foundaml/server)
+[![License](http://img.shields.io/:license-Apache%202-red.svg)](http://www.apache.org/licenses/LICENSE-2.0.txt)
+
 Foundaml is a service that help you manage your algorithms in a production environment. It's a great way to start industrializing your machine learning projects. Foundaml comes with three principles
 
 * **Focus on the problem** machine learning is one solution, not the problem. Foundaml asks you to specify a problem first
@@ -14,9 +17,6 @@ Foundaml is a service that help you manage your algorithms in a production envir
 # Backend
 Foundaml does not execute algorithms on its own. It relies on backends for this task. Currently it is compatible with
 * TensorFlow serving API
-
-[![Build Status](https://travis-ci.org/scoverage/sbt-scoverage.png?branch=master)](https://travis-ci.org/foundaml/server)
-[![License](http://img.shields.io/:license-Apache%202-red.svg)](http://www.apache.org/licenses/LICENSE-2.0.txt)
 
 
 ## Building
