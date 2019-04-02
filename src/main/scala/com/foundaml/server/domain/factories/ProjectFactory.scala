@@ -14,12 +14,11 @@ import scalaz.zio.{Task, ZIO}
 
 class ProjectFactory(
     projectsRepository: ProjectsRepository,
-    algorithmsRepository: AlgorithmsRepository,
-    algorithmFactory: AlgorithmFactory
+    algorithmsRepository: AlgorithmsRepository
 ) extends IOLogging {
   def get(projectId: String): ZIO[Any, Throwable, Project] = {
-    (projectsRepository.read(projectId) zipPar algorithmFactory
-      .getForProject(projectId)).flatMap {
+    (projectsRepository.read(projectId) zipPar algorithmsRepository
+      .readForProject(projectId)).flatMap {
       case (
           (
             id,

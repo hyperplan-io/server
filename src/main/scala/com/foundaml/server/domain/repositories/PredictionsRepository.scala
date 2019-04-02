@@ -4,10 +4,7 @@ import com.foundaml.server.domain.models.Examples.{
   ClassificationExamples,
   RegressionExamples
 }
-import com.foundaml.server.domain.models.errors.{
-  PredictionAlreadyExist,
-  PredictionError
-}
+import com.foundaml.server.domain.models.errors._
 import com.foundaml.server.domain.models.features.Features.Features
 import com.foundaml.server.domain.models._
 import com.foundaml.server.domain.models.labels.{
@@ -17,6 +14,7 @@ import com.foundaml.server.domain.models.labels.{
   RegressionLabel
 }
 import com.foundaml.server.domain.repositories.PredictionsRepository.PredictionData
+import com.foundaml.server.infrastructure.logging.IOLogging
 import com.foundaml.server.infrastructure.serialization._
 import com.foundaml.server.infrastructure.serialization.examples.{
   ClassificationExamplesSerializer,
@@ -34,7 +32,7 @@ import io.circe.{Decoder, Encoder}
 import scalaz.zio.Task
 import scalaz.zio.interop.catz._
 
-class PredictionsRepository(implicit xa: Transactor[Task]) {
+class PredictionsRepository(implicit xa: Transactor[Task]) extends IOLogging {
 
   implicit val featuresGet: Get[Either[io.circe.Error, Features]] =
     Get[String].map(FeaturesSerializer.decodeJson)
@@ -146,7 +144,7 @@ class PredictionsRepository(implicit xa: Transactor[Task]) {
       .query[PredictionData]
 
   def read(predictionId: String) =
-    readQuery(predictionId).unique.transact(xa)
+    readQuery(predictionId).unique.transact(xa).flatMap(predictionFromData)
 
   def updateClassificationExamplesQuery(
       predictionId: String,
@@ -171,6 +169,94 @@ class PredictionsRepository(implicit xa: Transactor[Task]) {
       examples: RegressionExamples
   ) =
     updateRegressionExamplesQuery(predictionId, examples).run.transact(xa)
+
+  def predictionFromData(predictionData: PredictionData) =
+    predictionData match {
+      case (
+          predictionId,
+          projectId,
+          algorithmId,
+          Right(Classification),
+          Right(features),
+          labelsRaw,
+          examplesRaw
+          ) =>
+        ClassificationLabelSerializer
+          .decodeJsonSet(labelsRaw)
+          .fold(
+            err =>
+              warnLog(err.getMessage) *> Task
+                .fail(CouldNotDecodeLabels(predictionId, Classification)),
+            classificationLabels => {
+              ClassificationExamplesSerializer
+                .decodeJson(examplesRaw)
+                .fold(
+                  err =>
+                    warnLog(err.getMessage) *> Task.fail(
+                      CouldNotDecodeExamples(predictionId, Classification)
+                    ),
+                  classificationExamples => {
+                    val prediction = ClassificationPrediction(
+                      predictionId,
+                      projectId,
+                      algorithmId,
+                      features,
+                      classificationExamples,
+                      classificationLabels
+                    )
+                    Task.succeed(prediction)
+                  }
+                )
+            }
+          )
+
+      case (
+          predictionId,
+          projectId,
+          algorithmId,
+          Right(Regression),
+          Right(features),
+          labels,
+          examplesRaw
+          ) =>
+        RegressionLabelSerializer
+          .decodeJsonSet(labels)
+          .fold(
+            err =>
+              warnLog(err.getMessage) *> Task
+                .fail(CouldNotDecodeLabels(predictionId, Regression)),
+            classificationLabels => {
+              RegressionExamplesSerializer
+                .decodeJson(examplesRaw)
+                .fold(
+                  err =>
+                    warnLog(err.getMessage) *> Task.fail(
+                      CouldNotDecodeExamples(predictionId, Classification)
+                    ),
+                  regressionExamples => {
+                    val prediction = RegressionPrediction(
+                      predictionId,
+                      projectId,
+                      algorithmId,
+                      features,
+                      regressionExamples,
+                      classificationLabels
+                    )
+                    Task.succeed(prediction)
+                  }
+                )
+            }
+          )
+      case predictionData =>
+        warnLog(
+          s"Could not rebuild prediction with repository: $predictionData"
+        ) *> Task
+          .fail(
+            PredictionDataInconsistent(
+              s"The prediction ${predictionData._1} cannot be restored"
+            )
+          )
+    }
 }
 
 object PredictionsRepository {
