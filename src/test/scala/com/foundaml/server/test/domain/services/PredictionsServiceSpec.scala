@@ -2,7 +2,7 @@ package com.foundaml.server.test.domain.services
 
 import java.util.UUID
 
-import com.foundaml.server.domain.factories.{AlgorithmFactory, ProjectFactory}
+import com.foundaml.server.domain.factories.ProjectFactory
 import com.foundaml.server.domain._
 import com.foundaml.server.domain.models.errors.FeaturesValidationFailed
 import com.foundaml.server.domain.services.PredictionsService
@@ -60,11 +60,9 @@ class PredictionsServiceSpec
   val algorithmsRepository = new AlgorithmsRepository()(xa)
   val predictionsRepository = new PredictionsRepository()(xa)
 
-  val algorithmFactory = new AlgorithmFactory(algorithmsRepository)
   val projectFactory = new ProjectFactory(
     projectsRepository,
-    algorithmsRepository,
-    algorithmFactory
+    algorithmsRepository
   )
   val predictionsService =
     new PredictionsService(

@@ -248,7 +248,9 @@ class PredictionsRepository(implicit xa: Transactor[Task]) extends IOLogging {
             }
           )
       case predictionData =>
-        warnLog(s"Prediction data is inconsistent: $predictionData") *> Task
+        warnLog(
+          s"Could not rebuild prediction with repository: $predictionData"
+        ) *> Task
           .fail(
             PredictionDataInconsistent(
               s"The prediction ${predictionData._1} cannot be restored"

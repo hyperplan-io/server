@@ -2,16 +2,20 @@ package com.foundaml.server.domain.repositories
 
 import doobie._
 import doobie.implicits._
-import scalaz.zio.Task
+import scalaz.zio.{Task, ZIO}
 import scalaz.zio.interop.catz._
 import com.foundaml.server.domain.models.Algorithm
 import com.foundaml.server.domain.models.backends._
-import com.foundaml.server.domain.models.errors.AlgorithmAlreadyExists
+import com.foundaml.server.domain.models.errors.{
+  AlgorithmAlreadyExists,
+  AlgorithmDataIncorrect
+}
 import com.foundaml.server.domain.repositories.AlgorithmsRepository.AlgorithmData
+import com.foundaml.server.infrastructure.logging.IOLogging
 import com.foundaml.server.infrastructure.serialization._
 import doobie.postgres.sqlstate
 
-class AlgorithmsRepository(implicit xa: Transactor[Task]) {
+class AlgorithmsRepository(implicit xa: Transactor[Task]) extends IOLogging {
 
   implicit val backendGet: Get[Either[io.circe.Error, Backend]] =
     Get[String].map(BackendSerializer.decodeJson)
@@ -45,8 +49,8 @@ class AlgorithmsRepository(implicit xa: Transactor[Task]) {
       """
       .query[AlgorithmData]
 
-  def read(algorithmId: String): Task[AlgorithmData] =
-    readQuery(algorithmId).unique.transact(xa)
+  def read(algorithmId: String): Task[Algorithm] =
+    readQuery(algorithmId).unique.transact(xa).flatMap(dataToAlgorithm)
 
   def readForProjectQuery(projectId: String): doobie.Query0[AlgorithmData] =
     sql"""
@@ -56,8 +60,11 @@ class AlgorithmsRepository(implicit xa: Transactor[Task]) {
       """
       .query[AlgorithmData]
 
-  def readForProject(projectId: String): Task[List[AlgorithmData]] =
-    readForProjectQuery(projectId).to[List].transact(xa)
+  def readForProject(projectId: String): Task[List[Algorithm]] =
+    readForProjectQuery(projectId)
+      .to[List]
+      .transact(xa)
+      .flatMap(dataListToAlgorithm)
 
   def readAllQuery(): doobie.Query0[AlgorithmData] =
     sql"""
@@ -66,8 +73,27 @@ class AlgorithmsRepository(implicit xa: Transactor[Task]) {
       """
       .query[AlgorithmData]
 
-  def readAll(): Task[List[AlgorithmData]] =
-    readAllQuery().to[List].transact(xa)
+  def readAll(): Task[List[Algorithm]] =
+    readAllQuery().to[List].transact(xa).flatMap(dataListToAlgorithm)
+
+  def dataToAlgorithm(data: AlgorithmData) = data match {
+    case (
+        id,
+        Right(backend),
+        projectId
+        ) =>
+      Task.succeed(
+        Algorithm(id, backend, projectId)
+      )
+
+    case algorithmData =>
+      warnLog(
+        s"Could not rebuild algorithm with repository, data is $algorithmData"
+      ) *> Task.fail(AlgorithmDataIncorrect(data._1))
+  }
+
+  def dataListToAlgorithm(dataList: List[AlgorithmData]) =
+    ZIO.collectAll(dataList.map(dataToAlgorithm))
 
 }
 
