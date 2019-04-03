@@ -1,11 +1,9 @@
 package com.foundaml.server.application.controllers
 
-import com.foundaml.server.application.controllers.requests._
-import com.foundaml.server.domain.models.Prediction
 import com.foundaml.server.domain.models.errors.LabelNotFound
 import com.foundaml.server.domain.services.PredictionsService
-import com.foundaml.server.infrastructure.serialization.LabelSerializer
-import org.http4s.{HttpRoutes, HttpService}
+import com.foundaml.server.infrastructure.serialization.events.PredictionEventSerializer
+import org.http4s.HttpRoutes
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
 import scalaz.zio.Task
@@ -30,7 +28,7 @@ class ExamplesController(
           example <- predictionsService.addExample(predictionId, labelId, value)
         } yield example)
           .flatMap { example =>
-            Created(LabelSerializer.encodeJson(example))
+            Created(PredictionEventSerializer.encodeJson(example))
           }
           .catchAll {
             case LabelNotFound(_) =>

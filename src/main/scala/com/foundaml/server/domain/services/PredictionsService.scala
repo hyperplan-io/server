@@ -2,6 +2,7 @@ package com.foundaml.server.domain.services
 
 import java.util.UUID
 
+import cats.effect.{Async, Effect}
 import com.foundaml.server.domain.{FoundaMLConfig, models}
 import com.foundaml.server.domain.factories.ProjectFactory
 import com.foundaml.server.domain.models._
@@ -26,7 +27,8 @@ import com.foundaml.server.infrastructure.streaming.{
   KinesisService,
   PubSubService
 }
-import scalaz.zio.{Task, ZIO}
+import doobie.free.connection.{AsyncConnectionIO, ConnectionIO}
+import scalaz.zio.Task
 import scalaz.zio.interop.catz._
 
 class PredictionsService(
@@ -355,71 +357,93 @@ class PredictionsService(
     }
   }
 
+  def addClassificationExample(
+      labels: Option[String],
+      predictionId: String,
+      prediction: ClassificationPrediction
+  ): ConnectionIO[ClassificationPredictionEvent] =
+    labels.fold[ConnectionIO[ClassificationPredictionEvent]](
+      AsyncConnectionIO.raiseError(IncorrectExample(Classification))
+    )(
+      label =>
+        prediction.labels
+          .find(_.label == label)
+          .fold[ConnectionIO[ClassificationPredictionEvent]](
+            AsyncConnectionIO.raiseError(LabelNotFound(label))
+          )(
+            label => {
+              val example = label.label
+              val examples = prediction.examples :+ example
+              val predictionEvent = ClassificationPredictionEvent(
+                UUID.randomUUID().toString,
+                predictionId,
+                prediction.projectId,
+                prediction.algorithmId,
+                prediction.features,
+                prediction.labels,
+                example
+              )
+
+              predictionsRepository
+                .updateClassificationExamples(predictionId, examples)
+                .map(_ => predictionEvent)
+            }
+          )
+    )
+
+  def addRegressionExample(
+      valueOpt: Option[Float],
+      predictionId: String,
+      prediction: RegressionPrediction
+  ) =
+    valueOpt.fold[ConnectionIO[RegressionPredictionEvent]](
+      AsyncConnectionIO.raiseError(IncorrectExample(Regression))
+    )(
+      value => {
+        val example = value
+        val examples = prediction.examples :+ example
+
+        val predictionEvent = RegressionPredictionEvent(
+          UUID.randomUUID().toString,
+          predictionId,
+          prediction.projectId,
+          prediction.algorithmId,
+          prediction.features,
+          prediction.labels,
+          example
+        )
+        predictionsRepository
+          .updateRegressionExamples(predictionId, examples)
+          .map(_ => predictionEvent)
+      }
+    )
+
+  import scalaz.zio.interop.catz._
+  import doobie.free.connection._
+  import cats.effect.implicits._
+
   def addExample(
       predictionId: String,
       labelOpt: Option[String],
       valueOpt: Option[Float]
-  ) =
-    predictionsRepository.read(predictionId).flatMap {
-      case prediction: ClassificationPrediction =>
-        labelOpt.fold[Task[Label]](
-          Task.fail(IncorrectExample(Classification))
-        )(
-          label =>
-            prediction.labels
-              .find(_.label == label)
-              .fold[Task[Label]](
-                Task.fail(LabelNotFound(label))
-              )(
-                label => {
-                  val example = label.label
-                  val examples = prediction.examples :+ example
-                  val predictionEvent = ClassificationPredictionEvent(
-                    UUID.randomUUID().toString,
-                    predictionId,
-                    prediction.projectId,
-                    prediction.algorithmId,
-                    prediction.features,
-                    prediction.labels,
-                    example
-                  )
-
-                  predictionsRepository
-                    .updateClassificationExamples(predictionId, examples) *>
-                    publishToStream(
-                      predictionEvent
-                    ) *> Task
-                    .succeed(label)
-                }
-              )
+  ) = {
+    val transaction = for {
+      prediction <- predictionsRepository.read(predictionId)
+      event: PredictionEvent <- prediction match {
+        case prediction: ClassificationPrediction =>
+          addClassificationExample(labelOpt, predictionId, prediction)
+        case prediction: RegressionPrediction =>
+          addRegressionExample(valueOpt, predictionId, prediction)
+      }
+      _ <- AsyncConnectionIO.liftIO(
+        Effect[Task].toIO(
+          publishToStream(
+            event
+          )
         )
+      )
+    } yield event
+    predictionsRepository.transact(transaction)
+  }
 
-      case prediction: RegressionPrediction =>
-        valueOpt.fold[Task[Label]](
-          Task.fail(IncorrectExample(Regression))
-        )(
-          value => {
-            val example = value
-            val examples = prediction.examples :+ example
-
-            val predictionEvent = RegressionPredictionEvent(
-              UUID.randomUUID().toString,
-              predictionId,
-              prediction.projectId,
-              prediction.algorithmId,
-              prediction.features,
-              prediction.labels,
-              example
-            )
-
-            predictionsRepository
-              .updateRegressionExamples(predictionId, examples) *>
-              publishToStream(
-                predictionEvent
-              ) *>
-              Task.succeed(prediction.labels.head)
-          }
-        )
-
-    }
 }

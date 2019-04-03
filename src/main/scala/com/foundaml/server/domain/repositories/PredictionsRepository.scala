@@ -143,8 +143,8 @@ class PredictionsRepository(implicit xa: Transactor[Task]) extends IOLogging {
       """
       .query[PredictionData]
 
-  def read(predictionId: String) =
-    readQuery(predictionId).unique.transact(xa).flatMap(predictionFromData)
+  def read(predictionId: String): ConnectionIO[Prediction] =
+    readQuery(predictionId).unique.flatMap(predictionFromData)
 
   def updateClassificationExamplesQuery(
       predictionId: String,
@@ -156,7 +156,7 @@ class PredictionsRepository(implicit xa: Transactor[Task]) extends IOLogging {
       predictionId: String,
       examples: ClassificationExamples
   ) =
-    updateClassificationExamplesQuery(predictionId, examples).run.transact(xa)
+    updateClassificationExamplesQuery(predictionId, examples).run
 
   def updateRegressionExamplesQuery(
       predictionId: String,
@@ -168,9 +168,14 @@ class PredictionsRepository(implicit xa: Transactor[Task]) extends IOLogging {
       predictionId: String,
       examples: RegressionExamples
   ) =
-    updateRegressionExamplesQuery(predictionId, examples).run.transact(xa)
+    updateRegressionExamplesQuery(predictionId, examples).run
 
-  def predictionFromData(predictionData: PredictionData) =
+  def transact[T](connectionIO: ConnectionIO[T]): Task[T] =
+    connectionIO.transact(xa)
+
+  def predictionFromData(
+      predictionData: PredictionData
+  ): ConnectionIO[Prediction] =
     predictionData match {
       case (
           predictionId,
@@ -185,14 +190,14 @@ class PredictionsRepository(implicit xa: Transactor[Task]) extends IOLogging {
           .decodeJsonSet(labelsRaw)
           .fold(
             err =>
-              warnLog(err.getMessage) *> Task
-                .fail(CouldNotDecodeLabels(predictionId, Classification)),
+              AsyncConnectionIO
+                .raiseError(CouldNotDecodeLabels(predictionId, Classification)),
             classificationLabels => {
               ClassificationExamplesSerializer
                 .decodeJson(examplesRaw)
                 .fold(
                   err =>
-                    warnLog(err.getMessage) *> Task.fail(
+                    AsyncConnectionIO.raiseError(
                       CouldNotDecodeExamples(predictionId, Classification)
                     ),
                   classificationExamples => {
@@ -204,7 +209,7 @@ class PredictionsRepository(implicit xa: Transactor[Task]) extends IOLogging {
                       classificationExamples,
                       classificationLabels
                     )
-                    Task.succeed(prediction)
+                    AsyncConnectionIO.pure(prediction)
                   }
                 )
             }
@@ -223,14 +228,14 @@ class PredictionsRepository(implicit xa: Transactor[Task]) extends IOLogging {
           .decodeJsonSet(labels)
           .fold(
             err =>
-              warnLog(err.getMessage) *> Task
-                .fail(CouldNotDecodeLabels(predictionId, Regression)),
+              AsyncConnectionIO
+                .raiseError(CouldNotDecodeLabels(predictionId, Regression)),
             classificationLabels => {
               RegressionExamplesSerializer
                 .decodeJson(examplesRaw)
                 .fold(
                   err =>
-                    warnLog(err.getMessage) *> Task.fail(
+                    AsyncConnectionIO.raiseError(
                       CouldNotDecodeExamples(predictionId, Classification)
                     ),
                   regressionExamples => {
@@ -242,20 +247,17 @@ class PredictionsRepository(implicit xa: Transactor[Task]) extends IOLogging {
                       regressionExamples,
                       classificationLabels
                     )
-                    Task.succeed(prediction)
+                    AsyncConnectionIO.pure(prediction)
                   }
                 )
             }
           )
-      case predictionData =>
-        warnLog(
-          s"Could not rebuild prediction with repository: $predictionData"
-        ) *> Task
-          .fail(
-            PredictionDataInconsistent(
-              s"The prediction ${predictionData._1} cannot be restored"
-            )
+      case _ =>
+        AsyncConnectionIO.raiseError(
+          PredictionDataInconsistent(
+            s"The prediction ${predictionData._1} cannot be restored"
           )
+        )
     }
 }
 
