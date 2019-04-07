@@ -39,7 +39,7 @@ lazy val root = (project in file("."))
       "org.tpolecat" %% "doobie-scalatest" % DoobieVersion % "test",
       "com.github.pureconfig" %% "pureconfig" % "0.10.2",
       "ch.qos.logback" % "logback-classic" % "1.2.3",
-      "com.google.cloud" % "google-cloud-pubsub" % "1.66.0" excludeAll(
+      "com.google.cloud" % "google-cloud-pubsub" % "1.66.0" excludeAll (
         ExclusionRule(organization = "com.fasterxml.jackson.core"),
         ExclusionRule(organization = "com.fasterxml.jackson.dataformat")
       )
@@ -61,4 +61,3 @@ lazy val root = (project in file("."))
   )
   .enablePlugins(MicrositesPlugin)
   .enablePlugins(JavaAppPackaging)
-
