@@ -59,3 +59,5 @@ lazy val root = (project in file("."))
     micrositeBaseUrl := "/foundaml-server"
   )
   .enablePlugins(MicrositesPlugin)
+  .enablePlugins(JavaAppPackaging)
+
