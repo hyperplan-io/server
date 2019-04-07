@@ -17,9 +17,9 @@ class PubSubService(publisher: Publisher) extends IOLogging {
     for {
       dataBytes <- Task(ByteString.copyFromUtf8(json))
       message <- Task(PubsubMessage.newBuilder().setData(dataBytes).build())
-      _ <- infoLog(s"message id : ${message.getMessageId}")
+      _ <- logger.info(s"message id : ${message.getMessageId}")
       apiFuture <- Task(publisher.publish(message))
-      _ <- infoLog(apiFuture.get())
+      _ <- logger.info(apiFuture.get())
     } yield ()
   }
 }

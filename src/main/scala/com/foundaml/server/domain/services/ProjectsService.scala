@@ -94,11 +94,11 @@ class ProjectsService(
       _ <- errors.headOption.fold[Task[Unit]](
         Task.succeed(Unit)
       )(
-        err => warnLog(err.getMessage) *> Task.fail(err)
+        err => logger.warn(err.getMessage) *> Task.fail(err)
       )
       insertResult <- projectsRepository.insert(project)
       result <- insertResult.fold(
-        err => warnLog(err.getMessage) *> Task.fail(err),
+        err => logger.warn(err.getMessage) *> Task.fail(err),
         _ => Task.succeed(project)
       )
     } yield result

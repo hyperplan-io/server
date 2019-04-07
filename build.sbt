@@ -18,6 +18,7 @@ lazy val root = (project in file("."))
       "-feature",
       "-Xfatal-warnings"
     ),
+    fork in (IntegrationTest, run) := true,
     libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-blaze-server" % Http4sVersion,
       "org.http4s" %% "http4s-blaze-client" % Http4sVersion,
@@ -40,7 +41,6 @@ lazy val root = (project in file("."))
       "org.tpolecat" %% "doobie-scalatest" % DoobieVersion % "test",
       "com.github.pureconfig" %% "pureconfig" % "0.10.2",
       "ch.qos.logback" % "logback-classic" % "1.2.3",
-      "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
       "com.google.cloud" % "google-cloud-pubsub" % "1.66.0"
     ),
     addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.6"),
