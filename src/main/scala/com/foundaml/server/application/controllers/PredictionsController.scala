@@ -33,7 +33,7 @@ class PredictionsController(
             predictionRequest.features,
             predictionRequest.algorithmId
           )
-          _ <- debugLog(
+          _ <- logger.debug(
             s"Prediction computed for project ${prediction.projectId} using algorithm ${prediction.algorithmId}"
           )
         } yield prediction)

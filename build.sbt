@@ -1,6 +1,5 @@
 val Http4sVersion = "0.20.0-M5"
 val Specs2Version = "4.1.0"
-val LogbackVersion = "1.2.3"
 val ScalazZIOVersion = "1.0-RC1"
 val circeVersion = "0.11.1"
 val DoobieVersion = "0.7.0-M3"
@@ -18,13 +17,13 @@ lazy val root = (project in file("."))
       "-feature",
       "-Xfatal-warnings"
     ),
+    fork in (IntegrationTest, run) := true,
     libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-blaze-server" % Http4sVersion,
       "org.http4s" %% "http4s-blaze-client" % Http4sVersion,
       "org.http4s" %% "http4s-circe" % Http4sVersion,
       "org.http4s" %% "http4s-dsl" % Http4sVersion,
       "org.specs2" %% "specs2-core" % Specs2Version % "test",
-      "ch.qos.logback" % "logback-classic" % LogbackVersion,
       "org.scalaz" %% "scalaz-zio" % ScalazZIOVersion,
       "org.scalaz" %% "scalaz-zio-interop-cats" % ScalazZIOVersion,
       "org.scalaz" %% "scalaz-zio-interop-future" % ScalazZIOVersion,
@@ -32,7 +31,7 @@ lazy val root = (project in file("."))
       "io.circe" %% "circe-generic" % circeVersion,
       "io.circe" %% "circe-generic-extras" % circeVersion,
       "io.circe" %% "circe-parser" % circeVersion,
-      "com.amazonaws" % "aws-java-sdk-kinesis" % "1.11.514",
+      "com.amazonaws" % "aws-java-sdk-kinesis" % "1.11.534",
       "org.tpolecat" %% "doobie-core" % DoobieVersion,
       "org.tpolecat" %% "doobie-hikari" % DoobieVersion,
       "org.tpolecat" %% "doobie-postgres" % DoobieVersion,
@@ -40,8 +39,10 @@ lazy val root = (project in file("."))
       "org.tpolecat" %% "doobie-scalatest" % DoobieVersion % "test",
       "com.github.pureconfig" %% "pureconfig" % "0.10.2",
       "ch.qos.logback" % "logback-classic" % "1.2.3",
-      "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
-      "com.google.cloud" % "google-cloud-pubsub" % "1.66.0"
+      "com.google.cloud" % "google-cloud-pubsub" % "1.66.0" excludeAll (
+        ExclusionRule(organization = "com.fasterxml.jackson.core"),
+        ExclusionRule(organization = "com.fasterxml.jackson.dataformat")
+      )
     ),
     addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.6"),
     addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.2.4"),
@@ -59,3 +60,4 @@ lazy val root = (project in file("."))
     micrositeBaseUrl := "/foundaml-server"
   )
   .enablePlugins(MicrositesPlugin)
+  .enablePlugins(JavaAppPackaging)

@@ -45,14 +45,14 @@ class PredictionsService(
     predictionsRepository
       .insertClassificationPrediction(prediction)
       .fold(
-        err => warnLog(err.getMessage) *> Task.fail(err),
+        err => logger.warn(err.getMessage) *> Task.fail(err),
         _ => Task.succeed(prediction)
       )
   def persistRegressionPrediction(prediction: RegressionPrediction) =
     predictionsRepository
       .insertRegressionPrediction(prediction)
       .fold(
-        err => warnLog(err.getMessage) *> Task.fail(err),
+        err => logger.warn(err.getMessage) *> Task.fail(err),
         _ => Task.succeed(prediction)
       )
 
@@ -75,7 +75,7 @@ class PredictionsService(
 
   def noAlgorithm(): Task[Prediction] = {
     val message = "No algorithms are setup"
-    infoLog(message).flatMap { _ =>
+    logger.info(message).flatMap { _ =>
       Task.fail(
         NoAlgorithmAvailable(message)
       )
@@ -90,7 +90,7 @@ class PredictionsService(
       .take()
       .fold[Task[Prediction]] {
         val message = s"There is no algorithm in the project ${project.id}"
-        warnLog(message) *> Task.fail(
+        logger.warn(message) *> Task.fail(
           NoAlgorithmAvailable(message)
         )
       } { algorithmId =>
@@ -99,7 +99,9 @@ class PredictionsService(
           .fold[Task[Prediction]] {
             val message =
               s"The algorithm $algorithmId does not exist in the project ${project.id}"
-            debugLog(message) *> Task.fail(AlgorithmDoesNotExist(algorithmId))
+            logger.debug(message) *> Task.fail(
+              AlgorithmDoesNotExist(algorithmId)
+            )
           }(
             algorithm =>
               predictRegressionWithAlgorithm(
@@ -118,7 +120,7 @@ class PredictionsService(
       .take()
       .fold[Task[Prediction]] {
         val message = s"There is no algorithm in the project ${project.id}"
-        warnLog(message) *> Task.fail(
+        logger.warn(message) *> Task.fail(
           NoAlgorithmAvailable(message)
         )
       } { algorithmId =>
@@ -127,7 +129,9 @@ class PredictionsService(
           .fold[Task[Prediction]] {
             val message =
               s"The algorithm $algorithmId does not exist in the project ${project.id}"
-            debugLog(message) *> Task.fail(AlgorithmDoesNotExist(algorithmId))
+            logger.debug(message) *> Task.fail(
+              AlgorithmDoesNotExist(algorithmId)
+            )
           }(
             algorithm =>
               predictClassificationWithAlgorithm(
@@ -301,7 +305,7 @@ class PredictionsService(
                   } else {
                     val message =
                       s"The labels do not match the configuration of project ${project.id}"
-                    warnLog(message) *> Task.fail(
+                    logger.warn(message) *> Task.fail(
                       LabelsValidationFailed(
                         message
                       )
@@ -313,7 +317,7 @@ class PredictionsService(
     } else {
       val message =
         s"The features do not match the configuration of project ${project.id}"
-      warnLog(message) *> Task.fail(
+      logger.warn(message) *> Task.fail(
         FeaturesValidationFailed(
           message
         )
@@ -349,7 +353,7 @@ class PredictionsService(
     } else {
       val message =
         s"The features do not match the configuration of project ${project.id}"
-      warnLog(message) *> Task.fail(
+      logger.warn(message) *> Task.fail(
         FeaturesValidationFailed(
           message
         )

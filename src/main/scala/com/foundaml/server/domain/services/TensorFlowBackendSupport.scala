@@ -47,7 +47,7 @@ trait TensorFlowBackendSupport extends IOLogging {
       .transform(features)
       .fold(
         err =>
-          warnLog(err.getMessage) *>
+          logger.warn(err.getMessage) *>
             Task.fail(
               FeaturesTransformerError(
                 "The features could not be transformed to a TensorFlow compatible format"
@@ -100,7 +100,8 @@ trait TensorFlowBackendSupport extends IOLogging {
                         {
                           val message =
                             s"An error occurred with backend: ${err.getMessage}"
-                          errorLog(message) *> Task.fail(BackendError(message))
+                          logger.error(message) *> Task
+                            .fail(BackendError(message))
                         }
                       }
                   )
@@ -122,7 +123,7 @@ trait TensorFlowBackendSupport extends IOLogging {
       .transform(features)
       .fold(
         err =>
-          warnLog(err.getMessage) *>
+          logger.warn(err.getMessage) *>
             Task.fail(
               FeaturesTransformerError(
                 "The features could not be transformed to a TensorFlow compatible format"
@@ -192,7 +193,8 @@ trait TensorFlowBackendSupport extends IOLogging {
                         {
                           val message =
                             s"An error occurred with backend: ${err.getMessage}"
-                          errorLog(message) *> Task.fail(BackendError(message))
+                          logger.error(message) *> Task
+                            .fail(BackendError(message))
                         }
                       }
                   )

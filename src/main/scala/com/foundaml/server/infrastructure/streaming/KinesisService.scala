@@ -1,11 +1,13 @@
 package com.foundaml.server.infrastructure.streaming
 
 import scalaz.zio.{IO, Task, ZIO}
-import com.amazonaws.auth.AWSCredentialsProvider
+import com.amazonaws.auth.{
+  AWSCredentialsProvider,
+  DefaultAWSCredentialsProviderChain
+}
 import com.amazonaws.services.kinesis.AmazonKinesis
 import com.amazonaws.services.kinesis.AmazonKinesisClientBuilder
 import com.amazonaws.services.kinesis.model.PutRecordRequest
-import com.amazonaws.auth.profile.ProfileCredentialsProvider
 import java.nio.ByteBuffer
 
 case class KinesisPutError(message: String) extends Throwable
@@ -17,7 +19,7 @@ class KinesisService(kinesisClient: AmazonKinesis) {
       streamName: String,
       partitionKey: String
   )(implicit circeEncoder: io.circe.Encoder[Data]): Task[Unit] = {
-    val dataJson = circeEncoder.apply(data).noSpaces
+    val dataJson = circeEncoder(data).noSpaces
     for {
       jsonBytes <- IO(dataJson.getBytes)
       request <- IO(new PutRecordRequest())
@@ -36,7 +38,7 @@ object KinesisService {
       region: String
   ): Task[KinesisService] =
     for {
-      credentialsProvider <- getProfileCredentialsProvider
+      credentialsProvider <- getCredentialsProvider
       kinesisClient <- buildKinesisClient(credentialsProvider, region)
       kinesisService <- IO(new KinesisService(kinesisClient))
     } yield kinesisService
@@ -52,6 +54,7 @@ object KinesisService {
       amazonKinesis <- IO(builderWithRegion.build())
     } yield amazonKinesis
 
-  def getProfileCredentialsProvider = IO(new ProfileCredentialsProvider())
+  def getCredentialsProvider =
+    IO(new DefaultAWSCredentialsProviderChain())
 
 }

@@ -87,7 +87,7 @@ class AlgorithmsRepository(implicit xa: Transactor[Task]) extends IOLogging {
       )
 
     case algorithmData =>
-      warnLog(
+      logger.warn(
         s"Could not rebuild algorithm with repository, data is $algorithmData"
       ) *> Task.fail(AlgorithmDataIncorrect(data._1))
   }

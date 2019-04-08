@@ -50,7 +50,7 @@ object Main extends App with IOLogging {
   def run(args: List[String]): ZIO[Environment, Nothing, Int] =
     loadConfigAndStart()
       .fold(
-        err => errorLog(err.getMessage) *> Task.fail(err),
+        err => logger.error(err.getMessage) *> Task.fail(err),
         res => Task.succeed(res)
       )
       .either
@@ -62,10 +62,10 @@ object Main extends App with IOLogging {
       config: FoundaMLConfig
   )(implicit xa: doobie.Transactor[Task]) =
     for {
-      _ <- infoLog("Connected to database")
-      _ <- debugLog("Running SQL scripts")
+      _ <- logger.info("Connected to database")
+      _ <- logger.debug("Running SQL scripts")
       _ <- PostgresqlService.initSchema
-      _ <- debugLog("SQL scripts have been runned successfully")
+      _ <- logger.debug("SQL scripts have been runned successfully")
       projectsRepository = new ProjectsRepository
       algorithmsRepository = new AlgorithmsRepository
       predictionsRepository = new PredictionsRepository
@@ -75,7 +75,7 @@ object Main extends App with IOLogging {
       )
       _ = logger.info("Starting GCP Pubsub service")
       pubSubService <- if (config.gcp.pubsub.enabled) {
-        infoLog("Starting GCP PubSub service") *> PubSubService(
+        logger.info("Starting GCP PubSub service") *> PubSubService(
           config.gcp.projectId,
           config.gcp.pubsub.predictionsTopicId
         ).map(Some(_))
@@ -101,8 +101,8 @@ object Main extends App with IOLogging {
         projectFactory
       )
       port = 8080
-      _ <- infoLog("Services have been correctly instantiated")
-      _ <- infoLog(s"Starting http server on port $port")
+      _ <- logger.info("Services have been correctly instantiated")
+      _ <- logger.info(s"Starting http server on port $port")
       _ <- Server
         .stream(
           predictionsService,
@@ -119,14 +119,14 @@ object Main extends App with IOLogging {
     pureconfig
       .loadConfig[FoundaMLConfig]
       .fold(
-        err => errorLog(s"Failed to load configuration because $err"),
+        err => logger.error(s"Failed to load configuration because $err"),
         config => program(config)
       )
 
-  def program(config: FoundaMLConfig): Task[Unit] =
+  def program(config: FoundaMLConfig) =
     for {
-      _ <- infoLog("Starting Foundaml server")
-      _ <- infoLog("Connecting to database")
+      _ <- logger.info("Starting Foundaml server")
+      _ <- logger.info("Connecting to database")
       transactor = PostgresqlService(
         config.database.postgresql.host,
         config.database.postgresql.port.toString,
@@ -140,7 +140,7 @@ object Main extends App with IOLogging {
             case Right(_) =>
               databaseConnected(config)
             case Left(err) =>
-              infoLog(s"Could not connect to the database: $err")
+              logger.info(s"Could not connect to the database: $err")
           }
         }
       }

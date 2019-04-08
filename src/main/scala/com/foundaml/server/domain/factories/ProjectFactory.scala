@@ -58,7 +58,9 @@ class ProjectFactory(
           )
         )
       case projectData =>
-        warnLog(s"Could not build project with factory, data is $projectData") *> Task
+        logger.warn(
+          s"Could not build project with factory, data is $projectData"
+        ) *> Task
           .fail(ProjectDataInconsistent(projectId))
     }
   }

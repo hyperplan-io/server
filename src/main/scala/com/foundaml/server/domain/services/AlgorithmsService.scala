@@ -144,14 +144,14 @@ class AlgorithmsService(
         Task(Unit)
       } else {
         val message = s"The following errors occurred: ${errors.mkString(", ")}"
-        warnLog(message) *> Task.fail(
+        logger.warn(message) *> Task.fail(
           InvalidArgument(message)
         )
       }
       insertResult <- algorithmsRepository.insert(algorithm)
       result <- insertResult.fold(
         err => {
-          warnLog(
+          logger.warn(
             s"An error occurred while inserting an algorithm: ${err.getMessage}"
           ) *>
             Task.fail(err)

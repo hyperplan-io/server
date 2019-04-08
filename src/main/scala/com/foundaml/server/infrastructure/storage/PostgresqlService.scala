@@ -13,7 +13,7 @@ object PostgresqlService {
 
   def testConnection(
       implicit xa: doobie.Transactor[Task]
-  ): ZIO[Any, Nothing, Exit[Throwable, Double]] =
+  ): ZIO[Any, Throwable, Exit[Throwable, Double]] =
     sql"select random()".query[Double].unique.transact(xa).run
 
   def initSchema(implicit xa: doobie.Transactor[Task]) =
