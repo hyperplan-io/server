@@ -101,7 +101,8 @@ trait TensorFlowBackendSupport extends IOLogging {
                         {
                           val message =
                             s"An error occurred with backend: ${err.getMessage}"
-                          logger.error(message) *> IO.raiseError(BackendError(message))
+                          logger.error(message) *> IO
+                            .raiseError(BackendError(message))
                         }
                       }
                   )
@@ -193,7 +194,8 @@ trait TensorFlowBackendSupport extends IOLogging {
                         {
                           val message =
                             s"An error occurred with backend: ${err.getMessage}"
-                          logger.error(message) *> IO.raiseError(BackendError(message))
+                          logger.error(message) *> IO
+                            .raiseError(BackendError(message))
                         }
                       }
                   )

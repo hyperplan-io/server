@@ -128,8 +128,8 @@ class PredictionsRepository(implicit xa: Transactor[IO]) extends IOLogging {
   def insertRegressionPrediction(
       prediction: RegressionPrediction
   ): IO[Either[PredictionError, Int]] =
-  insertRegressionPredictionQuery(prediction).run
-    .attemptSomeSqlState {
+    insertRegressionPredictionQuery(prediction).run
+      .attemptSomeSqlState {
         case sqlstate.class23.UNIQUE_VIOLATION =>
           PredictionAlreadyExist(prediction.id)
       }

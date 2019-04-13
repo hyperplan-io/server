@@ -50,8 +50,10 @@ class PredictionsServiceSpec extends FlatSpec with TestDatabase {
       )
     )
   )
-  val kinesisService: KinesisService = KinesisService("fake-region").unsafeRunSync()
-  val pubSubService: PubSubService = PubSubService("myProjectId", "myTopic").unsafeRunSync()
+  val kinesisService: KinesisService =
+    KinesisService("fake-region").unsafeRunSync()
+  val pubSubService: PubSubService =
+    PubSubService("myProjectId", "myTopic").unsafeRunSync()
   val projectsRepository = new ProjectsRepository()(xa)
   val algorithmsRepository = new AlgorithmsRepository()(xa)
   val predictionsRepository = new PredictionsRepository()(xa)
@@ -83,12 +85,13 @@ class PredictionsServiceSpec extends FlatSpec with TestDatabase {
     )
 
     val shouldThrow = Try(
-        predictionsService
-          .predictForClassificationProject(
-            project,
-            features,
-            Some(algorithmId)
-          ).unsafeRunSync()
+      predictionsService
+        .predictForClassificationProject(
+          project,
+          features,
+          Some(algorithmId)
+        )
+        .unsafeRunSync()
     )
     inside(shouldThrow.toEither) {
       case Left(err) =>

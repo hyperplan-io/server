@@ -43,7 +43,7 @@ object Server {
     override def sleep(duration: FiniteDuration): IO[Unit] =
       zioClock.sleep(Duration.fromScala(duration))
   }
-  */
+   */
 
   import org.http4s.implicits._
 

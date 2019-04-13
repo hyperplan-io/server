@@ -48,7 +48,7 @@ class ProjectsController(
       case GET -> Root / projectId =>
         projectsService
           .readProject(projectId)
-          .flatMap { 
+          .flatMap {
             case Right(project) =>
               Ok(
                 ProjectSerializer.encodeJson(

@@ -7,7 +7,6 @@ import com.google.protobuf.ByteString
 import com.google.pubsub.v1.{ProjectTopicName, PubsubMessage}
 import cats.effect.IO
 
-
 class PubSubService(publisher: Publisher) extends IOLogging {
 
   def publish[Data](

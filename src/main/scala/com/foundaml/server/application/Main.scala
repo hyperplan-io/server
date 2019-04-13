@@ -43,18 +43,21 @@ object Main extends IOApp with IOLogging {
     override def sleep(duration: FiniteDuration): IO[Unit] =
       zioClock.sleep(Duration.fromScala(duration))
   }
-  */
+   */
 
   import scala.concurrent.ExecutionContext.Implicits.global
 
-  override def main(args: Array[String]): Unit = run(args.toList).runAsync(_ => IO(())).unsafeRunSync()
+  override def main(args: Array[String]): Unit =
+    run(args.toList).runAsync(_ => IO(())).unsafeRunSync()
 
   import cats.effect.ExitCode
   override def run(args: List[String]): IO[ExitCode] =
-    loadConfigAndStart().attempt.flatMap(_.fold(
+    loadConfigAndStart().attempt.flatMap(
+      _.fold(
         err => logger.error(err.getMessage) *> IO.pure(ExitCode.Error),
         res => IO.pure(ExitCode.Success)
-      ))
+      )
+    )
 
   import cats.effect.ContextShift
   def databaseConnected(
@@ -135,12 +138,12 @@ object Main extends IOApp with IOLogging {
       )
       _ <- transactor.use { implicit xa =>
         PostgresqlService.testConnection.attempt.flatMap {
-            case Right(_) =>
-              import ch.qos.logback.core.Context
-              import scala.concurrent.ExecutionContext
-              databaseConnected(config)
-            case Left(err) =>
-              logger.info(s"Could not connect to the database: $err")
+          case Right(_) =>
+            import ch.qos.logback.core.Context
+            import scala.concurrent.ExecutionContext
+            databaseConnected(config)
+          case Left(err) =>
+            logger.info(s"Could not connect to the database: $err")
         }
       }
     } yield ()

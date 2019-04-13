@@ -5,7 +5,7 @@ import doobie.implicits._
 import doobie.hikari.HikariTransactor
 import doobie.util.ExecutionContexts
 import cats.implicits._
-import cats.effect.{ IO, Resource }
+import cats.effect.{IO, Resource}
 
 object PostgresqlService {
 

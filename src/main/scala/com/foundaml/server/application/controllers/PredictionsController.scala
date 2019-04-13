@@ -48,7 +48,9 @@ class PredictionsController(
             case PredictionAlreadyExist(predictionId) =>
               Conflict(s"The prediction $predictionId already exists")
             case BackendError(message) =>
-              logger.warn(s"An error occurred in prediction: $message") *> InternalServerError(message)
+              logger.warn(s"An error occurred in prediction: $message") *> InternalServerError(
+                message
+              )
             case FeaturesValidationFailed(message) =>
               FailedDependency(message)
             case LabelsValidationFailed(message) =>

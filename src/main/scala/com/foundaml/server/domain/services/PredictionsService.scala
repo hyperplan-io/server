@@ -6,7 +6,6 @@ import cats.effect.{Async, Effect}
 import cats.effect.IO
 import cats.implicits._
 
-
 import com.foundaml.server.domain.{FoundaMLConfig, models}
 import com.foundaml.server.domain.factories.ProjectFactory
 import com.foundaml.server.domain.models._
@@ -33,7 +32,6 @@ import com.foundaml.server.infrastructure.streaming.{
 }
 import doobie.free.connection.{AsyncConnectionIO, ConnectionIO}
 
-
 import cats.effect.ContextShift
 class PredictionsService(
     projectsRepository: ProjectsRepository,
@@ -42,22 +40,28 @@ class PredictionsService(
     pubSubService: Option[PubSubService],
     projectFactory: ProjectFactory,
     config: FoundaMLConfig
-)(implicit cs: ContextShift[IO]) extends IOLogging
+)(implicit cs: ContextShift[IO])
+    extends IOLogging
     with TensorFlowBackendSupport {
 
   def persistClassificationPrediction(prediction: ClassificationPrediction) =
     predictionsRepository
-      .insertClassificationPrediction(prediction).flatMap(_.fold(
-        err => logger.warn(err.getMessage) *> IO.raiseError(err),
-        _ => IO.pure(prediction)
-    ))
+      .insertClassificationPrediction(prediction)
+      .flatMap(
+        _.fold(
+          err => logger.warn(err.getMessage) *> IO.raiseError(err),
+          _ => IO.pure(prediction)
+        )
+      )
   def persistRegressionPrediction(prediction: RegressionPrediction) =
     predictionsRepository
-      .insertRegressionPrediction(prediction).flatMap(_.fold(
-        err => logger.warn(err.getMessage) *> IO.raiseError(err),
-        _ => IO.pure(prediction)
+      .insertRegressionPrediction(prediction)
+      .flatMap(
+        _.fold(
+          err => logger.warn(err.getMessage) *> IO.raiseError(err),
+          _ => IO.pure(prediction)
+        )
       )
-    )
 
   def publishToStream(prediction: PredictionEvent): IO[Unit] =
     for {

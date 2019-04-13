@@ -18,8 +18,11 @@ class ProjectFactory(
     algorithmsRepository: AlgorithmsRepository
 ) extends IOLogging {
   def get(projectId: String): IO[Either[ProjectDataInconsistent, Project]] = {
-    (projectsRepository.read(projectId), algorithmsRepository.readForProject(projectId)).mapN {
-     case (
+    (
+      projectsRepository.read(projectId),
+      algorithmsRepository.readForProject(projectId)
+    ).mapN {
+      case (
           (
             id,
             name,
@@ -29,15 +32,15 @@ class ProjectFactory(
           ),
           algorithms
           ) =>
-          Right(
-            ClassificationProject(
-              id,
-              name,
-              projectConfiguration,
-              algorithms,
-              policy
-            )
+        Right(
+          ClassificationProject(
+            id,
+            name,
+            projectConfiguration,
+            algorithms,
+            policy
           )
+        )
       case (
           (
             id,
@@ -48,15 +51,15 @@ class ProjectFactory(
           ),
           algorithms
           ) =>
-          Right(
-            RegressionProject(
-              id,
-              name,
-              projectConfiguration,
-              algorithms,
-              policy
-            )
+        Right(
+          RegressionProject(
+            id,
+            name,
+            projectConfiguration,
+            algorithms,
+            policy
           )
+        )
       case projectData =>
         Left(ProjectDataInconsistent(projectId))
     }
