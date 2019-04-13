@@ -23,15 +23,13 @@ import com.foundaml.server.test.{
   ProjectGenerator,
   TestDatabase
 }
-import scalaz.zio.DefaultRuntime
 import cats.implicits._
+import cats.effect.IO
+import scala.concurrent.ExecutionContext
 
 import scala.util.Try
 
-class PredictionsServiceSpec
-    extends FlatSpec
-    with DefaultRuntime
-    with TestDatabase {
+class PredictionsServiceSpec extends FlatSpec with TestDatabase {
 
   val config = FoundaMLConfig(
     KinesisConfig(enabled = false, "predictionsStream", "examplesStream"),
@@ -52,10 +50,8 @@ class PredictionsServiceSpec
       )
     )
   )
-  val kinesisService: KinesisService = unsafeRun(KinesisService("fake-region"))
-  val pubSubService: PubSubService = unsafeRun(
-    PubSubService("myProjectId", "myTopic")
-  )
+  val kinesisService: KinesisService = KinesisService("fake-region").unsafeRunSync()
+  val pubSubService: PubSubService = PubSubService("myProjectId", "myTopic").unsafeRunSync()
   val projectsRepository = new ProjectsRepository()(xa)
   val algorithmsRepository = new AlgorithmsRepository()(xa)
   val predictionsRepository = new PredictionsRepository()(xa)
@@ -87,14 +83,12 @@ class PredictionsServiceSpec
     )
 
     val shouldThrow = Try(
-      unsafeRun(
         predictionsService
           .predictForClassificationProject(
             project,
             features,
             Some(algorithmId)
-          )
-      )
+          ).unsafeRunSync()
     )
     inside(shouldThrow.toEither) {
       case Left(err) =>

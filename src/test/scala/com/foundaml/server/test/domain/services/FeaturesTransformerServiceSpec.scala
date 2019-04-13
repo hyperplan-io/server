@@ -9,9 +9,8 @@ import com.foundaml.server.infrastructure.serialization.tensorflow.TensorFlowFea
 import io.circe._
 import io.circe.syntax._
 import io.circe.parser._
-import scalaz.zio.DefaultRuntime
 
-class FeaturesTransformerServiceSpec extends FlatSpec with DefaultRuntime {
+class FeaturesTransformerServiceSpec extends FlatSpec {
 
   it should "not accept a feature transformer with a different number of arguments than the features" in {
 
