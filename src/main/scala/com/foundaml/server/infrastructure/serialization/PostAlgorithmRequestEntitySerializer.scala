@@ -7,8 +7,8 @@ import io.circe._
 import org.http4s.EntityDecoder
 import org.http4s.circe.jsonOf
 
-import scalaz.zio.Task
-import scalaz.zio.interop.catz._
+import cats.effect.IO
+import cats.implicits._
 
 object PostAlgorithmRequestEntitySerializer {
 
@@ -22,7 +22,7 @@ object PostAlgorithmRequestEntitySerializer {
         backend <- c.downField("backend").as[Backend]
       } yield PostAlgorithmRequest(id, projectId, backend)
 
-  implicit val entityDecoder: EntityDecoder[Task, PostAlgorithmRequest] =
-    jsonOf[Task, PostAlgorithmRequest]
+  implicit val entityDecoder: EntityDecoder[IO, PostAlgorithmRequest] =
+    jsonOf[IO, PostAlgorithmRequest]
 
 }

@@ -1,6 +1,7 @@
 package com.foundaml.server.domain.services
 
-import scalaz.zio.{Task, ZIO}
+import cats.effect.IO
+import cats.implicits._
 import com.foundaml.server.domain.factories.ProjectFactory
 import com.foundaml.server.domain.models._
 import com.foundaml.server.domain.models.backends.{
@@ -135,16 +136,17 @@ class AlgorithmsService(
         projectId
       )
       errors = project match {
-        case classificationProject: ClassificationProject =>
+        case Right(classificationProject: ClassificationProject) =>
           validateClassificationAlgorithm(algorithm, classificationProject)
-        case regressionProject: RegressionProject =>
+        case Right(regressionProject: RegressionProject) =>
           validateRegressionAlgorithm(algorithm, regressionProject)
+        case Left(err) => List(err)
       }
       _ <- if (errors.isEmpty) {
-        Task(Unit)
+        IO(Unit)
       } else {
         val message = s"The following errors occurred: ${errors.mkString(", ")}"
-        logger.warn(message) *> Task.fail(
+        logger.warn(message) *> IO.raiseError(
           InvalidArgument(message)
         )
       }
@@ -154,9 +156,9 @@ class AlgorithmsService(
           logger.warn(
             s"An error occurred while inserting an algorithm: ${err.getMessage}"
           ) *>
-            Task.fail(err)
+            IO.raiseError(err)
         },
-        _ => Task.succeed(algorithm)
+        _ => IO.pure(algorithm)
       )
     } yield result
   }

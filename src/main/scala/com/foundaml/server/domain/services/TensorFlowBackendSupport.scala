@@ -28,49 +28,50 @@ import com.foundaml.server.infrastructure.serialization.tensorflow.{
 }
 import org.http4s.{EntityEncoder, Method, Request, Uri}
 import org.http4s.client.blaze.BlazeClientBuilder
-import scalaz.zio.Task
-import scalaz.zio.interop.catz._
+import cats.effect.IO
+import cats.implicits._
 
 import scala.concurrent.ExecutionContext
 
 trait TensorFlowBackendSupport extends IOLogging {
 
+  import cats.effect.ContextShift
   def predictWithTensorFlowClassificationBackend(
       projectId: String,
       algorithm: Algorithm,
       features: Features,
       backend: TensorFlowClassificationBackend,
       labelsConfiguration: LabelsConfiguration
-  ) = {
+  )(implicit cs: ContextShift[IO]) = {
     val predictionId = UUID.randomUUID().toString
     backend.featuresTransformer
       .transform(features)
       .fold(
         err =>
           logger.warn(err.getMessage) *>
-            Task.fail(
+            IO.raiseError(
               FeaturesTransformerError(
                 "The features could not be transformed to a TensorFlow compatible format"
               )
             ),
         tfFeatures => {
-          implicit val encoder: EntityEncoder[Task, TensorFlowFeatures] =
+          implicit val encoder: EntityEncoder[IO, TensorFlowFeatures] =
             TensorFlowFeaturesSerializer.entityEncoder
           val uriString = s"http://${backend.host}:${backend.port}"
           Uri
             .fromString(uriString)
             .fold(
               _ =>
-                Task.fail(
+                IO.raiseError(
                   InvalidArgument(
                     s"The following uri could not be parsed, check your backend configuration. $uriString"
                   )
                 ),
               uri => {
                 val request =
-                  Request[Task](method = Method.POST, uri = uri)
+                  Request[IO](method = Method.POST, uri = uri)
                     .withEntity(tfFeatures)
-                BlazeClientBuilder[Task](ExecutionContext.global).resource
+                BlazeClientBuilder[IO](ExecutionContext.global).resource
                   .use(
                     _.expect[TensorFlowClassificationLabels](request)(
                       TensorFlowClassificationLabelsSerializer.entityDecoder
@@ -82,9 +83,9 @@ trait TensorFlowBackendSupport extends IOLogging {
                             tfLabels
                           )
                           .fold(
-                            err => Task.fail(err),
+                            err => IO.raiseError(err),
                             labels =>
-                              Task.succeed(
+                              IO.pure(
                                 ClassificationPrediction(
                                   predictionId,
                                   projectId,
@@ -96,12 +97,11 @@ trait TensorFlowBackendSupport extends IOLogging {
                               )
                           )
                       }
-                      .catchAll { err =>
+                      .handleErrorWith { err =>
                         {
                           val message =
                             s"An error occurred with backend: ${err.getMessage}"
-                          logger.error(message) *> Task
-                            .fail(BackendError(message))
+                          logger.error(message) *> IO.raiseError(BackendError(message))
                         }
                       }
                   )
@@ -117,44 +117,44 @@ trait TensorFlowBackendSupport extends IOLogging {
       algorithm: Algorithm,
       features: Features,
       backend: TensorFlowRegressionBackend
-  ): Task[RegressionPrediction] = {
+  )(implicit cs: ContextShift[IO]): IO[RegressionPrediction] = {
     val predictionId = UUID.randomUUID().toString
     backend.featuresTransformer
       .transform(features)
       .fold(
         err =>
           logger.warn(err.getMessage) *>
-            Task.fail(
+            IO.raiseError(
               FeaturesTransformerError(
                 "The features could not be transformed to a TensorFlow compatible format"
               )
             ),
         tfFeatures => {
-          implicit val encoder: EntityEncoder[Task, TensorFlowFeatures] =
+          implicit val encoder: EntityEncoder[IO, TensorFlowFeatures] =
             TensorFlowFeaturesSerializer.entityEncoder
           val uriString = s"http://${backend.host}:${backend.port}"
           Uri
             .fromString(uriString)
             .fold(
               _ =>
-                Task.fail(
+                IO.raiseError(
                   InvalidArgument(
                     s"The following uri could not be parsed, check your backend configuration. $uriString"
                   )
                 ),
               uri => {
                 val request =
-                  Request[Task](method = Method.POST, uri = uri)
+                  Request[IO](method = Method.POST, uri = uri)
                     .withEntity(tfFeatures)
-                BlazeClientBuilder[Task](ExecutionContext.global).resource
+                BlazeClientBuilder[IO](ExecutionContext.global).resource
                   .use(
                     _.expect[TensorFlowRegressionLabels](request)(
                       TensorFlowRegressionLabelsSerializer.entityDecoder
                     ).flatMap {
                         tfLabels =>
                           tfLabels.result.headOption
-                            .fold[Task[RegressionPrediction]](
-                              Task.fail(
+                            .fold[IO[RegressionPrediction]](
+                              IO.raiseError(
                                 BackendError(
                                   "Unexpected result from TensorFlow"
                                 )
@@ -162,8 +162,8 @@ trait TensorFlowBackendSupport extends IOLogging {
                             ) {
                               tfLabel =>
                                 tfLabel.headOption
-                                  .fold[Task[RegressionPrediction]](
-                                    Task.fail(
+                                  .fold[IO[RegressionPrediction]](
+                                    IO.raiseError(
                                       BackendError(
                                         "Unexpected result from TensorFlow"
                                       )
@@ -185,16 +185,15 @@ trait TensorFlowBackendSupport extends IOLogging {
                                         )
                                       )
                                     )
-                                    Task.succeed(prediction)
+                                    IO.pure(prediction)
                                   }
                             }
                       }
-                      .catchAll { err =>
+                      .handleErrorWith { err =>
                         {
                           val message =
                             s"An error occurred with backend: ${err.getMessage}"
-                          logger.error(message) *> Task
-                            .fail(BackendError(message))
+                          logger.error(message) *> IO.raiseError(BackendError(message))
                         }
                       }
                   )

@@ -8,8 +8,8 @@ import io.circe.{Decoder, Encoder}
 import org.http4s.circe.jsonEncoderOf
 import com.foundaml.server.domain.models.labels._
 import org.http4s.{EntityDecoder, EntityEncoder}
-import scalaz.zio.Task
-import scalaz.zio.interop.catz._
+import cats.effect.IO
+import cats.implicits._
 
 object LabelsSerializer {
 
@@ -47,8 +47,8 @@ object LabelSerializer {
   implicit val encoder: Encoder[Label] = deriveEncoder
   implicit val decoder: Decoder[Label] = deriveDecoder
 
-  implicit val labelEntityDecoder: EntityEncoder[Task, Label] =
-    jsonEncoderOf[Task, Label]
+  implicit val labelEntityDecoder: EntityEncoder[IO, Label] =
+    jsonEncoderOf[IO, Label]
 
   def encodeJsonNoSpaces(labels: Label): String = {
     labels.asJson.noSpaces

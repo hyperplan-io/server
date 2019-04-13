@@ -29,10 +29,10 @@ import doobie._
 import doobie.implicits._
 import doobie.postgres.sqlstate
 import io.circe.{Decoder, Encoder}
-import scalaz.zio.Task
-import scalaz.zio.interop.catz._
+import cats.effect.IO
+import cats.implicits._
 
-class PredictionsRepository(implicit xa: Transactor[Task]) extends IOLogging {
+class PredictionsRepository(implicit xa: Transactor[IO]) extends IOLogging {
 
   implicit val featuresGet: Get[Either[io.circe.Error, Features]] =
     Get[String].map(FeaturesSerializer.decodeJson)
@@ -96,7 +96,7 @@ class PredictionsRepository(implicit xa: Transactor[Task]) extends IOLogging {
 
   def insertClassificationPrediction(
       prediction: ClassificationPrediction
-  ): Task[Either[PredictionError, Int]] =
+  ): IO[Either[PredictionError, Int]] =
     insertClassificationPredictionQuery(prediction).run
       .attemptSomeSqlState {
         case sqlstate.class23.UNIQUE_VIOLATION =>
@@ -127,9 +127,9 @@ class PredictionsRepository(implicit xa: Transactor[Task]) extends IOLogging {
 
   def insertRegressionPrediction(
       prediction: RegressionPrediction
-  ): Task[Either[PredictionError, Int]] =
-    insertRegressionPredictionQuery(prediction).run
-      .attemptSomeSqlState {
+  ): IO[Either[PredictionError, Int]] =
+  insertRegressionPredictionQuery(prediction).run
+    .attemptSomeSqlState {
         case sqlstate.class23.UNIQUE_VIOLATION =>
           PredictionAlreadyExist(prediction.id)
       }
@@ -170,7 +170,7 @@ class PredictionsRepository(implicit xa: Transactor[Task]) extends IOLogging {
   ) =
     updateRegressionExamplesQuery(predictionId, examples).run
 
-  def transact[T](connectionIO: ConnectionIO[T]): Task[T] =
+  def transact[T](connectionIO: ConnectionIO[T]): IO[T] =
     connectionIO.transact(xa)
 
   def predictionFromData(

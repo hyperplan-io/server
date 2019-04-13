@@ -9,20 +9,20 @@ import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
 import cats.Functor
 import com.foundaml.server.domain.models.Project
-import scalaz.zio.Task
-import scalaz.zio.interop.catz._
+import cats.effect.IO
+import cats.implicits._
 
 class ProjectsController(
     projectsService: ProjectsService
-) extends Http4sDsl[Task] {
+) extends Http4sDsl[IO] {
 
-  val service: HttpRoutes[Task] = {
+  val service: HttpRoutes[IO] = {
 
-    HttpRoutes.of[Task] {
+    HttpRoutes.of[IO] {
       case req @ POST -> Root =>
         (for {
           request <- req.as[Project](
-            Functor[Task],
+            Functor[IO],
             ProjectSerializer.entityDecoder
           )
           project <- projectsService.createEmptyProject(
@@ -34,7 +34,7 @@ class ProjectsController(
           .flatMap { project =>
             Created(ProjectSerializer.encodeJson(project))
           }
-          .catchAll {
+          .handleErrorWith {
             case ProjectAlreadyExists(projectId) =>
               Conflict(s"The project $projectId already exists")
             case InvalidProjectIdentifier(message) =>
@@ -48,14 +48,17 @@ class ProjectsController(
       case GET -> Root / projectId =>
         projectsService
           .readProject(projectId)
-          .flatMap { project =>
-            Ok(
-              ProjectSerializer.encodeJson(
-                project
+          .flatMap { 
+            case Right(project) =>
+              Ok(
+                ProjectSerializer.encodeJson(
+                  project
+                )
               )
-            )
+            case Left(err) =>
+              NotFound()
           }
-          .catchAll {
+          .handleErrorWith {
             case ProjectDoesNotExist(_) =>
               NotFound(s"The project $projectId does not exist")
             case ProjectDataInconsistent(_) =>

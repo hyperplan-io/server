@@ -3,6 +3,10 @@ package com.foundaml.server.domain.services
 import java.util.UUID
 
 import cats.effect.{Async, Effect}
+import cats.effect.IO
+import cats.implicits._
+
+
 import com.foundaml.server.domain.{FoundaMLConfig, models}
 import com.foundaml.server.domain.factories.ProjectFactory
 import com.foundaml.server.domain.models._
@@ -28,9 +32,9 @@ import com.foundaml.server.infrastructure.streaming.{
   PubSubService
 }
 import doobie.free.connection.{AsyncConnectionIO, ConnectionIO}
-import scalaz.zio.Task
-import scalaz.zio.interop.catz._
 
+
+import cats.effect.ContextShift
 class PredictionsService(
     projectsRepository: ProjectsRepository,
     predictionsRepository: PredictionsRepository,
@@ -38,27 +42,26 @@ class PredictionsService(
     pubSubService: Option[PubSubService],
     projectFactory: ProjectFactory,
     config: FoundaMLConfig
-) extends IOLogging
+)(implicit cs: ContextShift[IO]) extends IOLogging
     with TensorFlowBackendSupport {
 
   def persistClassificationPrediction(prediction: ClassificationPrediction) =
     predictionsRepository
-      .insertClassificationPrediction(prediction)
-      .fold(
-        err => logger.warn(err.getMessage) *> Task.fail(err),
-        _ => Task.succeed(prediction)
-      )
+      .insertClassificationPrediction(prediction).flatMap(_.fold(
+        err => logger.warn(err.getMessage) *> IO.raiseError(err),
+        _ => IO.pure(prediction)
+    ))
   def persistRegressionPrediction(prediction: RegressionPrediction) =
     predictionsRepository
-      .insertRegressionPrediction(prediction)
-      .fold(
-        err => logger.warn(err.getMessage) *> Task.fail(err),
-        _ => Task.succeed(prediction)
+      .insertRegressionPrediction(prediction).flatMap(_.fold(
+        err => logger.warn(err.getMessage) *> IO.raiseError(err),
+        _ => IO.pure(prediction)
       )
+    )
 
-  def publishToStream(prediction: PredictionEvent): Task[Unit] =
+  def publishToStream(prediction: PredictionEvent): IO[Unit] =
     for {
-      _ <- pubSubService.fold[Task[Unit]](Task.unit)(
+      _ <- pubSubService.fold[IO[Unit]](IO.unit)(
         _.publish(prediction)(PredictionEventSerializer.encoder)
       )
       _ <- publishPredictionEventToKinesis(prediction)
@@ -71,12 +74,12 @@ class PredictionsService(
         config.kinesis.predictionsStream,
         prediction.projectId
       )(PredictionEventSerializer.encoder)
-    } else Task.unit
+    } else IO.unit
 
-  def noAlgorithm(): Task[Prediction] = {
+  def noAlgorithm(): IO[Prediction] = {
     val message = "No algorithms are setup"
     logger.info(message).flatMap { _ =>
-      Task.fail(
+      IO.raiseError(
         NoAlgorithmAvailable(message)
       )
     }
@@ -85,21 +88,21 @@ class PredictionsService(
   def predictRegressionWithProjectPolicy(
       features: Features,
       project: RegressionProject
-  ): Task[Prediction] =
+  ): IO[Prediction] =
     project.policy
       .take()
-      .fold[Task[Prediction]] {
+      .fold[IO[Prediction]] {
         val message = s"There is no algorithm in the project ${project.id}"
-        logger.warn(message) *> Task.fail(
+        logger.warn(message) *> IO.raiseError(
           NoAlgorithmAvailable(message)
         )
       } { algorithmId =>
         project.algorithmsMap
           .get(algorithmId)
-          .fold[Task[Prediction]] {
+          .fold[IO[Prediction]] {
             val message =
               s"The algorithm $algorithmId does not exist in the project ${project.id}"
-            logger.debug(message) *> Task.fail(
+            logger.debug(message) *> IO.raiseError(
               AlgorithmDoesNotExist(algorithmId)
             )
           }(
@@ -115,21 +118,21 @@ class PredictionsService(
   def predictClassificationWithProjectPolicy(
       features: Features,
       project: ClassificationProject
-  ): Task[Prediction] =
+  ): IO[Prediction] =
     project.policy
       .take()
-      .fold[Task[Prediction]] {
+      .fold[IO[Prediction]] {
         val message = s"There is no algorithm in the project ${project.id}"
-        logger.warn(message) *> Task.fail(
+        logger.warn(message) *> IO.raiseError(
           NoAlgorithmAvailable(message)
         )
       } { algorithmId =>
         project.algorithmsMap
           .get(algorithmId)
-          .fold[Task[Prediction]] {
+          .fold[IO[Prediction]] {
             val message =
               s"The algorithm $algorithmId does not exist in the project ${project.id}"
-            logger.debug(message) *> Task.fail(
+            logger.debug(message) *> IO.raiseError(
               AlgorithmDoesNotExist(algorithmId)
             )
           }(
@@ -148,7 +151,7 @@ class PredictionsService(
       features: Features,
       local: LocalClassification
   ) = {
-    Task.succeed(
+    IO.pure(
       ClassificationPrediction(
         UUID.randomUUID().toString,
         projectId,
@@ -160,12 +163,13 @@ class PredictionsService(
     )
   }
 
+  import cats.effect.ContextShift
   def predictClassificationWithAlgorithm(
       project: ClassificationProject,
       algorithm: Algorithm,
       features: Features
-  ): Task[ClassificationPrediction] = {
-    val predictionTask = algorithm.backend match {
+  )(implicit cs: ContextShift[IO]): IO[ClassificationPrediction] = {
+    val predictionIO = algorithm.backend match {
       case local: LocalClassification =>
         predictWithLocalClassificationBackend(
           project.id,
@@ -182,15 +186,14 @@ class PredictionsService(
           project.configuration.labels
         )
       case tfBackend: TensorFlowRegressionBackend =>
-        Task.fail(
+        IO.raiseError(
           IncompatibleBackend(
             "TensorFlowRegressionBackend can not do classification, use TensorFlowClassificationBackend instead"
           )
         )
     }
-    predictionTask.flatMap { prediction =>
-      persistClassificationPrediction(prediction) *> Task
-        .succeed(prediction)
+    predictionIO.flatMap { prediction =>
+      persistClassificationPrediction(prediction) *> IO.pure(prediction)
     }
   }
 
@@ -198,10 +201,10 @@ class PredictionsService(
       project: RegressionProject,
       algorithm: Algorithm,
       features: Features
-  ): Task[RegressionPrediction] = {
-    val predictionTask = algorithm.backend match {
+  ): IO[RegressionPrediction] = {
+    val predictionIO = algorithm.backend match {
       case local: LocalClassification =>
-        Task.fail(
+        IO.raiseError(
           IncompatibleBackend("LocalClassification can not do regression")
         )
       case tfBackend: TensorFlowRegressionBackend =>
@@ -212,15 +215,14 @@ class PredictionsService(
           tfBackend
         )
       case tfBackend: TensorFlowClassificationBackend =>
-        Task.fail(
+        IO.raiseError(
           IncompatibleBackend(
             "TensorFlowRegressionBackend can not do regression, use TensorFlowClassificationBackend instead"
           )
         )
     }
-    predictionTask.flatMap { prediction =>
-      persistRegressionPrediction(prediction) *> Task
-        .succeed(prediction)
+    predictionIO.flatMap { prediction =>
+      persistRegressionPrediction(prediction) *> IO.pure(prediction)
     }
   }
 
@@ -263,11 +265,13 @@ class PredictionsService(
       projectId: String,
       features: Features,
       optionalAlgorithmId: Option[String]
-  ) = projectFactory.get(projectId).flatMap {
-    case project: ClassificationProject =>
+  ): IO[Prediction] = projectFactory.get(projectId).flatMap {
+    case Right(project: ClassificationProject) =>
       predictForClassificationProject(project, features, optionalAlgorithmId)
-    case project: RegressionProject =>
+    case Right(project: RegressionProject) =>
       predictForRegressionProject(project, features, optionalAlgorithmId)
+    case Left(err) =>
+      logger.warn(err.getMessage) *> IO.raiseError(err)
   }
 
   def predictForClassificationProject(
@@ -286,8 +290,8 @@ class PredictionsService(
         algorithmId =>
           project.algorithmsMap
             .get(algorithmId)
-            .fold[Task[Prediction]](
-              Task.fail(
+            .fold[IO[Prediction]](
+              IO.raiseError(
                 AlgorithmDoesNotExist(algorithmId)
               )
             )(
@@ -301,11 +305,11 @@ class PredictionsService(
                       project.configuration.labels,
                       prediction.labels
                     )) {
-                    Task.succeed(prediction)
+                    IO.pure(prediction)
                   } else {
                     val message =
                       s"The labels do not match the configuration of project ${project.id}"
-                    logger.warn(message) *> Task.fail(
+                    logger.warn(message) *> IO.raiseError(
                       LabelsValidationFailed(
                         message
                       )
@@ -317,7 +321,7 @@ class PredictionsService(
     } else {
       val message =
         s"The features do not match the configuration of project ${project.id}"
-      logger.warn(message) *> Task.fail(
+      logger.warn(message) *> IO.raiseError(
         FeaturesValidationFailed(
           message
         )
@@ -341,8 +345,8 @@ class PredictionsService(
         algorithmId =>
           project.algorithmsMap
             .get(algorithmId)
-            .fold[Task[Prediction]](
-              Task.fail(
+            .fold[IO[Prediction]](
+              IO.raiseError(
                 AlgorithmDoesNotExist(algorithmId)
               )
             )(
@@ -353,7 +357,7 @@ class PredictionsService(
     } else {
       val message =
         s"The features do not match the configuration of project ${project.id}"
-      logger.warn(message) *> Task.fail(
+      logger.warn(message) *> IO.raiseError(
         FeaturesValidationFailed(
           message
         )
@@ -422,7 +426,7 @@ class PredictionsService(
       }
     )
 
-  import scalaz.zio.interop.catz._
+  import cats.implicits._
   import doobie.free.connection._
   import cats.effect.implicits._
 
@@ -440,7 +444,7 @@ class PredictionsService(
           addRegressionExample(valueOpt, predictionId, prediction)
       }
       _ <- AsyncConnectionIO.liftIO(
-        Effect[Task].toIO(
+        Effect[IO].toIO(
           publishToStream(
             event
           )

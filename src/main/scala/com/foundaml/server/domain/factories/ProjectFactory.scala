@@ -10,16 +10,16 @@ import com.foundaml.server.domain.repositories.{
   ProjectsRepository
 }
 import com.foundaml.server.infrastructure.logging.IOLogging
-import scalaz.zio.{Task, ZIO}
+import cats.effect.IO
+import cats.implicits._
 
 class ProjectFactory(
     projectsRepository: ProjectsRepository,
     algorithmsRepository: AlgorithmsRepository
 ) extends IOLogging {
-  def get(projectId: String): ZIO[Any, Throwable, Project] = {
-    (projectsRepository.read(projectId) zipPar algorithmsRepository
-      .readForProject(projectId)).flatMap {
-      case (
+  def get(projectId: String): IO[Either[ProjectDataInconsistent, Project]] = {
+    (projectsRepository.read(projectId), algorithmsRepository.readForProject(projectId)).mapN {
+     case (
           (
             id,
             name,
@@ -29,15 +29,15 @@ class ProjectFactory(
           ),
           algorithms
           ) =>
-        Task.succeed(
-          ClassificationProject(
-            id,
-            name,
-            projectConfiguration,
-            algorithms,
-            policy
+          Right(
+            ClassificationProject(
+              id,
+              name,
+              projectConfiguration,
+              algorithms,
+              policy
+            )
           )
-        )
       case (
           (
             id,
@@ -48,21 +48,17 @@ class ProjectFactory(
           ),
           algorithms
           ) =>
-        Task.succeed(
-          RegressionProject(
-            id,
-            name,
-            projectConfiguration,
-            algorithms,
-            policy
+          Right(
+            RegressionProject(
+              id,
+              name,
+              projectConfiguration,
+              algorithms,
+              policy
+            )
           )
-        )
       case projectData =>
-        logger.warn(
-          s"Could not build project with factory, data is $projectData"
-        ) *> Task
-          .fail(ProjectDataInconsistent(projectId))
+        Left(ProjectDataInconsistent(projectId))
     }
   }
-
 }

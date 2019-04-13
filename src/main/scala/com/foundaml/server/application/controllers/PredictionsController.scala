@@ -4,8 +4,8 @@ import cats.Functor
 import org.http4s.{HttpRoutes, HttpService}
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
-import scalaz.zio.Task
-import scalaz.zio.interop.catz._
+import cats.effect.IO
+import cats.implicits._
 import com.foundaml.server.application.controllers.requests._
 import com.foundaml.server.domain.models.errors._
 import com.foundaml.server.domain.services.PredictionsService
@@ -17,15 +17,15 @@ import com.foundaml.server.infrastructure.serialization.{
 
 class PredictionsController(
     predictionsService: PredictionsService
-) extends Http4sDsl[Task]
+) extends Http4sDsl[IO]
     with IOLogging {
 
-  val service: HttpRoutes[Task] = {
-    HttpRoutes.of[Task] {
+  val service: HttpRoutes[IO] = {
+    HttpRoutes.of[IO] {
       case req @ POST -> Root =>
         (for {
           predictionRequest <- req.as[PredictionRequest](
-            Functor[Task],
+            Functor[IO],
             PredictionRequestEntitySerializer.requestDecoder
           )
           prediction <- predictionsService.predict(
@@ -42,13 +42,13 @@ class PredictionsController(
               PredictionSerializer.encodeJson(prediction)
             )
           }
-          .catchAll {
+          .handleErrorWith {
             case AlgorithmDoesNotExist(algorithmId) =>
               NotFound(s"the algorithm $algorithmId does not exist")
             case PredictionAlreadyExist(predictionId) =>
               Conflict(s"The prediction $predictionId already exists")
             case BackendError(message) =>
-              InternalServerError(message)
+              logger.warn(s"An error occurred in prediction: $message") *> InternalServerError(message)
             case FeaturesValidationFailed(message) =>
               FailedDependency(message)
             case LabelsValidationFailed(message) =>

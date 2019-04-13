@@ -24,7 +24,7 @@ import com.foundaml.server.test.{
   TestDatabase
 }
 import scalaz.zio.DefaultRuntime
-import scalaz.zio.interop.catz._
+import cats.implicits._
 
 import scala.util.Try
 

@@ -2,14 +2,14 @@ package com.foundaml.server.domain.repositories
 
 import doobie._
 import doobie.implicits._
-import scalaz.zio.Task
-import scalaz.zio.interop.catz._
+import cats.effect.IO
+import cats.implicits._
 import com.foundaml.server.domain.models._
 import com.foundaml.server.domain.models.errors.ProjectAlreadyExists
 import com.foundaml.server.infrastructure.serialization._
 import doobie.postgres.sqlstate
 
-class ProjectsRepository(implicit xa: Transactor[Task]) {
+class ProjectsRepository(implicit xa: Transactor[IO]) {
 
   implicit val problemTypeGet: Get[Either[io.circe.Error, ProblemType]] =
     Get[String].map(ProblemTypeSerializer.decodeJson)

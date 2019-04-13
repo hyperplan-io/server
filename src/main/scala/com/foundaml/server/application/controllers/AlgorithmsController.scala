@@ -4,8 +4,8 @@ import cats.Functor
 import org.http4s.{HttpRoutes, HttpService}
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
-import scalaz.zio.Task
-import scalaz.zio.interop.catz._
+import cats.effect.IO
+import cats.implicits._
 import com.foundaml.server.application.controllers.requests._
 import com.foundaml.server.domain.models.errors.{
   AlgorithmAlreadyExists,
@@ -17,14 +17,14 @@ import com.foundaml.server.infrastructure.serialization._
 
 class AlgorithmsController(
     algorithmsService: AlgorithmsService
-) extends Http4sDsl[Task] {
+) extends Http4sDsl[IO] {
 
-  val service: HttpRoutes[Task] = {
-    HttpRoutes.of[Task] {
+  val service: HttpRoutes[IO] = {
+    HttpRoutes.of[IO] {
       case req @ POST -> Root =>
         (for {
           request <- req.as[PostAlgorithmRequest](
-            Functor[Task],
+            Functor[IO],
             PostAlgorithmRequestEntitySerializer.entityDecoder
           )
           algorithm <- algorithmsService.createAlgorithm(
@@ -36,7 +36,7 @@ class AlgorithmsController(
           .flatMap { algorithm =>
             Created(AlgorithmsSerializer.encodeJson(algorithm))
           }
-          .catchAll {
+          .handleErrorWith {
             case AlgorithmAlreadyExists(algorithmId) =>
               Conflict(s"Algorithm $algorithmId already exists")
             case IncompatibleFeatures(message) =>

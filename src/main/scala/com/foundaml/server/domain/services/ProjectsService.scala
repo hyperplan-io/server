@@ -7,7 +7,9 @@ import com.foundaml.server.domain.models.features._
 import com.foundaml.server.domain.repositories.ProjectsRepository
 import com.foundaml.server.infrastructure.logging.IOLogging
 import doobie.util.invariant.UnexpectedEnd
-import scalaz.zio.{Task, ZIO}
+
+import cats.effect.IO
+import cats.implicits._
 
 class ProjectsService(
     projectsRepository: ProjectsRepository,
@@ -64,7 +66,7 @@ class ProjectsService(
       id: String,
       name: String,
       configuration: ProjectConfiguration
-  ): ZIO[Any, Throwable, Project] = {
+  ): IO[Project] = {
     val project = configuration match {
       case classificationConfiguration: ClassificationConfiguration =>
         ClassificationProject(
@@ -91,22 +93,22 @@ class ProjectsService(
     }
 
     for {
-      _ <- errors.headOption.fold[Task[Unit]](
-        Task.succeed(Unit)
+      _ <- errors.headOption.fold[IO[Unit]](
+        IO.pure(Unit)
       )(
-        err => logger.warn(err.getMessage) *> Task.fail(err)
+        err => logger.warn(err.getMessage) *> IO.raiseError(err)
       )
       insertResult <- projectsRepository.insert(project)
       result <- insertResult.fold(
-        err => logger.warn(err.getMessage) *> Task.fail(err),
-        _ => Task.succeed(project)
+        err => logger.warn(err.getMessage) *> IO.raiseError(err),
+        _ => IO.pure(project)
       )
     } yield result
   }
 
   def readProject(id: String) =
-    projectFactory.get(id).catchAll {
-      case UnexpectedEnd => Task.fail(ProjectDoesNotExist(id))
+    projectFactory.get(id).handleErrorWith {
+      case UnexpectedEnd => IO.raiseError(ProjectDoesNotExist(id))
     }
 
 }
