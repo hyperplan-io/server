@@ -21,31 +21,16 @@ import com.foundaml.server.infrastructure.streaming.{
   PubSubService
 }
 import cats.implicits._
+import cats.effect.IOApp
 
 import scala.concurrent.duration.{FiniteDuration, NANOSECONDS, TimeUnit}
 import scala.util.{Left, Right}
 import pureconfig.generic.auto._
 
-import cats.effect.IOApp
+import scala.concurrent.ExecutionContext.Implicits.global
+
 object Main extends IOApp with IOLogging {
 
-  /*
-  implicit val timer: Timer[IO] = new Timer[IO] {
-    val zioClock = Clock.Live.clock
-
-    override def clock: effect.Clock[IO] = new effect.Clock[IO] {
-      override def realTime(unit: TimeUnit) =
-        zioClock.nanoTime.map(unit.convert(_, NANOSECONDS))
-
-      override def monotonic(unit: TimeUnit) = zioClock.currentTime(unit)
-    }
-
-    override def sleep(duration: FiniteDuration): IO[Unit] =
-      zioClock.sleep(Duration.fromScala(duration))
-  }
-   */
-
-  import scala.concurrent.ExecutionContext.Implicits.global
 
   override def main(args: Array[String]): Unit =
     run(args.toList).runAsync(_ => IO(())).unsafeRunSync()

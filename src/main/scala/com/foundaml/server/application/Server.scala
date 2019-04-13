@@ -29,22 +29,6 @@ import org.http4s.server.Router
 object Server {
   val port: Int = envOrNone("HTTP_PORT").fold(9090)(_.toInt)
 
-  /*
-  implicit val timer: Timer[IO] = new Timer[IO] {
-    val zioClock = Clock.Live.clock
-
-    override def clock: effect.Clock[IO] = new effect.Clock[IO] {
-      override def realTime(unit: TimeUnit) =
-        zioClock.nanoTime.map(unit.convert(_, NANOSECONDS))
-
-      override def monotonic(unit: TimeUnit) = zioClock.currentTime(unit)
-    }
-
-    override def sleep(duration: FiniteDuration): IO[Unit] =
-      zioClock.sleep(Duration.fromScala(duration))
-  }
-   */
-
   import org.http4s.implicits._
 
   import cats.effect.ContextShift

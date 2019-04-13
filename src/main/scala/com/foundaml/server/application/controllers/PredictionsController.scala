@@ -2,6 +2,7 @@ package com.foundaml.server.application.controllers
 
 import cats.Functor
 import org.http4s.{HttpRoutes, HttpService}
+import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
 import cats.effect.IO
