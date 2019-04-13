@@ -1,6 +1,5 @@
 val Http4sVersion = "0.20.0-M5"
 val Specs2Version = "4.1.0"
-val ScalazZIOVersion = "1.0-RC1"
 val circeVersion = "0.11.1"
 val DoobieVersion = "0.7.0-M3"
 
