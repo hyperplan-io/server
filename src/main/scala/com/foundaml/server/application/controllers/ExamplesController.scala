@@ -3,6 +3,7 @@ package com.foundaml.server.application.controllers
 import com.foundaml.server.domain.models.errors.LabelNotFound
 import com.foundaml.server.domain.services.PredictionsService
 import com.foundaml.server.infrastructure.serialization.events.PredictionEventSerializer
+import com.foundaml.server.infrastructure.logging.IOLogging
 import org.http4s.HttpRoutes
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
@@ -11,7 +12,8 @@ import cats.implicits._
 
 class ExamplesController(
     predictionsService: PredictionsService
-) extends Http4sDsl[IO] {
+) extends Http4sDsl[IO]
+    with IOLogging {
 
   object ValueIdMatcher extends OptionalQueryParamDecoderMatcher[Float]("value")
   object LabelIdMatcher
@@ -33,6 +35,10 @@ class ExamplesController(
           .handleErrorWith {
             case LabelNotFound(_) =>
               NotFound(s"The label $labelId does not exist")
+            case err =>
+              logger.error(s"Unhandled error: ${err.getMessage}") *> InternalServerError(
+                "unknown error"
+              )
           }
     }
   }

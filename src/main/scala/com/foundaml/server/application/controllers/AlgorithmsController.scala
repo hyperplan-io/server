@@ -40,14 +40,21 @@ class AlgorithmsController(
           }
           .handleErrorWith {
             case AlgorithmAlreadyExists(algorithmId) =>
-              Conflict(s"Algorithm $algorithmId already exists")
+              logger.warn(s"The algorithm $algorithmId already exists") *> Conflict(
+                s"Algorithm $algorithmId already exists"
+              )
             case IncompatibleFeatures(message) =>
-              BadRequest(message)
+              logger.warn(
+                s"The features of this algorithm are not compatible with the project"
+              ) *> BadRequest(message)
             case IncompatibleLabels(message) =>
-              BadRequest(message)
+              logger.warn(
+                s"The labels of this algorithm are not compatible with the project"
+              ) *> BadRequest(message)
             case err =>
-              logger.error(s"Unhandled error: ${err.getMessage}") *> IO
-                .raiseError(err)
+              logger.error(s"Unhandled error: ${err.getMessage}") *> InternalServerError(
+                "Unhandled error"
+              )
           }
     }
   }

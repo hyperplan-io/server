@@ -164,10 +164,7 @@ class AlgorithmsService(
               insertResult <- algorithmsRepository.insert(algorithm)
               result <- insertResult.fold(
                 err => {
-                  logger.warn(
-                    s"An error occurred while inserting an algorithm: ${err.getMessage}"
-                  ) *>
-                    IO.raiseError(err)
+                  IO.raiseError(err)
                 },
                 _ => IO.pure(algorithm)
               )

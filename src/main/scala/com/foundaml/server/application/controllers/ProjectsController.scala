@@ -4,6 +4,7 @@ import com.foundaml.server.application.controllers.requests._
 import com.foundaml.server.domain.models.errors._
 import com.foundaml.server.domain.services.ProjectsService
 import com.foundaml.server.infrastructure.serialization._
+import com.foundaml.server.infrastructure.logging.IOLogging
 import org.http4s.{HttpRoutes, HttpService}
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
@@ -14,7 +15,8 @@ import cats.implicits._
 
 class ProjectsController(
     projectsService: ProjectsService
-) extends Http4sDsl[IO] {
+) extends Http4sDsl[IO]
+    with IOLogging {
 
   val service: HttpRoutes[IO] = {
 
@@ -42,7 +44,9 @@ class ProjectsController(
             case FeaturesConfigurationError(message) =>
               BadRequest(message)
             case err =>
-              InternalServerError("An unknown error occurred")
+              logger.error(s"Unhandled error: ${err.getMessage}") *> InternalServerError(
+                "An unknown error occurred"
+              )
           }
 
       case GET -> Root / projectId =>
@@ -66,7 +70,9 @@ class ProjectsController(
                 s"The project $projectId has inconsistent data"
               )
             case err =>
-              InternalServerError("An unknown error occurred")
+              logger.error(s"Unhandled error: ${err.getMessage}") *> InternalServerError(
+                "An unknown error occurred"
+              )
           }
     }
   }
