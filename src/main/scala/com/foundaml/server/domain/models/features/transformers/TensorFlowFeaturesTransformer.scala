@@ -26,6 +26,17 @@ case class TensorFlowFeaturesTransformer(
           TensorFlowIntVectorFeature(field, value)
         case (StringVectorFeature(value), field) =>
           TensorFlowStringVectorFeature(field, value)
+        case (EmptyVectorFeature, field) =>
+          TensorFlowEmptyVectorFeature(field)
+        case (IntVector2dFeature(values), field) =>
+          TensorFlowIntVector2dFeature(field, values)
+        case (FloatVector2dFeature(values), field) =>
+          TensorFlowFloatVector2dFeature(field, values)
+        case (StringVector2dFeature(values), field) =>
+          TensorFlowStringVector2dFeature(field, values)
+        case (EmptyVector2dFeature, field) =>
+          TensorFlowEmptyVectorFeature(field)
+
       }
 
       Right(TensorFlowFeatures(signatureName, examples))

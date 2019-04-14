@@ -27,6 +27,21 @@ object TensorFlowFeaturesSerializer {
             Some(key -> Json.fromValues(values.map(Json.fromInt)))
           case TensorFlowStringVectorFeature(key, values) =>
             Some(key -> Json.fromValues(values.map(Json.fromString)))
+          case TensorFlowEmptyVectorFeature(key) =>
+            Some(key -> Json.fromValues(Nil))
+          case TensorFlowIntVector2dFeature(key, values2d) =>
+            Some(key -> Json.fromValues(values2d.map { v =>
+              Json.fromValues(v.map(Json.fromInt))
+            }))
+          case TensorFlowFloatVector2dFeature(key, values2d) =>
+            Some(key -> Json.fromValues(values2d.map { v =>
+              Json.fromValues(v.map(Json.fromFloatOrNull))
+            }))
+          case TensorFlowStringVector2dFeature(key, values2d) =>
+            Some(key -> Json.fromValues(values2d.map { v =>
+              Json.fromValues(v.map(Json.fromString))
+            }))
+
         })))
       )
 

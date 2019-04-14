@@ -42,17 +42,67 @@ object FeaturesSerializer {
       case IntVectorFeature(values) => Json.fromValues(values.map(Json.fromInt))
       case StringVectorFeature(values) =>
         Json.fromValues(values.map(Json.fromString))
+      case EmptyVectorFeature => Json.fromValues(Nil)
+      case FloatVector2dFeature(values2d) =>
+        Json.fromValues(values2d.map { v =>
+          Json.fromValues(v.map(Json.fromFloatOrNull))
+        })
+      case IntVector2dFeature(values2d) =>
+        Json.fromValues(values2d.map { v =>
+          Json.fromValues(v.map(Json.fromInt))
+        })
+      case StringVector2dFeature(values2d) =>
+        Json.fromValues(values2d.map { v =>
+          Json.fromValues(v.map(Json.fromString))
+        })
+
+      case EmptyVector2dFeature => Json.fromValues(Nil)
     }
 
-    def parseFeature: Decoder[Feature] = (c: HCursor) => {
-      if (c.value.isNumber) {
-        if (c.value.noSpaces.contains(".")) {
-          c.value.as[Float].map(d => FloatFeature(d))
+    import io.circe.DecodingFailure
+    def computeType(value: Json): Either[DecodingFailure, Feature] =
+      if (value.isNumber) {
+        if (value.noSpaces.contains(".")) {
+          value.as[Float].map(d => FloatFeature(d))
         } else {
-          c.value.as[Int].map(d => IntFeature(d))
+          value.as[Int].map(d => IntFeature(d))
         }
       } else {
-        c.value.as[String].map(s => StringFeature(s))
+        value.as[String].map(s => StringFeature(s))
+      }
+
+    def parseFeature: Decoder[Feature] = (c: HCursor) => {
+      if (c.value.isArray) {
+        c.value.asArray.headOption.fold[Decoder.Result[Feature]](
+          Right(EmptyVectorFeature)
+        )(
+          listHead =>
+            listHead.headOption.fold[Decoder.Result[Feature]](
+              Right(EmptyVectorFeature)
+            ) { head =>
+              computeType(head) match {
+                case Right(StringFeature(_)) =>
+                  c.value
+                    .as[List[String]]
+                    .map(values => StringVectorFeature(values))
+                case Right(FloatFeature(_)) =>
+                  c.value
+                    .as[List[Float]]
+                    .map(values => FloatVectorFeature(values))
+                case Right(IntFeature(_)) =>
+                  c.value.as[List[Int]].map(values => IntVectorFeature(values))
+                case Right(_) =>
+                  Decoder.failedWithMessage[Feature](
+                    "Vectors of dimension > 2 are not supported"
+                  )(c)
+                case Left(_) =>
+                  Decoder.failedWithMessage[Feature]("Unrecognized type")(c)
+
+              }
+            }
+        )
+      } else {
+        computeType(c.value)
       }
     }
 
@@ -84,16 +134,20 @@ object FeaturesSerializer {
                       .map(values => StringVectorFeature(values))
                   case FloatVectorFeature(values) =>
                     c.value
-                      .as[List[Float]]
-                      .map(values => FloatVectorFeature(values))
+                      .as[List[List[Float]]]
+                      .map(values => FloatVector2dFeature(values))
                   case IntVectorFeature(values) =>
                     c.value
-                      .as[List[Int]]
-                      .map(values => IntVectorFeature(values))
+                      .as[List[List[Int]]]
+                      .map(values => IntVector2dFeature(values))
                   case StringVectorFeature(values) =>
                     c.value
-                      .as[List[String]]
-                      .map(values => StringVectorFeature(values))
+                      .as[List[List[String]]]
+                      .map(values => StringVector2dFeature(values))
+                  case _ =>
+                    Decoder.failedWithMessage[Feature](
+                      "Vectors of dimension > 2 are not supported"
+                    )(c)
                 }
               )
             }
@@ -108,10 +162,6 @@ object FeaturesSerializer {
 
   object Implicits {
     import FeatureSerializer._
-    import io.circe.generic.extras.Configuration
-
-    implicit val discriminator: Configuration =
-      Configuration.default.withDiscriminator("class")
 
     implicit val decoder: Decoder[List[Feature]] =
       Decoder.decodeList[Feature](featureDecoder)

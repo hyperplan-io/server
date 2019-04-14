@@ -40,7 +40,10 @@ class ProjectsService(
           StringFeature.featureClass,
           FloatVectorFeature.featureClass,
           IntVectorFeature.featureClass,
-          StringVectorFeature.featureClass
+          StringVectorFeature.featureClass,
+          FloatVector2dFeature.featureClass,
+          IntVector2dFeature.featureClass,
+          StringVector2dFeature.featureClass
         )
 
         featureConfigurations.flatMap { featureConfiguration =>

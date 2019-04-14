@@ -15,6 +15,15 @@ case class TensorFlowIntVectorFeature(key: String, value: List[Int])
     extends TensorFlowFeature
 case class TensorFlowStringVectorFeature(key: String, value: List[String])
     extends TensorFlowFeature
+case class TensorFlowEmptyVectorFeature(key: String) extends TensorFlowFeature
+case class TensorFlowIntVector2dFeature(key: String, value: List[List[Int]])
+    extends TensorFlowFeature
+case class TensorFlowFloatVector2dFeature(key: String, value: List[List[Float]])
+    extends TensorFlowFeature
+case class TensorFlowStringVector2dFeature(
+    key: String,
+    value: List[List[String]]
+) extends TensorFlowFeature
 
 case class TensorFlowFeatures(
     signatureName: String,
