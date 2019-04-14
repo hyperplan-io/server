@@ -4,6 +4,7 @@ import java.util.UUID
 
 import com.foundaml.server.domain.factories.ProjectFactory
 import com.foundaml.server.domain._
+import com.foundaml.server.domain.models._
 import com.foundaml.server.domain.models.errors.FeaturesValidationFailed
 import com.foundaml.server.domain.services.PredictionsService
 import org.scalatest._
@@ -62,7 +63,7 @@ class PredictionsServiceSpec extends FlatSpec with TestDatabase {
     projectsRepository,
     algorithmsRepository
   )
-  val predictionsService =
+  val predictionsService: PredictionsService =
     new PredictionsService(
       projectsRepository,
       predictionsRepository,
@@ -102,4 +103,347 @@ class PredictionsServiceSpec extends FlatSpec with TestDatabase {
     }
 
   }
+
+  it should "validate int features" in {
+
+    val goodConfig = FeaturesConfiguration(
+      List(
+        FeatureConfiguration(
+          "myInt",
+          "Int",
+          "an example of an int"
+        )
+      )
+    )
+    val features = List(IntFeature(1))
+    assert(
+      predictionsService.validateFeatures(
+        goodConfig,
+        features
+      ) == true
+    )
+
+    val badConfig = FeaturesConfiguration(
+      List(
+        FeatureConfiguration(
+          "myInt",
+          "int",
+          "an example of an int"
+        )
+      )
+    )
+    assert(
+      predictionsService.validateFeatures(
+        badConfig,
+        features
+      ) == false
+    )
+  }
+
+  it should "validate float features" in {
+
+    val goodConfig = FeaturesConfiguration(
+      List(
+        FeatureConfiguration(
+          "myFloat",
+          "Float",
+          "an example of a float"
+        )
+      )
+    )
+    val features = List(FloatFeature(1.0f))
+    assert(
+      predictionsService.validateFeatures(
+        goodConfig,
+        features
+      ) == true
+    )
+
+    val badConfig = FeaturesConfiguration(
+      List(
+        FeatureConfiguration(
+          "myFloat",
+          "float",
+          "an example of a float"
+        )
+      )
+    )
+    assert(
+      predictionsService.validateFeatures(
+        badConfig,
+        features
+      ) == false
+    )
+  }
+
+  it should "validate string features" in {
+
+    val goodConfig = FeaturesConfiguration(
+      List(
+        FeatureConfiguration(
+          "myString",
+          "String",
+          "an example of a string"
+        )
+      )
+    )
+    val features = List(StringFeature("hello"))
+    assert(
+      predictionsService.validateFeatures(
+        goodConfig,
+        features
+      ) == true
+    )
+
+    val badConfig = FeaturesConfiguration(
+      List(
+        FeatureConfiguration(
+          "myString",
+          "string",
+          "an example of a string"
+        )
+      )
+    )
+    assert(
+      predictionsService.validateFeatures(
+        badConfig,
+        features
+      ) == false
+    )
+  }
+
+  it should "validate int vector features" in {
+
+    val goodConfig = FeaturesConfiguration(
+      List(
+        FeatureConfiguration(
+          "myIntVector",
+          "IntVector",
+          "an example of a int vector"
+        )
+      )
+    )
+    val features = List(IntVectorFeature(List(1, 2, 3)))
+    assert(
+      predictionsService.validateFeatures(
+        goodConfig,
+        features
+      ) == true
+    )
+
+    val badConfig = FeaturesConfiguration(
+      List(
+        FeatureConfiguration(
+          "myIntVector",
+          "intvector",
+          "an example of a int vector"
+        )
+      )
+    )
+    assert(
+      predictionsService.validateFeatures(
+        badConfig,
+        features
+      ) == false
+    )
+  }
+
+  it should "validate float vector features" in {
+
+    val goodConfig = FeaturesConfiguration(
+      List(
+        FeatureConfiguration(
+          "myFloatVector",
+          "FloatVector",
+          "an example of a float vector"
+        )
+      )
+    )
+    val features = List(FloatVectorFeature(List(1.0f, 2.0f, 3.0f)))
+    assert(
+      predictionsService.validateFeatures(
+        goodConfig,
+        features
+      ) == true
+    )
+
+    val badConfig = FeaturesConfiguration(
+      List(
+        FeatureConfiguration(
+          "myFloatVector",
+          "floatvector",
+          "an example of a float vector"
+        )
+      )
+    )
+    assert(
+      predictionsService.validateFeatures(
+        badConfig,
+        features
+      ) == false
+    )
+  }
+
+  it should "validate string vector features" in {
+
+    val goodConfig = FeaturesConfiguration(
+      List(
+        FeatureConfiguration(
+          "myStringVector",
+          "StringVector",
+          "an example of a string vector"
+        )
+      )
+    )
+    val features = List(StringVectorFeature(List("hello", "bye")))
+    assert(
+      predictionsService.validateFeatures(
+        goodConfig,
+        features
+      ) == true
+    )
+
+    val badConfig = FeaturesConfiguration(
+      List(
+        FeatureConfiguration(
+          "myStringVector",
+          "stringvector",
+          "an example of a string vector"
+        )
+      )
+    )
+    assert(
+      predictionsService.validateFeatures(
+        badConfig,
+        features
+      ) == false
+    )
+  }
+
+  it should "validate int vector2d features" in {
+
+    val goodConfig = FeaturesConfiguration(
+      List(
+        FeatureConfiguration(
+          "myIntVector2d",
+          "IntVector2d",
+          "an example of a int vector2d"
+        )
+      )
+    )
+    val features = List(
+      IntVector2dFeature(
+        List(
+          List(1, 2, 3),
+          List(4, 5, 6)
+        )
+      )
+    )
+    assert(
+      predictionsService.validateFeatures(
+        goodConfig,
+        features
+      ) == true
+    )
+
+    val badConfig = FeaturesConfiguration(
+      List(
+        FeatureConfiguration(
+          "myIntVector2d",
+          "intvector2d",
+          "an example of a int vector2d"
+        )
+      )
+    )
+    assert(
+      predictionsService.validateFeatures(
+        badConfig,
+        features
+      ) == false
+    )
+  }
+
+  it should "validate float vector2d features" in {
+
+    val goodConfig = FeaturesConfiguration(
+      List(
+        FeatureConfiguration(
+          "myFloatVector2d",
+          "FloatVector2d",
+          "an example of a float vector2d"
+        )
+      )
+    )
+    val features = List(
+      FloatVector2dFeature(
+        List(
+          List(1, 0f, 2.0f, 3.0f),
+          List(4.0f, 5.0f, 6.0f)
+        )
+      )
+    )
+    assert(
+      predictionsService.validateFeatures(
+        goodConfig,
+        features
+      ) == true
+    )
+
+    val badConfig = FeaturesConfiguration(
+      List(
+        FeatureConfiguration(
+          "myFloatVector2d",
+          "floatvector2d",
+          "an example of a float vector2d"
+        )
+      )
+    )
+    assert(
+      predictionsService.validateFeatures(
+        badConfig,
+        features
+      ) == false
+    )
+  }
+
+  it should "validate string vector2d features" in {
+
+    val goodConfig = FeaturesConfiguration(
+      List(
+        FeatureConfiguration(
+          "myStringVector2d",
+          "StringVector2d",
+          "an example of a string vector2d"
+        )
+      )
+    )
+    val features = List(
+      StringVector2dFeature(
+        List(List("hello", "bye"))
+      )
+    )
+    assert(
+      predictionsService.validateFeatures(
+        goodConfig,
+        features
+      ) == true
+    )
+
+    val badConfig = FeaturesConfiguration(
+      List(
+        FeatureConfiguration(
+          "myStringVector2d",
+          "stringvector2d",
+          "an example of a string vector2d"
+        )
+      )
+    )
+    assert(
+      predictionsService.validateFeatures(
+        badConfig,
+        features
+      ) == false
+    )
+  }
+
 }
