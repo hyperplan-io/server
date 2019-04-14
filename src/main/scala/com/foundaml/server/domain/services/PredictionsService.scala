@@ -246,13 +246,25 @@ class PredictionsService(
           case (IntFeature.featureClass, IntFeature(_)) => true
           case (StringFeature.featureClass, StringFeature(_)) => true
           case (FloatVectorFeature.featureClass, FloatVectorFeature(_)) => true
+          case (FloatVectorFeature.featureClass, EmptyVectorFeature) => true
           case (IntVectorFeature.featureClass, IntVectorFeature(_)) => true
+          case (IntVectorFeature.featureClass, EmptyVectorFeature) => true
           case (StringVectorFeature.featureClass, StringVectorFeature(_)) =>
             true
-          case _ => false
+          case (StringVectorFeature.featureClass, EmptyVectorFeature) => true
+          case (FloatVector2dFeature.featureClass, FloatVector2dFeature(_)) =>
+            true
+          case (FloatVector2dFeature.featureClass, EmptyVectorFeature) => true
+          case (IntVector2dFeature.featureClass, IntVector2dFeature(_)) => true
+          case (IntVector2dFeature.featureClass, EmptyVectorFeature) => true
+          case (StringVector2dFeature.featureClass, StringVector2dFeature(_)) =>
+            true
+          case (StringVector2dFeature.featureClass, EmptyVector2dFeature) =>
+            true
+          case (config, feature) =>
+            false
         }
         .reduce(_ & _)
-
       sameSize && sameClasses
   }
 
