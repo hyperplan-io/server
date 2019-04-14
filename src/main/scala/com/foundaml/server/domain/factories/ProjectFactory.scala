@@ -10,15 +10,18 @@ import com.foundaml.server.domain.repositories.{
   ProjectsRepository
 }
 import com.foundaml.server.infrastructure.logging.IOLogging
-import scalaz.zio.{Task, ZIO}
+import cats.effect.IO
+import cats.implicits._
 
 class ProjectFactory(
     projectsRepository: ProjectsRepository,
     algorithmsRepository: AlgorithmsRepository
 ) extends IOLogging {
-  def get(projectId: String): ZIO[Any, Throwable, Project] = {
-    (projectsRepository.read(projectId) zipPar algorithmsRepository
-      .readForProject(projectId)).flatMap {
+  def get(projectId: String): IO[Either[ProjectDataInconsistent, Project]] = {
+    (
+      projectsRepository.read(projectId),
+      algorithmsRepository.readForProject(projectId)
+    ).mapN {
       case (
           (
             id,
@@ -29,7 +32,7 @@ class ProjectFactory(
           ),
           algorithms
           ) =>
-        Task.succeed(
+        Right(
           ClassificationProject(
             id,
             name,
@@ -48,7 +51,7 @@ class ProjectFactory(
           ),
           algorithms
           ) =>
-        Task.succeed(
+        Right(
           RegressionProject(
             id,
             name,
@@ -58,11 +61,7 @@ class ProjectFactory(
           )
         )
       case projectData =>
-        logger.warn(
-          s"Could not build project with factory, data is $projectData"
-        ) *> Task
-          .fail(ProjectDataInconsistent(projectId))
+        Left(ProjectDataInconsistent(projectId))
     }
   }
-
 }

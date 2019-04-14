@@ -1,6 +1,5 @@
 val Http4sVersion = "0.20.0-M5"
 val Specs2Version = "4.1.0"
-val ScalazZIOVersion = "1.0-RC1"
 val circeVersion = "0.11.1"
 val DoobieVersion = "0.7.0-M3"
 
@@ -24,9 +23,8 @@ lazy val root = (project in file("."))
       "org.http4s" %% "http4s-circe" % Http4sVersion,
       "org.http4s" %% "http4s-dsl" % Http4sVersion,
       "org.specs2" %% "specs2-core" % Specs2Version % "test",
-      "org.scalaz" %% "scalaz-zio" % ScalazZIOVersion,
-      "org.scalaz" %% "scalaz-zio-interop-cats" % ScalazZIOVersion,
-      "org.scalaz" %% "scalaz-zio-interop-future" % ScalazZIOVersion,
+      "org.typelevel" %% "cats-core" % "1.6.0",
+      "org.typelevel" %% "cats-effect" % "1.2.0",
       "io.circe" %% "circe-core" % circeVersion,
       "io.circe" %% "circe-generic" % circeVersion,
       "io.circe" %% "circe-generic-extras" % circeVersion,

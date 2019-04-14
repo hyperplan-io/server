@@ -7,15 +7,11 @@ import com.foundaml.server.domain.models.labels.{
   ClassificationLabel,
   TensorFlowClassificationLabels
 }
-import scalaz.zio.DefaultRuntime
 import org.scalatest.Inside.inside
 import org.scalatest._
 import com.foundaml.server.domain.models.labels.transformers.TensorFlowLabelsTransformer
 
-class LabelsTransformerServiceSpec
-    extends FlatSpec
-    with DefaultRuntime
-    with Matchers {
+class LabelsTransformerServiceSpec extends FlatSpec with Matchers {
 
   it should "not accept a label transformer with a different number of arguments than the labels" in {
     val labels1 = TensorFlowClassificationLabels(

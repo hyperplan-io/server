@@ -1,6 +1,6 @@
 package com.foundaml.server.infrastructure.streaming
 
-import scalaz.zio.{IO, Task, ZIO}
+import cats.effect.IO
 import com.amazonaws.auth.{
   AWSCredentialsProvider,
   DefaultAWSCredentialsProviderChain
@@ -18,7 +18,7 @@ class KinesisService(kinesisClient: AmazonKinesis) {
       data: Data,
       streamName: String,
       partitionKey: String
-  )(implicit circeEncoder: io.circe.Encoder[Data]): Task[Unit] = {
+  )(implicit circeEncoder: io.circe.Encoder[Data]): IO[Unit] = {
     val dataJson = circeEncoder(data).noSpaces
     for {
       jsonBytes <- IO(dataJson.getBytes)
@@ -36,7 +36,7 @@ object KinesisService {
 
   def apply(
       region: String
-  ): Task[KinesisService] =
+  ): IO[KinesisService] =
     for {
       credentialsProvider <- getCredentialsProvider
       kinesisClient <- buildKinesisClient(credentialsProvider, region)
@@ -46,7 +46,7 @@ object KinesisService {
   def buildKinesisClient(
       credentialsProvider: AWSCredentialsProvider,
       region: String
-  ): ZIO[Any, Throwable, AmazonKinesis] =
+  ): IO[AmazonKinesis] =
     for {
       builder <- IO(AmazonKinesisClientBuilder.standard())
       builderWithCredentials <- IO(builder.withCredentials(credentialsProvider))

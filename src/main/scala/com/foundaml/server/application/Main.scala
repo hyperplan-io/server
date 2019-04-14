@@ -1,6 +1,6 @@
 package com.foundaml.server.application
 
-import cats.effect
+import cats.effect.IO
 import cats.effect.Timer
 import com.foundaml.server.domain.FoundaMLConfig
 import com.foundaml.server.domain.factories.ProjectFactory
@@ -20,47 +20,33 @@ import com.foundaml.server.infrastructure.streaming.{
   KinesisService,
   PubSubService
 }
-import scalaz.zio.clock.Clock
-import scalaz.zio.duration.Duration
-import scalaz.zio.interop.catz._
-import scalaz.zio.{App, IO, Task, ZIO}
+import cats.implicits._
+import cats.effect.IOApp
 
 import scala.concurrent.duration.{FiniteDuration, NANOSECONDS, TimeUnit}
 import scala.util.{Left, Right}
 import pureconfig.generic.auto._
 
-object Main extends App with IOLogging {
+import scala.concurrent.ExecutionContext.Implicits.global
 
-  implicit val timer: Timer[Task] = new Timer[Task] {
-    val zioClock = Clock.Live.clock
+object Main extends IOApp with IOLogging {
 
-    override def clock: effect.Clock[Task] = new effect.Clock[Task] {
-      override def realTime(unit: TimeUnit) =
-        zioClock.nanoTime.map(unit.convert(_, NANOSECONDS))
+  override def main(args: Array[String]): Unit =
+    run(args.toList).runAsync(_ => IO(())).unsafeRunSync()
 
-      override def monotonic(unit: TimeUnit) = zioClock.currentTime(unit)
-    }
-
-    override def sleep(duration: FiniteDuration): Task[Unit] =
-      zioClock.sleep(Duration.fromScala(duration))
-  }
-
-  import scala.concurrent.ExecutionContext.Implicits.global
-
-  def run(args: List[String]): ZIO[Environment, Nothing, Int] =
-    loadConfigAndStart()
-      .fold(
-        err => logger.error(err.getMessage) *> Task.fail(err),
-        res => Task.succeed(res)
+  import cats.effect.ExitCode
+  override def run(args: List[String]): IO[ExitCode] =
+    loadConfigAndStart().attempt.flatMap(
+      _.fold(
+        err => logger.error(err.getMessage) *> IO.pure(ExitCode.Error),
+        res => IO.pure(ExitCode.Success)
       )
-      .either
-      .map(_.fold(_ => {
-        1
-      }, _ => 0))
+    )
 
+  import cats.effect.ContextShift
   def databaseConnected(
       config: FoundaMLConfig
-  )(implicit xa: doobie.Transactor[Task]) =
+  )(implicit xa: doobie.Transactor[IO]) =
     for {
       _ <- logger.info("Connected to database")
       _ <- logger.debug("Running SQL scripts")
@@ -80,7 +66,7 @@ object Main extends App with IOLogging {
           config.gcp.pubsub.predictionsTopicId
         ).map(Some(_))
       } else {
-        Task.succeed(None)
+        IO.pure(None)
       }
       kinesisService <- KinesisService("us-east-2")
       predictionsService = new PredictionsService(
@@ -135,13 +121,13 @@ object Main extends App with IOLogging {
         config.database.postgresql.password
       )
       _ <- transactor.use { implicit xa =>
-        PostgresqlService.testConnection.flatMap {
-          _.toEither match {
-            case Right(_) =>
-              databaseConnected(config)
-            case Left(err) =>
-              logger.info(s"Could not connect to the database: $err")
-          }
+        PostgresqlService.testConnection.attempt.flatMap {
+          case Right(_) =>
+            import ch.qos.logback.core.Context
+            import scala.concurrent.ExecutionContext
+            databaseConnected(config)
+          case Left(err) =>
+            logger.info(s"Could not connect to the database: $err")
         }
       }
     } yield ()

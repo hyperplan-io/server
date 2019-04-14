@@ -5,8 +5,8 @@ import org.http4s.EntityDecoder
 import org.http4s.circe.jsonOf
 import io.circe.parser._
 import io.circe.syntax._
-import scalaz.zio.Task
-import scalaz.zio.interop.catz._
+import cats.effect.IO
+import cats.implicits._
 
 object TensorFlowClassificationLabelsSerializer {
 
@@ -17,8 +17,8 @@ object TensorFlowClassificationLabelsSerializer {
   implicit val decoder: Decoder[TensorFlowClassificationLabels] = deriveDecoder
 
   implicit val entityDecoder
-      : EntityDecoder[Task, TensorFlowClassificationLabels] =
-    jsonOf[Task, TensorFlowClassificationLabels]
+      : EntityDecoder[IO, TensorFlowClassificationLabels] =
+    jsonOf[IO, TensorFlowClassificationLabels]
 
   def encodeJson(project: TensorFlowClassificationLabels): Json = {
     project.asJson

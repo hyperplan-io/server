@@ -1,13 +1,10 @@
 package com.foundaml.server.application
 
-import cats.effect
 import cats.effect.Timer
-import org.http4s.server.blaze.{BlazeBuilder, BlazeServerBuilder}
-import scalaz.zio.Task
-import scalaz.zio.interop.catz._
-import scalaz.zio.clock.Clock
-import scalaz.zio.duration.Duration
+import cats.effect.IO
+import cats.implicits._
 
+import org.http4s.server.blaze.{BlazeBuilder, BlazeServerBuilder}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.{FiniteDuration, NANOSECONDS, TimeUnit}
 import scala.util.Properties.envOrNone
@@ -32,30 +29,17 @@ import org.http4s.server.Router
 object Server {
   val port: Int = envOrNone("HTTP_PORT").fold(9090)(_.toInt)
 
-  implicit val timer: Timer[Task] = new Timer[Task] {
-    val zioClock = Clock.Live.clock
-
-    override def clock: effect.Clock[Task] = new effect.Clock[Task] {
-      override def realTime(unit: TimeUnit) =
-        zioClock.nanoTime.map(unit.convert(_, NANOSECONDS))
-
-      override def monotonic(unit: TimeUnit) = zioClock.currentTime(unit)
-    }
-
-    override def sleep(duration: FiniteDuration): Task[Unit] =
-      zioClock.sleep(Duration.fromScala(duration))
-  }
-
   import org.http4s.implicits._
 
+  import cats.effect.ContextShift
   def stream(
       predictionsService: PredictionsService,
       projectsService: ProjectsService,
       algorithmsService: AlgorithmsService,
       projectsRepository: ProjectsRepository,
       port: Int
-  )(implicit ec: ExecutionContext) =
-    BlazeServerBuilder[Task]
+  )(implicit cs: ContextShift[IO], timer: Timer[IO]) =
+    BlazeServerBuilder[IO]
       .bindHttp(port, "0.0.0.0")
       .withHttpApp(
         Router(

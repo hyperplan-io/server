@@ -6,12 +6,12 @@ import com.foundaml.server.infrastructure.serialization.events.PredictionEventSe
 import org.http4s.HttpRoutes
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
-import scalaz.zio.Task
-import scalaz.zio.interop.catz._
+import cats.effect.IO
+import cats.implicits._
 
 class ExamplesController(
     predictionsService: PredictionsService
-) extends Http4sDsl[Task] {
+) extends Http4sDsl[IO] {
 
   object ValueIdMatcher extends OptionalQueryParamDecoderMatcher[Float]("value")
   object LabelIdMatcher
@@ -19,8 +19,8 @@ class ExamplesController(
   object PredictionIdMatcher
       extends QueryParamDecoderMatcher[String]("predictionId")
 
-  val service: HttpRoutes[Task] = {
-    HttpRoutes.of[Task] {
+  val service: HttpRoutes[IO] = {
+    HttpRoutes.of[IO] {
       case POST -> Root :? PredictionIdMatcher(predictionId) +& LabelIdMatcher(
             labelId
           ) +& ValueIdMatcher(value) =>
@@ -30,7 +30,7 @@ class ExamplesController(
           .flatMap { example =>
             Created(PredictionEventSerializer.encodeJson(example))
           }
-          .catchAll {
+          .handleErrorWith {
             case LabelNotFound(_) =>
               NotFound(s"The label $labelId does not exist")
           }

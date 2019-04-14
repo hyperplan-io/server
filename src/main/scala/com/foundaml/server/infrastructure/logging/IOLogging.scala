@@ -1,11 +1,10 @@
 package com.foundaml.server.infrastructure.logging
 
-import scalaz.zio.console.Console
-import scalaz.zio.{Task, ZIO, console}
+import cats.effect.IO
 
 trait IOLogging {
 
-  type ZIOLog = Task[Unit]
+  type ZIOLog = IO[Unit]
 
   trait Logger {
     def trace[A](a: A): ZIOLog
@@ -16,8 +15,8 @@ trait IOLogging {
   }
 
   implicit lazy val logger: Logger = new Logger {
-    private def log[A](level: String)(a: A): ZIOLog =
-      Task(println(s"[$level] $a"))
+    private def log[A](level: String)(a: A): IO[Unit] =
+      IO(println(s"[$level] $a"))
 
     def trace[A](a: A): ZIOLog = log("TRACE")(a)
     def debug[A](a: A): ZIOLog = log("DEBUG")(a)

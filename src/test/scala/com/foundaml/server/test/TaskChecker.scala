@@ -3,10 +3,10 @@ package com.foundaml.server.test
 import cats.effect.Effect
 import doobie.scalatest.imports.Checker
 import org.scalatest.Assertions
-import scalaz.zio.Task
-import scalaz.zio.interop.catz._
+import cats.effect.IO
+import cats.implicits._
 
-trait TaskChecker extends Checker[Task] {
+trait TaskChecker extends Checker[IO] {
   self: Assertions =>
-  val M: Effect[Task] = implicitly
+  val M: Effect[IO] = implicitly
 }

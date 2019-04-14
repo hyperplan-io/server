@@ -5,8 +5,8 @@ import io.circe.syntax._
 import org.http4s.circe.jsonOf
 import com.foundaml.server.domain.models._
 import org.http4s.EntityDecoder
-import scalaz.zio.Task
-import scalaz.zio.interop.catz._
+import cats.effect.IO
+import cats.implicits._
 
 object ProjectSerializer {
 
@@ -102,8 +102,8 @@ object ProjectSerializer {
 
       } yield result
 
-  implicit val entityDecoder: EntityDecoder[Task, Project] =
-    jsonOf[Task, Project]
+  implicit val entityDecoder: EntityDecoder[IO, Project] =
+    jsonOf[IO, Project]
 
   def encodeJson(project: Project): Json = {
     project.asJson

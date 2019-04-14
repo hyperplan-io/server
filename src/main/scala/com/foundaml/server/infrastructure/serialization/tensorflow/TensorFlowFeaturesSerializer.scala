@@ -5,8 +5,8 @@ import io.circe.{Encoder, Json}
 import org.http4s.EntityEncoder
 import org.http4s.circe.jsonEncoderOf
 import io.circe.syntax._
-import scalaz.zio.Task
-import scalaz.zio.interop.catz._
+import cats.effect.IO
+import cats.implicits._
 
 object TensorFlowFeaturesSerializer {
 
@@ -30,8 +30,8 @@ object TensorFlowFeaturesSerializer {
         })))
       )
 
-  implicit val entityEncoder: EntityEncoder[Task, TensorFlowFeatures] =
-    jsonEncoderOf[Task, TensorFlowFeatures]
+  implicit val entityEncoder: EntityEncoder[IO, TensorFlowFeatures] =
+    jsonEncoderOf[IO, TensorFlowFeatures]
 
   def encodeJson(features: TensorFlowFeatures): Json =
     features.asJson
