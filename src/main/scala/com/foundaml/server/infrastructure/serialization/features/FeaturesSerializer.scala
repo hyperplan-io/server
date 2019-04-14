@@ -112,14 +112,15 @@ object FeaturesSerializer {
           Decoder.failedWithMessage[Feature]("features key is not an array")(c)
         )(
           jsonArr => {
-            jsonArr.headOption.fold(
-              Decoder.failedWithMessage[Feature]("features array is empty")(c)
-            ) { headJson =>
+            jsonArr.headOption.fold[Decoder.Result[Feature]] {
+              Right(EmptyVectorFeature)
+            } { headJson =>
               parseFeature(headJson.hcursor).fold(
-                err =>
+                err => {
                   Decoder.failedWithMessage[Feature](
                     "features array could not be parsed"
-                  )(c), {
+                  )(c)
+                }, {
                   case FloatFeature(values) =>
                     c.value
                       .as[List[Float]]
@@ -144,6 +145,8 @@ object FeaturesSerializer {
                     c.value
                       .as[List[List[String]]]
                       .map(values => StringVector2dFeature(values))
+                  case EmptyVectorFeature =>
+                    Right(EmptyVector2dFeature)
                   case _ =>
                     Decoder.failedWithMessage[Feature](
                       "Vectors of dimension > 2 are not supported"

@@ -62,6 +62,8 @@ class PredictionsController(
               FailedDependency(message)
             case LabelsTransformerError(message) =>
               FailedDependency(message)
+            case err: InvalidMessageBodyFailure =>
+              logger.warn(err) *> BadRequest("Json payload is not correct")
           }
     }
   }

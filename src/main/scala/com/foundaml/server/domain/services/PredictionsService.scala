@@ -259,12 +259,12 @@ class PredictionsService(
           case (IntVector2dFeature.featureClass, EmptyVectorFeature) => true
           case (StringVector2dFeature.featureClass, StringVector2dFeature(_)) =>
             true
-          case (StringVector2dFeature.featureClass, EmptyVectorFeature) => true
-
-          case _ => false
+          case (StringVector2dFeature.featureClass, EmptyVector2dFeature) =>
+            true
+          case (config, feature) =>
+            false
         }
         .reduce(_ & _)
-
       sameSize && sameClasses
   }
 
