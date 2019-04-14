@@ -31,7 +31,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 object Main extends IOApp with IOLogging {
 
-
   override def main(args: Array[String]): Unit =
     run(args.toList).runAsync(_ => IO(())).unsafeRunSync()
 
