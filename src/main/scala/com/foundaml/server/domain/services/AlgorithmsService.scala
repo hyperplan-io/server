@@ -25,6 +25,7 @@ import com.foundaml.server.domain.repositories.{
 import com.foundaml.server.infrastructure.logging.IOLogging
 
 class AlgorithmsService(
+    projectsService: ProjectsService,
     algorithmsRepository: AlgorithmsRepository,
     projectsRepository: ProjectsRepository,
     projectFactory: ProjectFactory
@@ -128,38 +129,62 @@ class AlgorithmsService(
   }
 
   def createAlgorithm(id: String, backend: Backend, projectId: String) = {
-    for {
-      project <- projectFactory.get(projectId)
-      algorithm = Algorithm(
-        id,
-        backend,
-        projectId
-      )
-      errors = project match {
-        case Right(classificationProject: ClassificationProject) =>
-          validateClassificationAlgorithm(algorithm, classificationProject)
-        case Right(regressionProject: RegressionProject) =>
-          validateRegressionAlgorithm(algorithm, regressionProject)
-        case Left(err) => List(err)
-      }
-      _ <- if (errors.isEmpty) {
-        IO(Unit)
-      } else {
-        val message = s"The following errors occurred: ${errors.mkString(", ")}"
-        logger.warn(message) *> IO.raiseError(
-          InvalidArgument(message)
+    val algorithm = Algorithm(
+      id,
+      backend,
+      projectId
+    )
+    projectFactory
+      .get(projectId)
+      .flatMap(
+        _.fold(
+          err =>
+            logger.error(s"An error occurred when read the project: $err") *> IO
+              .raiseError(err),
+          project => {
+            val errors = project match {
+              case classificationProject: ClassificationProject =>
+                validateClassificationAlgorithm(
+                  algorithm,
+                  classificationProject
+                )
+              case regressionProject: RegressionProject =>
+                validateRegressionAlgorithm(algorithm, regressionProject)
+            }
+            for {
+              _ <- if (errors.isEmpty) {
+                IO.unit
+              } else {
+                val message =
+                  s"The following errors occurred: ${errors.mkString(", ")}"
+                logger.warn(message) *> IO.raiseError(
+                  InvalidArgument(message)
+                )
+              }
+              insertResult <- algorithmsRepository.insert(algorithm)
+              result <- insertResult.fold(
+                err => {
+                  logger.warn(
+                    s"An error occurred while inserting an algorithm: ${err.getMessage}"
+                  ) *>
+                    IO.raiseError(err)
+                },
+                _ => IO.pure(algorithm)
+              )
+              _ <- project match {
+                case classificationProject: ClassificationProject =>
+                  projectsService.updateProject(
+                    classificationProject.copy(policy = DefaultAlgorithm(id))
+                  )
+                case regressionProject: RegressionProject =>
+                  projectsService.updateProject(
+                    regressionProject.copy(policy = DefaultAlgorithm(id))
+                  )
+
+              }
+            } yield result
+          }
         )
-      }
-      insertResult <- algorithmsRepository.insert(algorithm)
-      result <- insertResult.fold(
-        err => {
-          logger.warn(
-            s"An error occurred while inserting an algorithm: ${err.getMessage}"
-          ) *>
-            IO.raiseError(err)
-        },
-        _ => IO.pure(algorithm)
       )
-    } yield result
   }
 }

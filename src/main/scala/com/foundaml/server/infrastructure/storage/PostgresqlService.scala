@@ -45,7 +45,7 @@ object PostgresqlService {
       CREATE TABLE IF NOT EXISTS projects(
         id VARCHAR(36) PRIMARY KEY,
         name VARCHAR NOT NULL,
-        algorithm_policy VARCHAR(36) NOT NULL,
+        algorithm_policy VARCHAR NOT NULL,
         configuration VARCHAR NOT NULL,
         problem VARCHAR NOT NULL
       )

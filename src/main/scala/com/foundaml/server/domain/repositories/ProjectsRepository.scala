@@ -82,6 +82,13 @@ class ProjectsRepository(implicit xa: Transactor[IO]) {
       """
       .query[ProjectsRepository.ProjectData]
 
+  def updateQuery(project: Project) =
+    sql"""
+        UPDATE projects SET name=${project.name}, algorithm_policy = ${project.policy}
+      """.update
+
+  def update(project: Project) = updateQuery(project).run.transact(xa)
+
 }
 
 object ProjectsRepository {

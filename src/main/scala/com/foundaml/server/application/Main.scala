@@ -82,6 +82,7 @@ object Main extends IOApp with IOLogging {
         projectFactory
       )
       algorithmsService = new AlgorithmsService(
+        projectsService,
         algorithmsRepository,
         projectsRepository,
         projectFactory
