@@ -34,12 +34,12 @@ case class RegressionConfiguration(
 ) extends ProjectConfiguration
 
 sealed trait Project {
-  def id: String
-  def name: String
-  def problem: ProblemType
-  def algorithms: List[Algorithm]
-  def policy: AlgorithmPolicy
-  def configuration: ProjectConfiguration
+  val id: String
+  val name: String
+  val problem: ProblemType
+  val algorithms: List[Algorithm]
+  val policy: AlgorithmPolicy
+  val configuration: ProjectConfiguration
 
   lazy val algorithmsMap: Map[String, Algorithm] =
     algorithms.map(algorithm => algorithm.id -> algorithm).toMap
@@ -52,7 +52,7 @@ case class ClassificationProject(
     algorithms: List[Algorithm],
     policy: AlgorithmPolicy
 ) extends Project {
-  override def problem: ProblemType = Classification
+  override val problem: ProblemType = Classification
 }
 
 object ClassificationProject {
@@ -82,7 +82,7 @@ case class RegressionProject(
     algorithms: List[Algorithm],
     policy: AlgorithmPolicy
 ) extends Project {
-  override def problem: ProblemType = Regression
+  override val problem: ProblemType = Regression
 }
 
 object RegressionProject {

@@ -14,10 +14,12 @@ import com.foundaml.server.domain.models.errors.{
 }
 import com.foundaml.server.domain.services.AlgorithmsService
 import com.foundaml.server.infrastructure.serialization._
+import com.foundaml.server.infrastructure.logging.IOLogging
 
 class AlgorithmsController(
     algorithmsService: AlgorithmsService
-) extends Http4sDsl[IO] {
+) extends Http4sDsl[IO]
+    with IOLogging {
 
   val service: HttpRoutes[IO] = {
     HttpRoutes.of[IO] {
@@ -43,6 +45,9 @@ class AlgorithmsController(
               BadRequest(message)
             case IncompatibleLabels(message) =>
               BadRequest(message)
+            case err =>
+              logger.error(s"Unhandled error: ${err.getMessage}") *> IO
+                .raiseError(err)
           }
     }
   }

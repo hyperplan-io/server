@@ -114,4 +114,5 @@ class ProjectsService(
       case UnexpectedEnd => IO.raiseError(ProjectDoesNotExist(id))
     }
 
+  def updateProject(project: Project) = projectsRepository.update(project)
 }
