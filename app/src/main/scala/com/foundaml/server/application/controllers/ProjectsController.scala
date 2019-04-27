@@ -4,6 +4,7 @@ import com.foundaml.server.application.controllers.requests._
 import com.foundaml.server.domain.models.errors._
 import com.foundaml.server.domain.services.ProjectsService
 import com.foundaml.server.infrastructure.serialization._
+import com.foundaml.server.infrastructure.logging.IOLogging
 import org.http4s.{HttpRoutes, HttpService}
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
@@ -14,15 +15,17 @@ import cats.implicits._
 
 class ProjectsController(
     projectsService: ProjectsService
-) extends Http4sDsl[IO] {
+) extends Http4sDsl[IO]
+    with IOLogging {
 
+  import cats.MonadError
   val service: HttpRoutes[IO] = {
 
     HttpRoutes.of[IO] {
       case req @ POST -> Root =>
         (for {
           request <- req.as[Project](
-            Functor[IO],
+            MonadError[IO, Throwable],
             ProjectSerializer.entityDecoder
           )
           project <- projectsService.createEmptyProject(
@@ -42,7 +45,9 @@ class ProjectsController(
             case FeaturesConfigurationError(message) =>
               BadRequest(message)
             case err =>
-              InternalServerError("An unknown error occurred")
+              logger.error(s"Unhandled error: ${err.getMessage}") *> InternalServerError(
+                "An unknown error occurred"
+              )
           }
 
       case GET -> Root / projectId =>
@@ -66,7 +71,9 @@ class ProjectsController(
                 s"The project $projectId has inconsistent data"
               )
             case err =>
-              InternalServerError("An unknown error occurred")
+              logger.error(s"Unhandled error: ${err.getMessage}") *> InternalServerError(
+                "An unknown error occurred"
+              )
           }
     }
   }

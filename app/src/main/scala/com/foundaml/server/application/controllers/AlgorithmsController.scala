@@ -21,12 +21,13 @@ class AlgorithmsController(
 ) extends Http4sDsl[IO]
     with IOLogging {
 
+  import cats.MonadError
   val service: HttpRoutes[IO] = {
     HttpRoutes.of[IO] {
       case req @ POST -> Root =>
         (for {
           request <- req.as[PostAlgorithmRequest](
-            Functor[IO],
+            MonadError[IO, Throwable],
             PostAlgorithmRequestEntitySerializer.entityDecoder
           )
           algorithm <- algorithmsService.createAlgorithm(
@@ -40,14 +41,21 @@ class AlgorithmsController(
           }
           .handleErrorWith {
             case AlgorithmAlreadyExists(algorithmId) =>
-              Conflict(s"Algorithm $algorithmId already exists")
+              logger.warn(s"The algorithm $algorithmId already exists") *> Conflict(
+                s"Algorithm $algorithmId already exists"
+              )
             case IncompatibleFeatures(message) =>
-              BadRequest(message)
+              logger.warn(
+                s"The features of this algorithm are not compatible with the project"
+              ) *> BadRequest(message)
             case IncompatibleLabels(message) =>
-              BadRequest(message)
+              logger.warn(
+                s"The labels of this algorithm are not compatible with the project"
+              ) *> BadRequest(message)
             case err =>
-              logger.error(s"Unhandled error: ${err.getMessage}") *> IO
-                .raiseError(err)
+              logger.error(s"Unhandled error", err) *> InternalServerError(
+                "Unhandled error"
+              )
           }
     }
   }
