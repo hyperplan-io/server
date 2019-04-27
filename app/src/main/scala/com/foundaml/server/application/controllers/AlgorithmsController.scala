@@ -35,6 +35,9 @@ class AlgorithmsController(
             request.backend,
             request.projectId
           )
+          _ <- logger.info(
+            s"Algorithm created with id ${algorithm.id} on project ${algorithm.projectId}"
+          )
         } yield algorithm)
           .flatMap { algorithm =>
             Created(AlgorithmsSerializer.encodeJson(algorithm))
