@@ -58,14 +58,13 @@ lazy val root = (project in file("."))
     micrositeName := "FoundaML",
     micrositeDescription := "Pipeline for machine learning algorithms",
     micrositeAuthor := "FoundaML contributors",
-    micrositeOrganizationHomepage := "https://github.com/antoinesauray/foundaml-server",
+    micrositeOrganizationHomepage := "https://github.com/foundaml/server",
     micrositeGitterChannelUrl := "foundaml/server",
     micrositeGithubOwner := "foundaml",
     micrositeGithubRepo := "server",
     micrositeFavicons := Seq(
       microsites.MicrositeFavicon("favicon.png", "512x512")
     ),
-    micrositeUrl := "https://foundaml.github.io",
     micrositeBaseUrl := "/server"
   )
   lazy val microsite = project.in(file("site"))
