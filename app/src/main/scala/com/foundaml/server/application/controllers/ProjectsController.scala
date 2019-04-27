@@ -18,13 +18,14 @@ class ProjectsController(
 ) extends Http4sDsl[IO]
     with IOLogging {
 
+  import cats.MonadError
   val service: HttpRoutes[IO] = {
 
     HttpRoutes.of[IO] {
       case req @ POST -> Root =>
         (for {
           request <- req.as[Project](
-            Functor[IO],
+            MonadError[IO, Throwable],
             ProjectSerializer.entityDecoder
           )
           project <- projectsService.createEmptyProject(

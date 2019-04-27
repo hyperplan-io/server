@@ -21,12 +21,13 @@ class PredictionsController(
 ) extends Http4sDsl[IO]
     with IOLogging {
 
+  import cats.MonadError
   val service: HttpRoutes[IO] = {
     HttpRoutes.of[IO] {
       case req @ POST -> Root =>
         (for {
           predictionRequest <- req.as[PredictionRequest](
-            Functor[IO],
+            MonadError[IO, Throwable],
             PredictionRequestEntitySerializer.requestDecoder
           )
           prediction <- predictionsService.predict(
@@ -73,9 +74,11 @@ class PredictionsController(
                 s"The labels could not be transformed to a backend api compatible format"
               ) *> FailedDependency(message)
             case err: InvalidMessageBodyFailure =>
-              logger.warn(err) *> BadRequest("Json payload is not correct")
+              logger.warn("An error occured with json body", err) *> BadRequest(
+                "Json payload is not correct"
+              )
             case err =>
-              logger.error(s"Unhandled error: ${err.getMessage}") *> InternalServerError(
+              logger.error(s"Unhandled error", err) *> InternalServerError(
                 "unknown error"
               )
           }

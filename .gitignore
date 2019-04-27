@@ -6,3 +6,4 @@ target
 *.class
 *.xml
 .idea
+scala-logging.log

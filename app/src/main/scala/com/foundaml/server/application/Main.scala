@@ -124,7 +124,6 @@ object Main extends IOApp with IOLogging {
       _ <- transactor.use { implicit xa =>
         PostgresqlService.testConnection.attempt.flatMap {
           case Right(_) =>
-            import ch.qos.logback.core.Context
             import scala.concurrent.ExecutionContext
             databaseConnected(config)
           case Left(err) =>
