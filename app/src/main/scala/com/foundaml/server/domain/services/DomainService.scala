@@ -3,8 +3,6 @@ package com.foundaml.server.domain.services
 import cats.effect.IO
 import cats.implicits._
 import com.foundaml.server.infrastructure.logging.IOLogging
-
-import com.foundaml.server.infrastructure.logging.IOLogging
 import com.foundaml.server.domain.repositories.DomainRepository
 import com.foundaml.server.domain.models.DomainClass
 
