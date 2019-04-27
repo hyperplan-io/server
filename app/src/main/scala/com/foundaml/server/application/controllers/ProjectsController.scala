@@ -33,6 +33,7 @@ class ProjectsController(
             request.name,
             request.configuration
           )
+          _ <- logger.info(s"Project created with id ${project.id}")
         } yield project)
           .flatMap { project =>
             Created(ProjectSerializer.encodeJson(project))

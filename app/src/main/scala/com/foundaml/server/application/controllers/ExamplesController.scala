@@ -28,6 +28,7 @@ class ExamplesController(
           ) +& ValueIdMatcher(value) =>
         (for {
           example <- predictionsService.addExample(predictionId, labelId, value)
+          _ <- logger.info(s"Example assigned to prediction $predictionId")
         } yield example)
           .flatMap { example =>
             Created(PredictionEventSerializer.encodeJson(example))
