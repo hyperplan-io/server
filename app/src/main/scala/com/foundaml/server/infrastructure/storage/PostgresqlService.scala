@@ -15,8 +15,12 @@ object PostgresqlService {
     sql"select random()".query[Double].unique.transact(xa)
 
   def initSchema(implicit xa: doobie.Transactor[IO]) =
-    (createProjectsTable, createAlgorithmsTable, createPredictionsTable)
-      .mapN(_ + _ + _)
+    (
+      createProjectsTable,
+      createAlgorithmsTable,
+      createPredictionsTable,
+      createDomainTable
+    ).mapN(_ + _ + _ + _)
       .transact(xa)
 
   import cats.effect.ContextShift
@@ -69,6 +73,12 @@ object PostgresqlService {
         features VARCHAR NOT NULL,
         labels VARCHAR NOT NULL,
         examples VARCHAR NOT NULL
+      )
+    """.update.run
+  val createDomainTable: doobie.ConnectionIO[Int] = sql"""
+      CREATE TABLE IF NOT EXISTS domain(
+        id VARCHAR(36) PRIMARY KEY,
+        data VARCHAR NOT NULL
       )
     """.update.run
 }

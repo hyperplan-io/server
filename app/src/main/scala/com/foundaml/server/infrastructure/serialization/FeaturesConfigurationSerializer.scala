@@ -51,7 +51,12 @@ object FeaturesConfigurationSerializer {
     (a: FeaturesConfiguration) =>
       Json.arr(a.configuration.map(customFeatureEncoder.apply): _*)
 
-  def encodeJson(featuresConfiguration: FeaturesConfiguration): String = {
+  def encodeJson(featuresConfiguration: FeaturesConfiguration): Json = {
+    featuresConfiguration.asJson
+  }
+  def encodeJsonNoSpaces(
+      featuresConfiguration: FeaturesConfiguration
+  ): String = {
     featuresConfiguration.asJson.noSpaces
   }
 

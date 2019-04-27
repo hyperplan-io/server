@@ -12,12 +12,13 @@ import com.foundaml.server.domain.models.errors.{
   IncompatibleFeatures,
   IncompatibleLabels
 }
+import com.foundaml.server.domain.models._
 import com.foundaml.server.domain.services.AlgorithmsService
 import com.foundaml.server.infrastructure.serialization._
 import com.foundaml.server.infrastructure.logging.IOLogging
+import com.foundaml.server.domain.services.DomainService
 
-class DomainController(
-    )
+class DomainController(domainService: DomainService)
     extends Http4sDsl[IO]
     with IOLogging {
 
@@ -25,7 +26,19 @@ class DomainController(
   val service: HttpRoutes[IO] = {
     HttpRoutes.of[IO] {
       case req @ POST -> Root =>
-        NotImplemented()
+        (for {
+          domainClass <- req.as[DomainClass](
+            MonadError[IO, Throwable],
+            DomainClassSerializer.entityDecoder
+          )
+          _ <- domainService.createDomainModel(domainClass)
+          _ <- logger.info(
+            s"Domain class created with id ${domainClass.id}"
+          )
+
+        } yield domainClass).flatMap { domainClass =>
+          Ok()
+        }
       case req @ GET -> Root =>
         NotImplemented()
     }

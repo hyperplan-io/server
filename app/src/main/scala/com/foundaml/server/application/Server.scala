@@ -20,11 +20,7 @@ import com.foundaml.server.domain.repositories.{
   AlgorithmsRepository,
   ProjectsRepository
 }
-import com.foundaml.server.domain.services.{
-  AlgorithmsService,
-  PredictionsService,
-  ProjectsService
-}
+import com.foundaml.server.domain.services._
 import org.http4s.server.Router
 
 object Server {
@@ -37,6 +33,7 @@ object Server {
       predictionsService: PredictionsService,
       projectsService: ProjectsService,
       algorithmsService: AlgorithmsService,
+      domainService: DomainService,
       projectsRepository: ProjectsRepository,
       port: Int
   )(implicit cs: ContextShift[IO], timer: Timer[IO]) =
@@ -57,7 +54,8 @@ object Server {
             predictionsService
           ).service,
           "/domain" -> new DomainController(
-            ).service
+            domainService
+          ).service
         ).orNotFound
       )
       .serve

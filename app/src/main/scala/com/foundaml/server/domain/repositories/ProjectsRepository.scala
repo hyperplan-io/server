@@ -27,7 +27,7 @@ class ProjectsRepository(implicit xa: Transactor[IO]) {
     Get[String].map(FeaturesConfigurationSerializer.decodeJson)
 
   implicit val featuresConfigurationPut: Put[FeaturesConfiguration] =
-    Put[String].contramap(FeaturesConfigurationSerializer.encodeJson)
+    Put[String].contramap(FeaturesConfigurationSerializer.encodeJsonNoSpaces)
 
   implicit val projectConfigurationGet
       : Get[Either[io.circe.Error, ProjectConfiguration]] =
