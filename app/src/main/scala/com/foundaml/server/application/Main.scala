@@ -87,7 +87,7 @@ object Main extends IOApp with IOLogging {
         projectsRepository,
         projectFactory
       )
-      
+
       port = 8080
       _ <- logger.info("Services have been correctly instantiated")
       _ <- logger.info(s"Starting http server on port $port")

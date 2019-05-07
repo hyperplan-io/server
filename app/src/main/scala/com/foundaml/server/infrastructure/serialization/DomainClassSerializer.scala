@@ -16,7 +16,7 @@ import org.http4s.circe.jsonOf
 import cats.effect.IO
 
 object DomainClassSerializer {
-/*
+  /*
   implicit val encoder: Encoder[DomainClass] =
     (domainClass: DomainClass) =>
       Json.obj(
@@ -54,5 +54,5 @@ object DomainClassSerializer {
   def decodeJson(n: String): Either[io.circe.Error, DomainClass] = {
     decode[DomainClass](n)
   }
-  */
+ */
 }

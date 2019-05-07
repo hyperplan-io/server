@@ -69,55 +69,59 @@ class ProjectsService(
   }
 
   def createEmptyProject(
-     projectRequest: PostProjectRequest 
+      projectRequest: PostProjectRequest
   ): IO[Project] = {
     val featuresIO = domainService.readFeatures(projectRequest.featuresId)
     val labelsIO = domainService.readLabels(projectRequest.labelsId)
-    (featuresIO, labelsIO).mapN { (features, labels) => 
-      projectRequest.problem match {
-        case Classification =>
-          ClassificationProject(
-            projectRequest.id,
-            projectRequest.name,
-            ClassificationConfiguration(
-              features,
-              labels
-            ),
-            Nil,
-            NoAlgorithm()
-          )
-        case Regression =>
-          RegressionProject(
-            projectRequest.id,
-            projectRequest.name,
-            RegressionConfiguration(
-              features
-            ),
-            Nil,
-            NoAlgorithm()
-          )
+    (featuresIO, labelsIO)
+      .mapN { (features, labels) =>
+        projectRequest.problem match {
+          case Classification =>
+            ClassificationProject(
+              projectRequest.id,
+              projectRequest.name,
+              ClassificationConfiguration(
+                features,
+                labels
+              ),
+              Nil,
+              NoAlgorithm()
+            )
+          case Regression =>
+            RegressionProject(
+              projectRequest.id,
+              projectRequest.name,
+              RegressionConfiguration(
+                features
+              ),
+              Nil,
+              NoAlgorithm()
+            )
+        }
       }
-    }.flatMap { project => 
-      val errors = project match {
-        case classificationProject: ClassificationProject =>
-          validateClassificationConfiguration(classificationProject.configuration)
-        case _ => Nil
+      .flatMap { project =>
+        val errors = project match {
+          case classificationProject: ClassificationProject =>
+            validateClassificationConfiguration(
+              classificationProject.configuration
+            )
+          case _ => Nil
+        }
+
+        for {
+          _ <- errors.headOption.fold[IO[Unit]](
+            IO.pure(Unit)
+          )(
+            err => logger.warn(err.getMessage) *> IO.raiseError(err)
+          )
+          insertResult <- projectsRepository.insert(project)
+          result <- insertResult.fold(
+            err => logger.warn(err.getMessage) *> IO.raiseError(err),
+            _ => IO.pure(project)
+          )
+        } yield result
+
       }
-
-      for {
-        _ <- errors.headOption.fold[IO[Unit]](
-          IO.pure(Unit)
-        )(
-          err => logger.warn(err.getMessage) *> IO.raiseError(err)
-        )
-        insertResult <- projectsRepository.insert(project)
-        result <- insertResult.fold(
-          err => logger.warn(err.getMessage) *> IO.raiseError(err),
-          _ => IO.pure(project)
-        )
-      } yield result
-
-    }
   }
 
   def readProject(id: String) =

@@ -24,16 +24,26 @@ class DomainRepository(implicit xa: Transactor[IO]) extends IOLogging {
   implicit val featuresConfigurationPut: Put[FeaturesConfiguration] =
     Put[String].contramap(FeaturesConfigurationSerializer.encodeJsonNoSpaces)
 
-  implicit val featureConfigurationGet: Get[Either[io.circe.Error, FeatureConfiguration]] = 
-    Get[String].map(FeaturesConfigurationSerializer.decodeFeatureConfigurationJson)
-  implicit val featureConfigurationPut: Put[FeatureConfiguration] = 
-    Put[String].contramap(FeaturesConfigurationSerializer.encodeJsonConfigurationNoSpaces)
+  implicit val featureConfigurationGet
+      : Get[Either[io.circe.Error, FeatureConfiguration]] =
+    Get[String].map(
+      FeaturesConfigurationSerializer.decodeFeatureConfigurationJson
+    )
+  implicit val featureConfigurationPut: Put[FeatureConfiguration] =
+    Put[String].contramap(
+      FeaturesConfigurationSerializer.encodeJsonConfigurationNoSpaces
+    )
 
-  implicit val featureconfigurationlistget: Get[Either[io.circe.Error, List[FeatureConfiguration]]] = 
-    Get[String].map(FeaturesConfigurationSerializer.decodeFeatureConfigurationListJson)
+  implicit val featureconfigurationlistget
+      : Get[Either[io.circe.Error, List[FeatureConfiguration]]] =
+    Get[String].map(
+      FeaturesConfigurationSerializer.decodeFeatureConfigurationListJson
+    )
 
-  implicit val featureconfigurationlistput: Put[List[FeatureConfiguration]] = 
-    Put[String].contramap(FeaturesConfigurationSerializer.encodeJsonConfigurationListNoSpaces)
+  implicit val featureconfigurationlistput: Put[List[FeatureConfiguration]] =
+    Put[String].contramap(
+      FeaturesConfigurationSerializer.encodeJsonConfigurationListNoSpaces
+    )
 
   implicit val labelsConfigurationGet
       : Get[Either[io.circe.Error, LabelsConfiguration]] =
@@ -41,14 +51,22 @@ class DomainRepository(implicit xa: Transactor[IO]) extends IOLogging {
   implicit val labelsConfigurationPut: Put[LabelsConfiguration] =
     Put[String].contramap(LabelsConfigurationSerializer.encodeJsonNoSpaces)
 
-  implicit val labelConfigurationGet: Get[Either[io.circe.Error, LabelConfiguration]] = 
+  implicit val labelConfigurationGet
+      : Get[Either[io.circe.Error, LabelConfiguration]] =
     Get[String].map(LabelsConfigurationSerializer.decodeLabelConfigurationJson)
-  implicit val labelConfigurationPut: Put[LabelConfiguration] = 
-    Put[String].contramap(LabelsConfigurationSerializer.encodeJsonConfigurationNoSpaces)
-  implicit val labelConfigurationListGet: Get[Either[io.circe.Error, List[LabelConfiguration]]] = 
-    Get[String].map(LabelsConfigurationSerializer.decodeLabelConfigurationListJson)
-  implicit val featureConfigurationListPut: Put[List[LabelConfiguration]] = 
-    Put[String].contramap(LabelsConfigurationSerializer.encodeJsonConfigurationListNoSpaces)
+  implicit val labelConfigurationPut: Put[LabelConfiguration] =
+    Put[String].contramap(
+      LabelsConfigurationSerializer.encodeJsonConfigurationNoSpaces
+    )
+  implicit val labelConfigurationListGet
+      : Get[Either[io.circe.Error, List[LabelConfiguration]]] =
+    Get[String].map(
+      LabelsConfigurationSerializer.decodeLabelConfigurationListJson
+    )
+  implicit val featureConfigurationListPut: Put[List[LabelConfiguration]] =
+    Put[String].contramap(
+      LabelsConfigurationSerializer.encodeJsonConfigurationListNoSpaces
+    )
 
   def insertFeaturesQuery(features: FeaturesConfiguration): doobie.Update0 =
     sql"""INSERT INTO features(
@@ -84,8 +102,9 @@ class DomainRepository(implicit xa: Transactor[IO]) extends IOLogging {
       }
       .transact(xa)
 
-
-  def readFeaturesQuery(id: String): doobie.Query0[DomainRepository.FeaturesConfigurationData] =
+  def readFeaturesQuery(
+      id: String
+  ): doobie.Query0[DomainRepository.FeaturesConfigurationData] =
     sql"""
       SELECT id, data 
       FROM features 
@@ -94,9 +113,13 @@ class DomainRepository(implicit xa: Transactor[IO]) extends IOLogging {
       .query[DomainRepository.FeaturesConfigurationData]
 
   def readFeatures(id: String): IO[FeaturesConfiguration] =
-    readFeaturesQuery(id).unique.transact(xa).flatMap(dataToFeaturesConfiguration _)
+    readFeaturesQuery(id).unique
+      .transact(xa)
+      .flatMap(dataToFeaturesConfiguration _)
 
-  def readLabelsQuery(id: String): doobie.Query0[DomainRepository.LabelsConfigurationData] =
+  def readLabelsQuery(
+      id: String
+  ): doobie.Query0[DomainRepository.LabelsConfigurationData] =
     sql"""
       SELECT id, data 
       FROM labels 
@@ -107,7 +130,8 @@ class DomainRepository(implicit xa: Transactor[IO]) extends IOLogging {
   def readLabels(id: String): IO[LabelsConfiguration] =
     readLabelsQuery(id).unique.transact(xa).flatMap(dataToLabelsConfiguration _)
 
-  def readAllFeaturesQuery(): doobie.Query0[DomainRepository.FeaturesConfigurationData] =
+  def readAllFeaturesQuery()
+      : doobie.Query0[DomainRepository.FeaturesConfigurationData] =
     sql"""
       SELECT id, data 
       FROM features
@@ -115,9 +139,13 @@ class DomainRepository(implicit xa: Transactor[IO]) extends IOLogging {
       .query[DomainRepository.FeaturesConfigurationData]
 
   def readAllFeatures(): IO[List[FeaturesConfiguration]] =
-    readAllFeaturesQuery().to[List].transact(xa).flatMap(_.map(dataToFeaturesConfiguration _).sequence)
+    readAllFeaturesQuery()
+      .to[List]
+      .transact(xa)
+      .flatMap(_.map(dataToFeaturesConfiguration _).sequence)
 
-  def readAllLabelsQuery(): doobie.Query0[DomainRepository.LabelsConfigurationData] =
+  def readAllLabelsQuery()
+      : doobie.Query0[DomainRepository.LabelsConfigurationData] =
     sql"""
       SELECT id, data 
       FROM labels
@@ -125,9 +153,14 @@ class DomainRepository(implicit xa: Transactor[IO]) extends IOLogging {
       .query[DomainRepository.LabelsConfigurationData]
 
   def readAllLabels(): IO[List[LabelsConfiguration]] =
-    readAllLabelsQuery().to[List].transact(xa).flatMap(_.map(dataToLabelsConfiguration _).sequence)
+    readAllLabelsQuery()
+      .to[List]
+      .transact(xa)
+      .flatMap(_.map(dataToLabelsConfiguration _).sequence)
 
-  def dataToFeaturesConfiguration(data: DomainRepository.FeaturesConfigurationData): IO[FeaturesConfiguration] = data match {
+  def dataToFeaturesConfiguration(
+      data: DomainRepository.FeaturesConfigurationData
+  ): IO[FeaturesConfiguration] = data match {
     case (
         id,
         Right(data)
@@ -142,8 +175,9 @@ class DomainRepository(implicit xa: Transactor[IO]) extends IOLogging {
       ) *> IO.raiseError(DomainClassDataIncorrect(data._1))
   }
 
-
-  def dataToLabelsConfiguration(data: DomainRepository.LabelsConfigurationData): IO[LabelsConfiguration] = data match {
+  def dataToLabelsConfiguration(
+      data: DomainRepository.LabelsConfigurationData
+  ): IO[LabelsConfiguration] = data match {
     case (
         id,
         Right(data)
@@ -158,11 +192,15 @@ class DomainRepository(implicit xa: Transactor[IO]) extends IOLogging {
       ) *> IO.raiseError(DomainClassDataIncorrect(data._1))
   }
 
-  def dataListToFeaturesConfiguration(dataList: List[DomainRepository.FeaturesConfigurationData]) =
+  def dataListToFeaturesConfiguration(
+      dataList: List[DomainRepository.FeaturesConfigurationData]
+  ) =
     (dataList.map(dataToFeaturesConfiguration)).sequence
 }
 
 object DomainRepository {
-  type FeaturesConfigurationData = (String, Either[io.circe.Error, List[FeatureConfiguration]])
-  type LabelsConfigurationData = (String, Either[io.circe.Error, LabelConfiguration])
+  type FeaturesConfigurationData =
+    (String, Either[io.circe.Error, List[FeatureConfiguration]])
+  type LabelsConfigurationData =
+    (String, Either[io.circe.Error, LabelConfiguration])
 }

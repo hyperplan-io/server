@@ -50,8 +50,10 @@ object ProjectSerializer {
         ("problem", ProblemTypeSerializer.encodeJson(project.problem)),
         ("algorithms", algorithmListEncoder(project.algorithms)),
         ("policy", AlgorithmPolicySerializer.encodeJson(project.policy)),
-        ("featuresId", Json.fromString(project.featuresId)),
-        ("labelsId", project.labelsId.fold(Json.Null)( Json.fromString _))
+        (
+          "configuration",
+          ProjectConfigurationSerializer.encodeJson(project.configuration)
+        )
       )
 
   implicit val decoder: Decoder[Project] =

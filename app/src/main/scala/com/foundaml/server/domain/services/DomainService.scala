@@ -11,18 +11,18 @@ import doobie.util.invariant.UnexpectedEnd
 
 class DomainService(domainRepository: DomainRepository) extends IOLogging {
 
-  def readAllFeatures = 
-    domainRepository.readAllFeatures  
+  def readAllFeatures =
+    domainRepository.readAllFeatures
 
-  def readFeatures(id: String) = 
-    domainRepository.readFeatures(id).handleErrorWith { 
+  def readFeatures(id: String) =
+    domainRepository.readFeatures(id).handleErrorWith {
       case UnexpectedEnd =>
         IO.raiseError(FeaturesClassDoesNotExist(id))
     }
 
   def readAllLabels = domainRepository.readAllLabels
-  def readLabels(id: String) = 
-    domainRepository.readLabels(id).handleErrorWith { 
+  def readLabels(id: String) =
+    domainRepository.readLabels(id).handleErrorWith {
       case UnexpectedEnd =>
         IO.raiseError(LabelsClassDoesNotExist(id))
     }

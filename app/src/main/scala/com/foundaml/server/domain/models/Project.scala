@@ -4,7 +4,7 @@ sealed trait ProjectConfiguration
 
 case class ClassificationConfiguration(
     features: FeaturesConfiguration,
-    labels: LabelsConfiguration 
+    labels: LabelsConfiguration
 ) extends ProjectConfiguration
 
 case class RegressionConfiguration(

@@ -8,7 +8,6 @@ import cats.effect.IO
 import org.http4s.circe.jsonOf
 import org.http4s.EntityDecoder
 
-
 /**
   * Created by Antoine Sauray on 20/03/2019.
   */
@@ -48,21 +47,22 @@ object LabelsConfigurationSerializer {
         description <- c.downField("description").as[String]
       } yield DynamicLabelsConfiguration(description)
 
-  implicit val labelConfigurationDecoder: Decoder[LabelConfiguration] = 
-    (c: HCursor) => c.downField("type").as[String].flatMap {
-          case OneOfLabelsConfiguration.labelsType => oneOfLabelsConfigDecoder(c)
-          case DynamicLabelsConfiguration.labelsType =>
-            dynamicLabelsConfigDecoder(c)
-    }
+  implicit val labelConfigurationDecoder: Decoder[LabelConfiguration] =
+    (c: HCursor) =>
+      c.downField("type").as[String].flatMap {
+        case OneOfLabelsConfiguration.labelsType => oneOfLabelsConfigDecoder(c)
+        case DynamicLabelsConfiguration.labelsType =>
+          dynamicLabelsConfigDecoder(c)
+      }
 
-  implicit val labelConfigurationEncoder: Encoder[LabelConfiguration] = 
-    (labelConfiguration: LabelConfiguration) => labelConfiguration match {
-      case configuration: OneOfLabelsConfiguration => 
-        oneOfLabelsConfigEncoder(configuration)
-      case configuration: DynamicLabelsConfiguration =>
-        dynamicLabelsConfigEncoder(configuration)
-    }
-      
+  implicit val labelConfigurationEncoder: Encoder[LabelConfiguration] =
+    (labelConfiguration: LabelConfiguration) =>
+      labelConfiguration match {
+        case configuration: OneOfLabelsConfiguration =>
+          oneOfLabelsConfigEncoder(configuration)
+        case configuration: DynamicLabelsConfiguration =>
+          dynamicLabelsConfigEncoder(configuration)
+      }
 
   implicit val encoder: Encoder[LabelsConfiguration] = {
     case LabelsConfiguration(id, oneOfConfig: OneOfLabelsConfiguration) =>
@@ -88,11 +88,15 @@ object LabelsConfigurationSerializer {
     labelConfiguration.asJson.noSpaces
   }
 
-  def encodeJsonConfigurationNoSpaces(labelConfiguration: LabelConfiguration): String = {
+  def encodeJsonConfigurationNoSpaces(
+      labelConfiguration: LabelConfiguration
+  ): String = {
     labelConfiguration.asJson.noSpaces
   }
 
-  def encodeJsonConfigurationListNoSpaces(labelConfiguration: List[LabelConfiguration]): String = {
+  def encodeJsonConfigurationListNoSpaces(
+      labelConfiguration: List[LabelConfiguration]
+  ): String = {
     labelConfiguration.asJson.noSpaces
   }
 
@@ -103,12 +107,16 @@ object LabelsConfigurationSerializer {
   def decodeJson(n: String): Either[io.circe.Error, LabelsConfiguration] = {
     decode[LabelsConfiguration](n)
   }
-  
-  def decodeLabelConfigurationJson(n: String): Either[io.circe.Error, LabelConfiguration] = {
+
+  def decodeLabelConfigurationJson(
+      n: String
+  ): Either[io.circe.Error, LabelConfiguration] = {
     decode[LabelConfiguration](n)
   }
 
-  def decodeLabelConfigurationListJson(n: String): Either[io.circe.Error, List[LabelConfiguration]] = {
+  def decodeLabelConfigurationListJson(
+      n: String
+  ): Either[io.circe.Error, List[LabelConfiguration]] = {
     decode[List[LabelConfiguration]](n)
   }
 

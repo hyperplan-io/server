@@ -53,7 +53,6 @@ object Server {
           "/labels" -> new LabelsController(
             domainService
           ).service
-
         ).orNotFound
       )
       .serve
