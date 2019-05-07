@@ -1,6 +1,7 @@
 package com.foundaml.server.application.controllers
 
 import com.foundaml.server.application.controllers.requests._
+import com.foundaml.server.controllers.requests.PostProjectRequest
 import com.foundaml.server.domain.models.errors._
 import com.foundaml.server.domain.services.ProjectsService
 import com.foundaml.server.infrastructure.serialization._
@@ -24,15 +25,11 @@ class ProjectsController(
     HttpRoutes.of[IO] {
       case req @ POST -> Root =>
         (for {
-          request <- req.as[Project](
+          request <- req.as[PostProjectRequest](
             MonadError[IO, Throwable],
-            ProjectSerializer.entityDecoder
+            PostProjectRequestSerializer.entityDecoder
           )
-          project <- projectsService.createEmptyProject(
-            request.id,
-            request.name,
-            request.configuration
-          )
+          project <- projectsService.createEmptyProject(request)
           _ <- logger.info(s"Project created with id ${project.id}")
         } yield project)
           .flatMap { project =>

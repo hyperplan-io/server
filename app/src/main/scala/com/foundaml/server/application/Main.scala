@@ -73,8 +73,12 @@ object Main extends IOApp with IOLogging {
         projectFactory,
         config
       )
+      domainService = new DomainService(
+        domainRepository
+      )
       projectsService = new ProjectsService(
         projectsRepository,
+        domainService,
         projectFactory
       )
       algorithmsService = new AlgorithmsService(
@@ -83,9 +87,7 @@ object Main extends IOApp with IOLogging {
         projectsRepository,
         projectFactory
       )
-      domainService = new DomainService(
-        domainRepository
-      )
+      
       port = 8080
       _ <- logger.info("Services have been correctly instantiated")
       _ <- logger.info(s"Starting http server on port $port")

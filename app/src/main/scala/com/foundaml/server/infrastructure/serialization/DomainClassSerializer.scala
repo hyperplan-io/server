@@ -10,14 +10,13 @@ import com.foundaml.server.domain.models.backends.{
   TensorFlowClassificationBackend,
   TensorFlowRegressionBackend
 }
-import com.foundaml.server.domain.models.DomainClass
 import com.foundaml.server.domain.models.FeaturesConfiguration
 import org.http4s.EntityDecoder
 import org.http4s.circe.jsonOf
 import cats.effect.IO
 
 object DomainClassSerializer {
-
+/*
   implicit val encoder: Encoder[DomainClass] =
     (domainClass: DomainClass) =>
       Json.obj(
@@ -55,4 +54,5 @@ object DomainClassSerializer {
   def decodeJson(n: String): Either[io.circe.Error, DomainClass] = {
     decode[DomainClass](n)
   }
+  */
 }

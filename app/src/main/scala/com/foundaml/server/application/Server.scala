@@ -10,8 +10,8 @@ import scala.concurrent.duration.{FiniteDuration, NANOSECONDS, TimeUnit}
 import scala.util.Properties.envOrNone
 import com.foundaml.server.application.controllers.{
   AlgorithmsController,
-  DomainController,
   ExamplesController,
+  FeaturesController,
   PredictionsController,
   ProjectsController
 }
@@ -53,7 +53,7 @@ object Server {
           "/examples" -> new ExamplesController(
             predictionsService
           ).service,
-          "/domain" -> new DomainController(
+          "/features" -> new FeaturesController(
             domainService
           ).service
         ).orNotFound

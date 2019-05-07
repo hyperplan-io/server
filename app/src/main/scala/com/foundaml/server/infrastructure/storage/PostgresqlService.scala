@@ -19,8 +19,9 @@ object PostgresqlService {
       createProjectsTable,
       createAlgorithmsTable,
       createPredictionsTable,
-      createDomainTable
-    ).mapN(_ + _ + _ + _)
+      createFeaturesTable,
+      createLabelsTable
+    ).mapN(_ + _ + _ + _ + _)
       .transact(xa)
 
   import cats.effect.ContextShift
@@ -75,10 +76,19 @@ object PostgresqlService {
         examples VARCHAR NOT NULL
       )
     """.update.run
-  val createDomainTable: doobie.ConnectionIO[Int] = sql"""
-      CREATE TABLE IF NOT EXISTS domain(
+
+  val createFeaturesTable: doobie.ConnectionIO[Int] = sql"""
+      CREATE TABLE IF NOT EXISTS features(
         id VARCHAR(36) PRIMARY KEY,
         data VARCHAR NOT NULL
       )
     """.update.run
+
+  val createLabelsTable: doobie.ConnectionIO[Int] = sql"""
+      CREATE TABLE IF NOT EXISTS labels(
+        id VARCHAR(36) PRIMARY KEY,
+        data VARCHAR NOT NULL
+      )
+    """.update.run
+
 }

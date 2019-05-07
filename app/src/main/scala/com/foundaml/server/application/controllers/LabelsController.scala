@@ -18,7 +18,7 @@ import com.foundaml.server.infrastructure.serialization._
 import com.foundaml.server.infrastructure.logging.IOLogging
 import com.foundaml.server.domain.services.DomainService
 
-class DomainController(domainService: DomainService)
+class LabelsController(domainService: DomainService)
     extends Http4sDsl[IO]
     with IOLogging {
 
@@ -27,11 +27,11 @@ class DomainController(domainService: DomainService)
     HttpRoutes.of[IO] {
       case req @ POST -> Root =>
         (for {
-          domainClass <- req.as[DomainClass](
+          domainClass <- req.as[LabelsConfiguration](
             MonadError[IO, Throwable],
-            DomainClassSerializer.entityDecoder
+            LabelsConfigurationSerializer.entityDecoder
           )
-          _ <- domainService.createDomainModel(domainClass)
+          _ <- domainService.createLabels(domainClass)
           _ <- logger.info(
             s"Domain class created with id ${domainClass.id}"
           )

@@ -49,7 +49,7 @@ class AlgorithmsService(
   def validateLabelsConfiguration(
       labels: Map[String, String],
       labelsConfiguration: LabelsConfiguration
-  ) = labelsConfiguration match {
+  ) = labelsConfiguration.data match {
     case OneOfLabelsConfiguration(oneOf, _) =>
       if (labels.size != oneOf.size) {
         Some(
@@ -78,6 +78,7 @@ class AlgorithmsService(
           ) =>
         val size = project.configuration.features match {
           case FeaturesConfiguration(
+              id,
               featuresClasses: List[FeatureConfiguration]
               ) =>
             featuresClasses.size
@@ -112,6 +113,7 @@ class AlgorithmsService(
           ) =>
         val size = project.configuration.features match {
           case FeaturesConfiguration(
+              id,
               featuresClasses: List[FeatureConfiguration]
               ) =>
             featuresClasses.size

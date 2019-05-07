@@ -94,8 +94,7 @@ case class TensorFlowLabelsTransformer(fields: Map[String, String]) {
       predictionId: String,
       tfLabels: TensorFlowClassificationLabels
   ): Either[LabelsTransformerError, Set[ClassificationLabel]] = {
-
-    labelsConfiguration match {
+    labelsConfiguration.data match {
       case OneOfLabelsConfiguration(_, _) =>
         transformWithOneOfConfiguration(predictionId, tfLabels)
       case DynamicLabelsConfiguration(_) =>
