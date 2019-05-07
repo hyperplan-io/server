@@ -117,8 +117,7 @@ class ProjectsService(
         )
       } yield result
 
-      }
-    
+    }
   }
 
   def readProject(id: String) =

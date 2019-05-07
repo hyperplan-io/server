@@ -42,6 +42,10 @@ class ProjectsController(
               BadRequest(message)
             case FeaturesConfigurationError(message) =>
               BadRequest(message)
+            case FeaturesClassDoesNotExist(featuresId) =>
+              NotFound(s"""the features class "$featuresId" does not exist""")
+            case LabelsClassDoesNotExist(labelsId) =>
+              NotFound(s"""the labels class "$labelsId" does not exist""")
             case err =>
               logger.error(s"Unhandled error: ${err.getMessage}") *> InternalServerError(
                 "An unknown error occurred"
