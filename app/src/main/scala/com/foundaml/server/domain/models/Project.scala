@@ -17,6 +17,8 @@ sealed trait Project {
   val problem: ProblemType
   val algorithms: List[Algorithm]
   val policy: AlgorithmPolicy
+  val featuresId: String
+  val labelsId: Option[String]
   val configuration: ProjectConfiguration
 
   lazy val algorithmsMap: Map[String, Algorithm] =
@@ -31,6 +33,8 @@ case class ClassificationProject(
     policy: AlgorithmPolicy
 ) extends Project {
   override val problem: ProblemType = Classification
+  val featuresId = configuration.features.id
+  val labelsId = Some(configuration.labels.id)
 }
 
 object ClassificationProject {
@@ -61,6 +65,8 @@ case class RegressionProject(
     policy: AlgorithmPolicy
 ) extends Project {
   override val problem: ProblemType = Regression
+  val featuresId = configuration.features.id
+  val labelsId = None
 }
 
 object RegressionProject {
