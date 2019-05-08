@@ -22,10 +22,9 @@ class KafkaService(topic: String, stream: fs2.Stream[IO, KafkaProducer[IO,String
 object KafkaService {
   import org.apache.kafka.common.serialization.StringSerializer
   import cats.effect.ContextShift
-  def apply(topic: String, bootstrapServers: String)(implicit cs: ContextShift[IO]): IO[KafkaService] = for {
-    producerSettings <- IO(
-      ProducerSettings[String, String].withBootstrapServers(bootstrapServers)
-    )
-    producer = fs2.kafka.producerStream[IO].using(producerSettings)
-  } yield new KafkaService(topic, producer)
+  def apply(topic: String, bootstrapServers: String)(implicit cs: ContextShift[IO]): KafkaService = {
+    val producerSettings = ProducerSettings[String, String].withBootstrapServers(bootstrapServers)
+    val producer = fs2.kafka.producerStream[IO].using(producerSettings)
+    new KafkaService(topic, producer)
+  }
 }
