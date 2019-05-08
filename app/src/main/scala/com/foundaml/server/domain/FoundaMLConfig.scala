@@ -21,7 +21,7 @@ case class PostgreSqlConfig(
     database: String,
     username: String,
     password: String,
-    schema: Option[String]
+    schema: String
 )
 case class DatabaseConfig(postgresql: PostgreSqlConfig)
 

@@ -31,14 +31,14 @@ object PostgresqlService {
       database: String,
       username: String,
       password: String,
-      schema: Option[String]
+      schema: String
   )(implicit cs: ContextShift[IO]): Resource[IO, doobie.Transactor[IO]] = {
     for {
       ce <- ExecutionContexts.fixedThreadPool[IO](32) // our connect EC
       te <- ExecutionContexts.cachedThreadPool[IO]
       xa <- HikariTransactor.newHikariTransactor[IO](
         "org.postgresql.Driver",
-        s"jdbc:postgresql://$host:$port/$database?currentSchema=${schema.getOrElse("public")}",
+        s"jdbc:postgresql://$host:$port/$database?currentSchema=$schema",
         username,
         password,
         ce,
