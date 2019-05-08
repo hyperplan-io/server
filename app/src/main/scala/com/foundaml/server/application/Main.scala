@@ -1,6 +1,4 @@
 package com.foundaml.server.application
-
-import cats.effect.IO
 import cats.effect.Timer
 import com.foundaml.server.domain.FoundaMLConfig
 import com.foundaml.server.domain.factories.ProjectFactory
@@ -9,11 +7,7 @@ import com.foundaml.server.domain.repositories.{
   PredictionsRepository,
   ProjectsRepository
 }
-import com.foundaml.server.domain.services.{
-  AlgorithmsService,
-  PredictionsService,
-  ProjectsService
-}
+import com.foundaml.server.domain.services._
 import com.foundaml.server.infrastructure.logging.IOLogging
 import com.foundaml.server.infrastructure.storage.PostgresqlService
 import com.foundaml.server.infrastructure.streaming.{
@@ -21,13 +15,14 @@ import com.foundaml.server.infrastructure.streaming.{
   PubSubService
 }
 import cats.implicits._
-import cats.effect.IOApp
+import cats.effect._
 
 import scala.concurrent.duration.{FiniteDuration, NANOSECONDS, TimeUnit}
 import scala.util.{Left, Right}
 import pureconfig.generic.auto._
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import com.foundaml.server.domain.repositories.DomainRepository
 
 object Main extends IOApp with IOLogging {
 
@@ -55,6 +50,7 @@ object Main extends IOApp with IOLogging {
       projectsRepository = new ProjectsRepository
       algorithmsRepository = new AlgorithmsRepository
       predictionsRepository = new PredictionsRepository
+      domainRepository = new DomainRepository
       projectFactory = new ProjectFactory(
         projectsRepository,
         algorithmsRepository
@@ -87,6 +83,9 @@ object Main extends IOApp with IOLogging {
         projectsRepository,
         projectFactory
       )
+      domainService = new DomainService(
+        domainRepository
+      )
       port = 8080
       _ <- logger.info("Services have been correctly instantiated")
       _ <- logger.info(s"Starting http server on port $port")
@@ -95,6 +94,7 @@ object Main extends IOApp with IOLogging {
           predictionsService,
           projectsService,
           algorithmsService,
+          domainService,
           projectsRepository,
           port
         )
