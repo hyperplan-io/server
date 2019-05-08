@@ -75,7 +75,9 @@ object FeaturesConfigurationSerializer {
     featuresConfiguration.asJson
   }
 
-  def encodeJsonList(featuresConfiguration: List[FeaturesConfiguration]): Json = {
+  def encodeJsonList(
+      featuresConfiguration: List[FeaturesConfiguration]
+  ): Json = {
     featuresConfiguration.asJson
   }
   def encodeJsonNoSpaces(

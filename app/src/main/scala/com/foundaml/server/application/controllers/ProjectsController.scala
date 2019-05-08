@@ -36,7 +36,7 @@ class ProjectsController(
             Created(ProjectSerializer.encodeJson(project))
           }
           .handleErrorWith {
-            case err@ ProjectAlreadyExists(projectId) =>
+            case err @ ProjectAlreadyExists(projectId) =>
               logger.warn(err.getMessage)
               Conflict(s"The project $projectId already exists")
             case err @ InvalidProjectIdentifier(message) =>
@@ -51,10 +51,10 @@ class ProjectsController(
             case err @ LabelsClassDoesNotExist(labelsId) =>
               logger.warn(err.getMessage)
               NotFound(s"""the labels class "$labelsId" does not exist""")
-            case err: ClassificationProjectRequiresLabels => 
+            case err: ClassificationProjectRequiresLabels =>
               logger.warn(err.getMessage)
               BadRequest(s"a classification project requires labels")
-            case err: RegressionProjectDoesNotRequireLabels => 
+            case err: RegressionProjectDoesNotRequireLabels =>
               logger.warn(err.getMessage)
               BadRequest(s"a regression project does not require labels")
             case err =>

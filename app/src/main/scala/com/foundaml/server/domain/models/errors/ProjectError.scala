@@ -16,5 +16,7 @@ case class ProjectAlreadyExists(projectId: String) extends ProjectError {
 case class ProjectDoesNotExist(projectId: String) extends ProjectError {
   val message = s"The project $projectId does not exist"
 }
-case class ClassificationProjectRequiresLabels(message: String) extends ProjectError
-case class RegressionProjectDoesNotRequireLabels(message: String) extends ProjectError
+case class ClassificationProjectRequiresLabels(message: String)
+    extends ProjectError
+case class RegressionProjectDoesNotRequireLabels(message: String)
+    extends ProjectError

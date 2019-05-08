@@ -25,7 +25,7 @@ class FeaturesController(domainService: DomainService)
     extends Http4sDsl[IO]
     with IOLogging {
 
-    val service: HttpRoutes[IO] = {
+  val service: HttpRoutes[IO] = {
     HttpRoutes.of[IO] {
       case req @ POST -> Root =>
         (for {
@@ -38,23 +38,30 @@ class FeaturesController(domainService: DomainService)
             s"Domain class created with id ${domainClass.id}"
           )
 
-        } yield domainClass).flatMap { domainClass =>
-          Ok(FeaturesConfigurationSerializer.encodeJson(domainClass))
-        }.handleErrorWith { 
-          case err: DomainClassAlreadyExists => 
-            Conflict(s"""The features class ${err.domainClassId} already exists""")
-        }
+        } yield domainClass)
+          .flatMap { domainClass =>
+            Ok(FeaturesConfigurationSerializer.encodeJson(domainClass))
+          }
+          .handleErrorWith {
+            case err: DomainClassAlreadyExists =>
+              Conflict(
+                s"""The features class ${err.domainClassId} already exists"""
+              )
+          }
       case req @ GET -> Root =>
-        domainService.readAllFeatures.flatMap{ features => 
+        domainService.readAllFeatures.flatMap { features =>
           Ok(FeaturesConfigurationSerializer.encodeJsonList(features))
         }
       case req @ GET -> Root / featuresId =>
-        domainService.readFeatures(featuresId).flatMap{ features => 
-          Ok(FeaturesConfigurationSerializer.encodeJson(features))
-        }.handleErrorWith {
-          case err: FeaturesClassDoesNotExist =>
-            NotFound(s"""The features class "$featuresId" does not exist""") 
-        }
+        domainService
+          .readFeatures(featuresId)
+          .flatMap { features =>
+            Ok(FeaturesConfigurationSerializer.encodeJson(features))
+          }
+          .handleErrorWith {
+            case err: FeaturesClassDoesNotExist =>
+              NotFound(s"""The features class "$featuresId" does not exist""")
+          }
     }
   }
 

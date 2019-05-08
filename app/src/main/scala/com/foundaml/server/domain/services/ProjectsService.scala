@@ -71,9 +71,9 @@ class ProjectsService(
   def createEmptyProject(
       projectRequest: PostProjectRequest
   ): IO[Project] = {
-    
+
     val featuresIO = domainService.readFeatures(projectRequest.featuresId)
-    ( (projectRequest.problem, projectRequest.labelsId) match {
+    ((projectRequest.problem, projectRequest.labelsId) match {
       case (Classification, Some(labelsId)) =>
         val labelsIO = domainService.readLabels(labelsId)
         (featuresIO, labelsIO).mapN { (features, labels) =>
@@ -88,46 +88,54 @@ class ProjectsService(
             NoAlgorithm()
           )
         }
-        case (Regression, None) =>
-          featuresIO.map { features => 
-            RegressionProject(
-              projectRequest.id,
-              projectRequest.name,
-              RegressionConfiguration(
-                features
-              ),
-              Nil,
-              NoAlgorithm()
-            )
-          }
-        case (Classification, None) =>
-          IO.raiseError(ClassificationProjectRequiresLabels("A classification project requires labels"))
-        case (Regression, Some(_)) =>
-          IO.raiseError(RegressionProjectDoesNotRequireLabels("A regression project does not require labels"))
-
-      }).flatMap { project =>
-        val errors = project match {
-          case classificationProject: ClassificationProject =>
-            validateClassificationConfiguration(
-              classificationProject.configuration
-            )
-          case _ => Nil
+      case (Regression, None) =>
+        featuresIO.map { features =>
+          RegressionProject(
+            projectRequest.id,
+            projectRequest.name,
+            RegressionConfiguration(
+              features
+            ),
+            Nil,
+            NoAlgorithm()
+          )
         }
-
-        for {
-          _ <- errors.headOption.fold[IO[Unit]](
-            IO.pure(Unit)
-          )(
-            err => logger.warn(err.getMessage) *> IO.raiseError(err)
+      case (Classification, None) =>
+        IO.raiseError(
+          ClassificationProjectRequiresLabels(
+            "A classification project requires labels"
           )
-          insertResult <- projectsRepository.insert(project)
-          result <- insertResult.fold(
-            err => logger.warn(err.getMessage) *> IO.raiseError(err),
-            _ => IO.pure(project)
+        )
+      case (Regression, Some(_)) =>
+        IO.raiseError(
+          RegressionProjectDoesNotRequireLabels(
+            "A regression project does not require labels"
           )
-        } yield result
+        )
 
+    }).flatMap { project =>
+      val errors = project match {
+        case classificationProject: ClassificationProject =>
+          validateClassificationConfiguration(
+            classificationProject.configuration
+          )
+        case _ => Nil
       }
+
+      for {
+        _ <- errors.headOption.fold[IO[Unit]](
+          IO.pure(Unit)
+        )(
+          err => logger.warn(err.getMessage) *> IO.raiseError(err)
+        )
+        insertResult <- projectsRepository.insert(project)
+        result <- insertResult.fold(
+          err => logger.warn(err.getMessage) *> IO.raiseError(err),
+          _ => IO.pure(project)
+        )
+      } yield result
+
+    }
   }
 
   def readProject(id: String) =

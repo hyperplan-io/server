@@ -38,23 +38,30 @@ class LabelsController(domainService: DomainService)
             s"Domain class created with id ${domainClass.id}"
           )
 
-        } yield domainClass).flatMap { domainClass =>
-          Ok(LabelsConfigurationSerializer.encodeJson(domainClass))
-        }.handleErrorWith { 
-          case err: DomainClassAlreadyExists => 
-            Conflict(s"""The labels class ${err.domainClassId} already exists""")
-        }
+        } yield domainClass)
+          .flatMap { domainClass =>
+            Ok(LabelsConfigurationSerializer.encodeJson(domainClass))
+          }
+          .handleErrorWith {
+            case err: DomainClassAlreadyExists =>
+              Conflict(
+                s"""The labels class ${err.domainClassId} already exists"""
+              )
+          }
       case req @ GET -> Root =>
         domainService.readAllLabels.flatMap { labels =>
-          Ok(LabelsConfigurationSerializer.encodeJsonList(labels)) 
+          Ok(LabelsConfigurationSerializer.encodeJsonList(labels))
         }
       case req @ GET -> Root / labelsId =>
-        domainService.readLabels(labelsId).flatMap { labels => 
-          Ok(LabelsConfigurationSerializer.encodeJson(labels)) 
-        }.handleErrorWith { 
-          case err: LabelsClassDoesNotExist =>
-            NotFound(s"""The labels class "$labelsId" does not exist""")
-        }
+        domainService
+          .readLabels(labelsId)
+          .flatMap { labels =>
+            Ok(LabelsConfigurationSerializer.encodeJson(labels))
+          }
+          .handleErrorWith {
+            case err: LabelsClassDoesNotExist =>
+              NotFound(s"""The labels class "$labelsId" does not exist""")
+          }
     }
   }
 

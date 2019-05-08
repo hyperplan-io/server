@@ -28,14 +28,12 @@ class DomainService(domainRepository: DomainRepository) extends IOLogging {
     }
 
   def createFeatures(features: FeaturesConfiguration) =
-    domainRepository.insertFeatures(features).flatMap(_.fold(
-      err => IO.raiseError(err),
-      result => IO.pure(result))
-    )
+    domainRepository
+      .insertFeatures(features)
+      .flatMap(_.fold(err => IO.raiseError(err), result => IO.pure(result)))
   def createLabels(labels: LabelsConfiguration) =
-    domainRepository.insertLabels(labels).flatMap(_.fold(
-      err => IO.raiseError(err),
-      result => IO.pure(result))
-    )
+    domainRepository
+      .insertLabels(labels)
+      .flatMap(_.fold(err => IO.raiseError(err), result => IO.pure(result)))
 
 }
