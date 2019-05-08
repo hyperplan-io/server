@@ -26,12 +26,14 @@ import com.foundaml.server.test.{
   TestDatabase
 }
 import cats.implicits._
-import cats.effect.IO
+import cats.effect.{IO, Timer}
 import scala.concurrent.ExecutionContext
 
 import scala.util.Try
 
 class PredictionsServiceSpec extends FlatSpec with TestDatabase {
+
+  implicit val timer: Timer[IO] = IO.timer(ExecutionContext.global)
 
   val config = FoundaMLConfig(
     KinesisConfig(enabled = false, "predictionsStream", "examplesStream"),
@@ -63,6 +65,7 @@ class PredictionsServiceSpec extends FlatSpec with TestDatabase {
     PubSubService("myProjectId", "myTopic").unsafeRunSync()
   val kafkaService: KafkaService =
     KafkaService(config.kafka.topic, config.kafka.bootstrapServers)
+      .unsafeRunSync()
   val projectsRepository = new ProjectsRepository()(xa)
   val algorithmsRepository = new AlgorithmsRepository()(xa)
   val predictionsRepository = new PredictionsRepository()(xa)

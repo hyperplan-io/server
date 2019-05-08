@@ -34,6 +34,7 @@ import com.foundaml.server.infrastructure.streaming.{
 import doobie.free.connection.{AsyncConnectionIO, ConnectionIO}
 import cats.effect.ContextShift
 
+import cats.effect.Timer
 class PredictionsService(
     projectsRepository: ProjectsRepository,
     predictionsRepository: PredictionsRepository,
@@ -42,9 +43,11 @@ class PredictionsService(
     kafkaService: Option[KafkaService],
     projectFactory: ProjectFactory,
     config: FoundaMLConfig
-)(implicit cs: ContextShift[IO])
+)(implicit cs: ContextShift[IO], timer: Timer[IO])
     extends IOLogging
     with TensorFlowBackendSupport {
+
+  implicit val predictionEventEncoder = PredictionEventSerializer.encoder
 
   def persistClassificationPrediction(prediction: ClassificationPrediction) =
     predictionsRepository
@@ -66,17 +69,18 @@ class PredictionsService(
       )
 
   def publishToStream(prediction: PredictionEvent): IO[Unit] =
-    for {
-      _ <- pubSubService.fold[IO[Unit]](IO.unit)(
-        _.publish(prediction)(PredictionEventSerializer.encoder)
-      )
+    (for {
+      _ <- pubSubService.fold[IO[Unit]](IO.unit)(_.publish(prediction))
       _ <- kafkaService.fold[IO[Unit]](IO.unit)(
-        _.publish(prediction, prediction.projectId)(
-          PredictionEventSerializer.encoder
-        )
+        _.publish(prediction, prediction.projectId)
       )
       _ <- publishPredictionEventToKinesis(prediction)
-    } yield ()
+    } yield ()).handleErrorWith {
+      case err =>
+        logger.warn(
+          s"An occurred occurred when publishing data, ${err.getMessage}"
+        ) *> IO.unit
+    }
 
   def publishPredictionEventToKinesis(prediction: PredictionEvent) =
     if (config.kinesis.enabled) {
