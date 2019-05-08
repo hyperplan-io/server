@@ -19,7 +19,7 @@ class KafkaService(
     stream: fs2.Stream[IO, KafkaProducer[IO, String, String]],
     health: Ref[IO, Boolean]
 ) extends IOLogging {
-
+  val producerTimeout = Duration(3, TimeUnit.SECONDS)
   def publish[Data](
       data: Data,
       partitionKey: String
@@ -39,7 +39,7 @@ class KafkaService(
       .drain
     IO.race(
         produceIO,
-        timer.sleep(Duration(3, TimeUnit.SECONDS))
+        timer.sleep(producerTimeout)
       )
       .flatMap {
         case Left(_) => IO.unit
