@@ -1,0 +1,38 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: foundaml-server 
+  namespace: default
+spec:
+  selector:
+    matchLabels:
+      app: foundaml
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: foundaml
+    spec:
+      containers:
+      - name: foundaml-server 
+        image: foundaml/server:0.0.1
+        ports:
+          - containerPort: 8080
+        resources:
+          limits:
+            memory: "150Mi"
+            cpu: "100m"
+          requests:
+            memory: "150Mi"
+            cpu: "100m"
+        env:
+          - name: JAVA_OPTS
+            value: "-XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap"
+          - name: POSTGRESQL_HOST
+            value: "postgres"
+          - name: POSTGRESQL_PORT
+            value: "5432"
+          - name: POSTGRESQL_DATABASE
+            value: "postgres"
+          - name: POSTGRESQL_PASSWORD
+            value: "postgres"
