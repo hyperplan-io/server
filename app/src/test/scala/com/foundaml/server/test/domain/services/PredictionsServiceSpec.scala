@@ -55,7 +55,8 @@ class PredictionsServiceSpec extends FlatSpec with TestDatabase {
         5432,
         "database",
         "username",
-        "password"
+        "password",
+        None
       )
     )
   )
