@@ -107,6 +107,7 @@ class PredictionsServiceSpec extends FlatSpec with TestDatabase {
   it should "validate int features" in {
 
     val goodConfig = FeaturesConfiguration(
+      "id",
       List(
         FeatureConfiguration(
           "myInt",
@@ -124,6 +125,7 @@ class PredictionsServiceSpec extends FlatSpec with TestDatabase {
     )
 
     val badConfig = FeaturesConfiguration(
+      "id",
       List(
         FeatureConfiguration(
           "myInt",
@@ -143,6 +145,7 @@ class PredictionsServiceSpec extends FlatSpec with TestDatabase {
   it should "validate float features" in {
 
     val goodConfig = FeaturesConfiguration(
+      "id",
       List(
         FeatureConfiguration(
           "myFloat",
@@ -160,6 +163,7 @@ class PredictionsServiceSpec extends FlatSpec with TestDatabase {
     )
 
     val badConfig = FeaturesConfiguration(
+      "id",
       List(
         FeatureConfiguration(
           "myFloat",
@@ -179,6 +183,7 @@ class PredictionsServiceSpec extends FlatSpec with TestDatabase {
   it should "validate string features" in {
 
     val goodConfig = FeaturesConfiguration(
+      "id",
       List(
         FeatureConfiguration(
           "myString",
@@ -196,6 +201,7 @@ class PredictionsServiceSpec extends FlatSpec with TestDatabase {
     )
 
     val badConfig = FeaturesConfiguration(
+      "id",
       List(
         FeatureConfiguration(
           "myString",
@@ -215,6 +221,7 @@ class PredictionsServiceSpec extends FlatSpec with TestDatabase {
   it should "validate int vector features" in {
 
     val goodConfig = FeaturesConfiguration(
+      "id",
       List(
         FeatureConfiguration(
           "myIntVector",
@@ -232,6 +239,7 @@ class PredictionsServiceSpec extends FlatSpec with TestDatabase {
     )
 
     val badConfig = FeaturesConfiguration(
+      "id",
       List(
         FeatureConfiguration(
           "myIntVector",
@@ -251,6 +259,7 @@ class PredictionsServiceSpec extends FlatSpec with TestDatabase {
   it should "validate float vector features" in {
 
     val goodConfig = FeaturesConfiguration(
+      "id",
       List(
         FeatureConfiguration(
           "myFloatVector",
@@ -268,6 +277,7 @@ class PredictionsServiceSpec extends FlatSpec with TestDatabase {
     )
 
     val badConfig = FeaturesConfiguration(
+      "id",
       List(
         FeatureConfiguration(
           "myFloatVector",
@@ -287,6 +297,7 @@ class PredictionsServiceSpec extends FlatSpec with TestDatabase {
   it should "validate string vector features" in {
 
     val goodConfig = FeaturesConfiguration(
+      "id",
       List(
         FeatureConfiguration(
           "myStringVector",
@@ -304,6 +315,7 @@ class PredictionsServiceSpec extends FlatSpec with TestDatabase {
     )
 
     val badConfig = FeaturesConfiguration(
+      "id",
       List(
         FeatureConfiguration(
           "myStringVector",
@@ -323,6 +335,7 @@ class PredictionsServiceSpec extends FlatSpec with TestDatabase {
   it should "validate int vector2d features" in {
 
     val goodConfig = FeaturesConfiguration(
+      "id",
       List(
         FeatureConfiguration(
           "myIntVector2d",
@@ -347,6 +360,7 @@ class PredictionsServiceSpec extends FlatSpec with TestDatabase {
     )
 
     val badConfig = FeaturesConfiguration(
+      "id",
       List(
         FeatureConfiguration(
           "myIntVector2d",
@@ -366,6 +380,7 @@ class PredictionsServiceSpec extends FlatSpec with TestDatabase {
   it should "validate float vector2d features" in {
 
     val goodConfig = FeaturesConfiguration(
+      "id",
       List(
         FeatureConfiguration(
           "myFloatVector2d",
@@ -390,6 +405,7 @@ class PredictionsServiceSpec extends FlatSpec with TestDatabase {
     )
 
     val badConfig = FeaturesConfiguration(
+      "id",
       List(
         FeatureConfiguration(
           "myFloatVector2d",
@@ -409,6 +425,7 @@ class PredictionsServiceSpec extends FlatSpec with TestDatabase {
   it should "validate string vector2d features" in {
 
     val goodConfig = FeaturesConfiguration(
+      "id",
       List(
         FeatureConfiguration(
           "myStringVector2d",
@@ -430,6 +447,7 @@ class PredictionsServiceSpec extends FlatSpec with TestDatabase {
     )
 
     val badConfig = FeaturesConfiguration(
+      "id",
       List(
         FeatureConfiguration(
           "myStringVector2d",

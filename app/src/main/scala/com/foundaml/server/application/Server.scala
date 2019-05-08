@@ -8,13 +8,7 @@ import org.http4s.server.blaze.{BlazeBuilder, BlazeServerBuilder}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.{FiniteDuration, NANOSECONDS, TimeUnit}
 import scala.util.Properties.envOrNone
-import com.foundaml.server.application.controllers.{
-  AlgorithmsController,
-  DomainController,
-  ExamplesController,
-  PredictionsController,
-  ProjectsController
-}
+import com.foundaml.server.application.controllers._
 import com.foundaml.server.domain.factories.ProjectFactory
 import com.foundaml.server.domain.repositories.{
   AlgorithmsRepository,
@@ -27,8 +21,8 @@ object Server {
   val port: Int = envOrNone("HTTP_PORT").fold(9090)(_.toInt)
 
   import org.http4s.implicits._
-
   import cats.effect.ContextShift
+
   def stream(
       predictionsService: PredictionsService,
       projectsService: ProjectsService,
@@ -53,7 +47,10 @@ object Server {
           "/examples" -> new ExamplesController(
             predictionsService
           ).service,
-          "/domain" -> new DomainController(
+          "/features" -> new FeaturesController(
+            domainService
+          ).service,
+          "/labels" -> new LabelsController(
             domainService
           ).service
         ).orNotFound

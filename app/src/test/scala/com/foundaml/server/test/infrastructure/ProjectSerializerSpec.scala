@@ -22,6 +22,7 @@ class ProjectSerializerSpec
     val projectName = "test project"
     val configuration = ClassificationConfiguration(
       FeaturesConfiguration(
+        "id",
         List(
           FeatureConfiguration(
             "",
@@ -30,9 +31,12 @@ class ProjectSerializerSpec
           )
         )
       ),
-      OneOfLabelsConfiguration(
-        Set(""),
-        ""
+      LabelsConfiguration(
+        "id",
+        OneOfLabelsConfiguration(
+          Set(""),
+          ""
+        )
       )
     )
     val project = ClassificationProject(
@@ -45,7 +49,7 @@ class ProjectSerializerSpec
 
     testEncoder(project: Project) { json =>
       val expectedJson =
-        """{"id":"test-project-encode","name":"test project","problem":"classification","algorithms":[],"policy":{"class":"NoAlgorithm"},"configuration":{"features":[{"name":"","type":"","description":""}],"labels":{"type":"oneOf","oneOf":[""],"description":""}}}"""
+        """{"id":"test-project-encode","name":"test project","problem":"classification","algorithms":[],"policy":{"class":"NoAlgorithm"},"configuration":{"features":{"id":"id","data":[{"name":"","type":"","description":""}]},"labels":{"id":"id","data":{"type":"oneOf","oneOf":[""],"description":""}}}}"""
       json.noSpaces should be(expectedJson)
     }(encoder)
   }
@@ -55,7 +59,7 @@ class ProjectSerializerSpec
     val projectName = "test project"
 
     val projectJson =
-      s"""{"id":"$projectId","name":"$projectName","problem":"classification","algorithms":[],"policy":{"class":"NoAlgorithm"},"configuration":{"features":[{"name":"","type":"","description":""}],"labels":{"type":"oneOf","oneOf":[""],"description":""}}}"""
+      s"""{"id":"$projectId","name":"$projectName","problem":"classification","algorithms":[],"policy":{"class":"NoAlgorithm"},"configuration":{"features":{"id":"id","data":[{"name":"","type":"","description":""}]},"labels":{"id":"id","data":{"type":"oneOf","oneOf":[""],"description":""}}}}"""
 
     testDecoder[Project](projectJson) {
       case project: ClassificationProject =>

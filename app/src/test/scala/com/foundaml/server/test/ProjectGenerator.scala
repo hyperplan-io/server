@@ -44,6 +44,7 @@ object ProjectGenerator {
       "example project",
       ClassificationConfiguration(
         models.FeaturesConfiguration(
+          "id",
           List(
             FeatureConfiguration(
               "my feature",
@@ -52,13 +53,16 @@ object ProjectGenerator {
             )
           )
         ),
-        OneOfLabelsConfiguration(
-          Set(
-            "class1",
-            "class2",
-            "class3"
-          ),
-          "Either class1, class2 or class3"
+        LabelsConfiguration(
+          "id",
+          OneOfLabelsConfiguration(
+            Set(
+              "class1",
+              "class2",
+              "class3"
+            ),
+            "Either class1, class2 or class3"
+          )
         )
       ),
       algorithms.getOrElse(List(AlgorithmGenerator.withLocalBackend())),

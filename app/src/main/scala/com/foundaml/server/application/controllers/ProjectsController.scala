@@ -1,6 +1,7 @@
 package com.foundaml.server.application.controllers
 
 import com.foundaml.server.application.controllers.requests._
+import com.foundaml.server.controllers.requests.PostProjectRequest
 import com.foundaml.server.domain.models.errors._
 import com.foundaml.server.domain.services.ProjectsService
 import com.foundaml.server.infrastructure.serialization._
@@ -24,27 +25,38 @@ class ProjectsController(
     HttpRoutes.of[IO] {
       case req @ POST -> Root =>
         (for {
-          request <- req.as[Project](
+          request <- req.as[PostProjectRequest](
             MonadError[IO, Throwable],
-            ProjectSerializer.entityDecoder
+            PostProjectRequestSerializer.entityDecoder
           )
-          project <- projectsService.createEmptyProject(
-            request.id,
-            request.name,
-            request.configuration
-          )
+          project <- projectsService.createEmptyProject(request)
           _ <- logger.info(s"Project created with id ${project.id}")
         } yield project)
           .flatMap { project =>
             Created(ProjectSerializer.encodeJson(project))
           }
           .handleErrorWith {
-            case ProjectAlreadyExists(projectId) =>
+            case err @ ProjectAlreadyExists(projectId) =>
+              logger.warn(err.getMessage)
               Conflict(s"The project $projectId already exists")
-            case InvalidProjectIdentifier(message) =>
+            case err @ InvalidProjectIdentifier(message) =>
+              logger.warn(err.getMessage)
               BadRequest(message)
-            case FeaturesConfigurationError(message) =>
+            case err @ FeaturesConfigurationError(message) =>
+              logger.warn(err.getMessage)
               BadRequest(message)
+            case err @ FeaturesClassDoesNotExist(featuresId) =>
+              logger.warn(err.getMessage)
+              NotFound(s"""the features class "$featuresId" does not exist""")
+            case err @ LabelsClassDoesNotExist(labelsId) =>
+              logger.warn(err.getMessage)
+              NotFound(s"""the labels class "$labelsId" does not exist""")
+            case err: ClassificationProjectRequiresLabels =>
+              logger.warn(err.getMessage)
+              BadRequest(s"a classification project requires labels")
+            case err: RegressionProjectDoesNotRequireLabels =>
+              logger.warn(err.getMessage)
+              BadRequest(s"a regression project does not require labels")
             case err =>
               logger.error(s"Unhandled error: ${err.getMessage}") *> InternalServerError(
                 "An unknown error occurred"

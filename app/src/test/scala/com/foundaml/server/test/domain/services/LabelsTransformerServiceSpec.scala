@@ -29,11 +29,15 @@ class LabelsTransformerServiceSpec extends FlatSpec with Matchers {
       )
     )
 
+    import com.foundaml.server.domain.models.LabelsConfiguration
     inside(
       transformer2.transform(
-        OneOfLabelsConfiguration(
-          Set("toto", "toto3"),
-          "Either toto or toto3"
+        LabelsConfiguration(
+          "id",
+          OneOfLabelsConfiguration(
+            Set("toto", "toto3"),
+            "Either toto or toto3"
+          )
         ),
         UUID.randomUUID().toString,
         labels1
@@ -64,9 +68,12 @@ class LabelsTransformerServiceSpec extends FlatSpec with Matchers {
 
     inside(
       transformer1.transform(
-        OneOfLabelsConfiguration(
-          Set("toto", "toto3"),
-          "Either toto or toto3"
+        LabelsConfiguration(
+          "id",
+          OneOfLabelsConfiguration(
+            Set("toto", "toto3"),
+            "Either toto or toto3"
+          )
         ),
         UUID.randomUUID().toString,
         labels2
@@ -99,10 +106,14 @@ class LabelsTransformerServiceSpec extends FlatSpec with Matchers {
       )
     )
 
+    import com.foundaml.server.domain.models.LabelsConfiguration
     val transformedLabels = transformer.transform(
-      OneOfLabelsConfiguration(
-        Set("toto", "titi"),
-        "Either toto or titi"
+      LabelsConfiguration(
+        "id",
+        OneOfLabelsConfiguration(
+          Set("toto", "titi"),
+          "Either toto or titi"
+        )
       ),
       UUID.randomUUID().toString,
       labels

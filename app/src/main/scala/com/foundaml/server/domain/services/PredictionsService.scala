@@ -235,6 +235,7 @@ class PredictionsService(
       features: Features
   ) = featuresConfiguration match {
     case FeaturesConfiguration(
+        id,
         featuresConfigList: List[FeatureConfiguration]
         ) =>
       lazy val sameSize = features.size == featuresConfigList.size
@@ -271,7 +272,7 @@ class PredictionsService(
   def validateClassificationLabels(
       labelsConfiguration: LabelsConfiguration,
       labels: Set[ClassificationLabel]
-  ): Boolean = labelsConfiguration match {
+  ): Boolean = labelsConfiguration.data match {
     case OneOfLabelsConfiguration(oneOf, _) =>
       oneOf == labels.map(_.label)
     case DynamicLabelsConfiguration(description) => true
