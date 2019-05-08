@@ -9,6 +9,11 @@ case class GCPConfig(
     projectId: String,
     pubsub: PubSubConfig
 )
+case class KafkaConfig(
+    enabled: Boolean,
+    topic: String,
+    bootstrapServers: String
+)
 case class PubSubConfig(enabled: Boolean, predictionsTopicId: String)
 case class PostgreSqlConfig(
     host: String,
@@ -22,5 +27,6 @@ case class DatabaseConfig(postgresql: PostgreSqlConfig)
 case class FoundaMLConfig(
     kinesis: KinesisConfig,
     gcp: GCPConfig,
+    kafka: KafkaConfig,
     database: DatabaseConfig
 )

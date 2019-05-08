@@ -39,6 +39,7 @@ object Main extends IOApp with IOLogging {
     )
 
   import cats.effect.ContextShift
+  import com.foundaml.server.infrastructure.streaming.KafkaService
   def databaseConnected(
       config: FoundaMLConfig
   )(implicit xa: doobie.Transactor[IO]) =
@@ -65,11 +66,18 @@ object Main extends IOApp with IOLogging {
         IO.pure(None)
       }
       kinesisService <- KinesisService("us-east-2")
+      kafkaService <- if (config.kafka.enabled) {
+        KafkaService(config.kafka.topic, config.kafka.bootstrapServers)
+          .map(Some(_))
+      } else {
+        IO.pure(None)
+      }
       predictionsService = new PredictionsService(
         projectsRepository,
         predictionsRepository,
         kinesisService,
         pubSubService,
+        kafkaService,
         projectFactory,
         config
       )
