@@ -47,7 +47,10 @@ lazy val root = (project in file("."))
         ExclusionRule(organization = "com.fasterxml.jackson.core"),
         ExclusionRule(organization = "com.fasterxml.jackson.dataformat"),
         ExclusionRule(organization = "org.jboss.logging")
-      )
+      ),
+      "co.fs2" %% "fs2-core" % "1.0.4",
+      "co.fs2" %% "fs2-io" % "1.0.4",
+      "com.ovoenergy" %% "fs2-kafka" % "0.19.9"
     ),
     addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.6"),
     addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.2.4"),
