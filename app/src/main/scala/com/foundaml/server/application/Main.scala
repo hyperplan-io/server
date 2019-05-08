@@ -74,6 +74,7 @@ object Main extends IOApp with IOLogging {
         predictionsRepository,
         kinesisService,
         pubSubService,
+        kafkaService,
         projectFactory,
         config
       )

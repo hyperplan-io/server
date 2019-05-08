@@ -28,16 +28,18 @@ import com.foundaml.server.infrastructure.serialization.PredictionSerializer
 import com.foundaml.server.infrastructure.serialization.events.PredictionEventSerializer
 import com.foundaml.server.infrastructure.streaming.{
   KinesisService,
-  PubSubService
+  PubSubService,
+  KafkaService
 }
 import doobie.free.connection.{AsyncConnectionIO, ConnectionIO}
-
 import cats.effect.ContextShift
+
 class PredictionsService(
     projectsRepository: ProjectsRepository,
     predictionsRepository: PredictionsRepository,
     kinesisService: KinesisService,
     pubSubService: Option[PubSubService],
+    kafkaService: Option[KafkaService],
     projectFactory: ProjectFactory,
     config: FoundaMLConfig
 )(implicit cs: ContextShift[IO])
@@ -67,6 +69,9 @@ class PredictionsService(
     for {
       _ <- pubSubService.fold[IO[Unit]](IO.unit)(
         _.publish(prediction)(PredictionEventSerializer.encoder)
+      )
+      _ <- kafkaService.fold[IO[Unit]](IO.unit)(
+        _.publish(prediction, prediction.projectId)(PredictionEventSerializer.encoder)
       )
       _ <- publishPredictionEventToKinesis(prediction)
     } yield ()

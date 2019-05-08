@@ -15,6 +15,7 @@ class KafkaService(topic: String, stream: fs2.Stream[IO, KafkaProducer[IO,String
     val json = circeEncoder(data).noSpaces
     val record = ProducerRecord(topic, partitionKey, json)
     ProducerMessage.one(record)
+    IO.unit 
   }
 
 }
