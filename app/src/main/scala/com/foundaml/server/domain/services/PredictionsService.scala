@@ -71,7 +71,9 @@ class PredictionsService(
         _.publish(prediction)(PredictionEventSerializer.encoder)
       )
       _ <- kafkaService.fold[IO[Unit]](IO.unit)(
-        _.publish(prediction, prediction.projectId)(PredictionEventSerializer.encoder)
+        _.publish(prediction, prediction.projectId)(
+          PredictionEventSerializer.encoder
+        )
       )
       _ <- publishPredictionEventToKinesis(prediction)
     } yield ()

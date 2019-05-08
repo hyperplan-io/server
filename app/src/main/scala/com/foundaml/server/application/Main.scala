@@ -66,9 +66,11 @@ object Main extends IOApp with IOLogging {
         IO.pure(None)
       }
       kinesisService <- KinesisService("us-east-2")
-      kafkaService = if(config.kafka.enabled) {
+      kafkaService = if (config.kafka.enabled) {
         Some(KafkaService(config.kafka.topic, config.kafka.bootstrapServers))
-      } else { None }
+      } else {
+        None
+      }
       predictionsService = new PredictionsService(
         projectsRepository,
         predictionsRepository,

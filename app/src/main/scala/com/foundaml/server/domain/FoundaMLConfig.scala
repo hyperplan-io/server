@@ -10,9 +10,9 @@ case class GCPConfig(
     pubsub: PubSubConfig
 )
 case class KafkaConfig(
-  enabled: Boolean,
-  topic: String,
-  bootstrapServers: String
+    enabled: Boolean,
+    topic: String,
+    bootstrapServers: String
 )
 case class PubSubConfig(enabled: Boolean, predictionsTopicId: String)
 case class PostgreSqlConfig(
