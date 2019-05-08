@@ -121,7 +121,8 @@ object Main extends IOApp with IOLogging {
         config.database.postgresql.port.toString,
         config.database.postgresql.database,
         config.database.postgresql.username,
-        config.database.postgresql.password
+        config.database.postgresql.password,
+        config.database.postgresql.schema
       )
       _ <- transactor.use { implicit xa =>
         PostgresqlService.testConnection.attempt.flatMap {
