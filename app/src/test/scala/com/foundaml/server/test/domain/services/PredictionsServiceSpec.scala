@@ -17,7 +17,8 @@ import com.foundaml.server.domain.repositories.{
 }
 import com.foundaml.server.infrastructure.streaming.{
   KinesisService,
-  PubSubService
+  PubSubService,
+  KafkaService
 }
 import com.foundaml.server.test.{
   AlgorithmGenerator,
@@ -41,6 +42,11 @@ class PredictionsServiceSpec extends FlatSpec with TestDatabase {
         "myTopic"
       )
     ),
+    KafkaConfig(
+      enabled = false,
+      topic = "exampleTopic",
+      bootstrapServers = "localhost:9092"
+    ),
     DatabaseConfig(
       PostgreSqlConfig(
         "host",
@@ -55,6 +61,8 @@ class PredictionsServiceSpec extends FlatSpec with TestDatabase {
     KinesisService("fake-region").unsafeRunSync()
   val pubSubService: PubSubService =
     PubSubService("myProjectId", "myTopic").unsafeRunSync()
+  val kafkaService: KafkaService =
+    KafkaService(config.kafka.topic, config.kafka.bootstrapServers)
   val projectsRepository = new ProjectsRepository()(xa)
   val algorithmsRepository = new AlgorithmsRepository()(xa)
   val predictionsRepository = new PredictionsRepository()(xa)
@@ -69,6 +77,7 @@ class PredictionsServiceSpec extends FlatSpec with TestDatabase {
       predictionsRepository,
       kinesisService,
       Some(pubSubService),
+      Some(kafkaService),
       projectFactory,
       config
     )
