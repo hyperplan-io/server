@@ -36,16 +36,27 @@ class ProjectsController(
             Created(ProjectSerializer.encodeJson(project))
           }
           .handleErrorWith {
-            case ProjectAlreadyExists(projectId) =>
+            case err@ ProjectAlreadyExists(projectId) =>
+              logger.warn(err.getMessage)
               Conflict(s"The project $projectId already exists")
-            case InvalidProjectIdentifier(message) =>
+            case err @ InvalidProjectIdentifier(message) =>
+              logger.warn(err.getMessage)
               BadRequest(message)
-            case FeaturesConfigurationError(message) =>
+            case err @ FeaturesConfigurationError(message) =>
+              logger.warn(err.getMessage)
               BadRequest(message)
-            case FeaturesClassDoesNotExist(featuresId) =>
+            case err @ FeaturesClassDoesNotExist(featuresId) =>
+              logger.warn(err.getMessage)
               NotFound(s"""the features class "$featuresId" does not exist""")
-            case LabelsClassDoesNotExist(labelsId) =>
+            case err @ LabelsClassDoesNotExist(labelsId) =>
+              logger.warn(err.getMessage)
               NotFound(s"""the labels class "$labelsId" does not exist""")
+            case err: ClassificationProjectRequiresLabels => 
+              logger.warn(err.getMessage)
+              BadRequest(s"a classification project requires labels")
+            case err: RegressionProjectDoesNotRequireLabels => 
+              logger.warn(err.getMessage)
+              BadRequest(s"a regression project does not require labels")
             case err =>
               logger.error(s"Unhandled error: ${err.getMessage}") *> InternalServerError(
                 "An unknown error occurred"

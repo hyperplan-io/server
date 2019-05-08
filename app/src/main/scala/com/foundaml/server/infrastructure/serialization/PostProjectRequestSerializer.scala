@@ -23,7 +23,7 @@ object PostProjectRequestSerializer {
         name <- c.downField("name").as[String]
         problemType <- c.downField("problem").as[ProblemType]
         featuresId <- c.downField("featuresId").as[String]
-        labelsId <- c.downField("labelsId").as[String]
+        labelsId <- c.downField("labelsId").as[Option[String]]
       } yield PostProjectRequest(id, name, problemType, featuresId, labelsId)
 
   implicit val entityDecoder: EntityDecoder[IO, PostProjectRequest] =

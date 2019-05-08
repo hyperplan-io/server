@@ -104,6 +104,10 @@ object LabelsConfigurationSerializer {
     labelConfiguration.asJson
   }
 
+  def encodeJsonList(labelConfiguration: List[LabelsConfiguration]): Json = {
+    labelConfiguration.asJson
+  }
+
   def decodeJson(n: String): Either[io.circe.Error, LabelsConfiguration] = {
     decode[LabelsConfiguration](n)
   }

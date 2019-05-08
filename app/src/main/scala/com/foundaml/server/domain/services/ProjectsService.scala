@@ -71,23 +71,25 @@ class ProjectsService(
   def createEmptyProject(
       projectRequest: PostProjectRequest
   ): IO[Project] = {
+    
     val featuresIO = domainService.readFeatures(projectRequest.featuresId)
-    val labelsIO = domainService.readLabels(projectRequest.labelsId)
-    (featuresIO, labelsIO)
-      .mapN { (features, labels) =>
-        projectRequest.problem match {
-          case Classification =>
-            ClassificationProject(
-              projectRequest.id,
-              projectRequest.name,
-              ClassificationConfiguration(
-                features,
-                labels
-              ),
-              Nil,
-              NoAlgorithm()
-            )
-          case Regression =>
+    ( (projectRequest.problem, projectRequest.labelsId) match {
+      case (Classification, Some(labelsId)) =>
+        val labelsIO = domainService.readLabels(labelsId)
+        (featuresIO, labelsIO).mapN { (features, labels) =>
+          ClassificationProject(
+            projectRequest.id,
+            projectRequest.name,
+            ClassificationConfiguration(
+              features,
+              labels
+            ),
+            Nil,
+            NoAlgorithm()
+          )
+        }
+        case (Regression, None) =>
+          featuresIO.map { features => 
             RegressionProject(
               projectRequest.id,
               projectRequest.name,
@@ -97,9 +99,13 @@ class ProjectsService(
               Nil,
               NoAlgorithm()
             )
-        }
-      }
-      .flatMap { project =>
+          }
+        case (Classification, None) =>
+          IO.raiseError(ClassificationProjectRequiresLabels("A classification project requires labels"))
+        case (Regression, Some(_)) =>
+          IO.raiseError(RegressionProjectDoesNotRequireLabels("A regression project does not require labels"))
+
+      }).flatMap { project =>
         val errors = project match {
           case classificationProject: ClassificationProject =>
             validateClassificationConfiguration(
