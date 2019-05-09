@@ -43,7 +43,6 @@ object Main extends IOApp with IOLogging {
       )
     )
 
-  
   def databaseConnected(
       config: FoundaMLConfig
   )(implicit xa: doobie.Transactor[IO]) =
