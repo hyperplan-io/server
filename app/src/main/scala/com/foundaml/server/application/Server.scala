@@ -20,6 +20,7 @@ import com.foundaml.server.domain.repositories.{
 import com.foundaml.server.infrastructure.streaming._
 import com.foundaml.server.domain.services._
 import org.http4s.server.Router
+import kamon.http4s.middleware.server.KamonSupport
 
 object Server {
   val port: Int = envOrNone("HTTP_PORT").fold(9090)(_.toInt)
@@ -40,22 +41,22 @@ object Server {
       .bindHttp(port, "0.0.0.0")
       .withHttpApp(
         Router(
-          "/predictions" -> new PredictionsController(
+          "/predictions" -> KamonSupport(new PredictionsController(
             predictionsService
-          ).service,
-          "/projects" -> new ProjectsController(
+          ).service),
+          "/projects" -> KamonSupport(new ProjectsController(
             projectsService
-          ).service,
-          "/algorithms" -> new AlgorithmsController(
+          ).service),
+          "/algorithms" -> KamonSupport(new AlgorithmsController(
             algorithmsService
-          ).service,
-          "/examples" -> new ExamplesController(
+          ).service),
+          "/examples" -> KamonSupport(new ExamplesController(
             predictionsService
-          ).service,
-          "/features" -> new FeaturesController(
+          ).service),
+          "/features" -> KamonSupport(new FeaturesController(
             domainService
-          ).service,
-          "/labels" -> new LabelsController(
+          ).service),
+          "/labels" -> KamonSupport(new LabelsController(
             domainService
           ).service,
           "/_health" -> new HealthController(
@@ -65,5 +66,5 @@ object Server {
         ).orNotFound
       )
       .serve
-
+    )
 }

@@ -53,6 +53,12 @@ lazy val root = (project in file("."))
       "com.ovoenergy" %% "fs2-kafka" % "0.19.9",
       "com.kubukoz" %% "sup-core" % "0.4.0",
       "com.kubukoz" %% "sup-doobie" % "0.4.0"
+      "io.kamon" %% "kamon-core" % "1.1.0",
+      "io.kamon" %% "kamon-prometheus" % "1.1.1",
+      "io.kamon" %% "kamon-jdbc" % "1.0.2",
+      "io.kamon" %% "kamon-logback" % "1.0.6",
+      "io.kamon" %% "kamon-system-metrics" % "1.0.0",
+      "io.kamon" %% "kamon-http4s" % "1.0.8"
     ),
     addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.6"),
     addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.2.4"),
