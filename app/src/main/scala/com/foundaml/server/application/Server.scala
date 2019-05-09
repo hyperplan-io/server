@@ -4,6 +4,8 @@ import cats.effect.Timer
 import cats.effect.IO
 import cats.implicits._
 
+import doobie._
+
 import org.http4s.server.blaze.{BlazeBuilder, BlazeServerBuilder}
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.{FiniteDuration, NANOSECONDS, TimeUnit}
@@ -14,8 +16,11 @@ import com.foundaml.server.domain.repositories.{
   AlgorithmsRepository,
   ProjectsRepository
 }
+
+import com.foundaml.server.infrastructure.streaming._
 import com.foundaml.server.domain.services._
 import org.http4s.server.Router
+
 
 object Server {
   val port: Int = envOrNone("HTTP_PORT").fold(9090)(_.toInt)
@@ -28,9 +33,10 @@ object Server {
       projectsService: ProjectsService,
       algorithmsService: AlgorithmsService,
       domainService: DomainService,
+      kafkaService: Option[KafkaService],
       projectsRepository: ProjectsRepository,
       port: Int
-  )(implicit cs: ContextShift[IO], timer: Timer[IO]) =
+  )(implicit cs: ContextShift[IO], timer: Timer[IO], xa: Transactor[IO]) =
     BlazeServerBuilder[IO]
       .bindHttp(port, "0.0.0.0")
       .withHttpApp(
@@ -52,7 +58,12 @@ object Server {
           ).service,
           "/labels" -> new LabelsController(
             domainService
+          ).service,
+          "/_health" -> new HealthController(
+            xa,
+            kafkaService
           ).service
+
         ).orNotFound
       )
       .serve
