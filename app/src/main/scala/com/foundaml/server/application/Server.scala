@@ -21,7 +21,6 @@ import com.foundaml.server.infrastructure.streaming._
 import com.foundaml.server.domain.services._
 import org.http4s.server.Router
 
-
 object Server {
   val port: Int = envOrNone("HTTP_PORT").fold(9090)(_.toInt)
 
@@ -63,7 +62,6 @@ object Server {
             xa,
             kafkaService
           ).service
-
         ).orNotFound
       )
       .serve

@@ -17,13 +17,12 @@ import cats.effect.Timer
 import cats.effect.ContextShift
 import com.foundaml.server.infrastructure.streaming.KafkaService
 
-
 import sup._, sup.modules.doobie._
 import eu.timepit.refined.auto._
 import scala.concurrent.duration._
 class HealthController(
-  xa: Transactor[IO],
-  kafkaService: Option[KafkaService]
+    xa: Transactor[IO],
+    kafkaService: Option[KafkaService]
 )(implicit cs: ContextShift[IO], timer: Timer[IO])
     extends Http4sDsl[IO]
     with IOLogging {
@@ -34,23 +33,28 @@ class HealthController(
   val service: HttpRoutes[IO] = {
     HttpRoutes.of[IO] {
       case req @ GET -> Root =>
-        HealthReporter.fromChecks(
-          databaseCheck(xa).through(mods.timeoutToSick(4.seconds)),
-          kafkaCheck(kafkaService).through(mods.timeoutToSick(3.seconds))
-        ).check.flatMap { healthResult => 
-          healthResult.value.health match {
-            case Health.Healthy => logger.debug("healthcheck successful") *> Ok()
-            case Health.Sick => logger.warn("healthcheck failed") *> InternalServerError()
+        HealthReporter
+          .fromChecks(
+            databaseCheck(xa).through(mods.timeoutToSick(4.seconds)),
+            kafkaCheck(kafkaService).through(mods.timeoutToSick(3.seconds))
+          )
+          .check
+          .flatMap { healthResult =>
+            healthResult.value.health match {
+              case Health.Healthy =>
+                logger.debug("healthcheck successful") *> Ok()
+              case Health.Sick =>
+                logger.warn("healthcheck failed") *> InternalServerError()
+            }
           }
-        }
     }
   }
 
-  def databaseCheck(implicit xa: Transactor[IO]) = 
+  def databaseCheck(implicit xa: Transactor[IO]) =
     connectionCheck(xa)(timeoutSeconds = Some(4))
 
-  def kafkaCheck(kafkaService: Option[KafkaService]) = 
+  def kafkaCheck(kafkaService: Option[KafkaService]) =
     kafkaService.fold(
       HealthCheck.liftFBoolean(IO.pure(true))
-      )(service => HealthCheck.liftFBoolean(service.isHealthy ))
+    )(service => HealthCheck.liftFBoolean(service.isHealthy))
 }
