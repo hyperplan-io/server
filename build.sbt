@@ -52,7 +52,7 @@ lazy val root = (project in file("."))
       "co.fs2" %% "fs2-io" % "1.0.4",
       "com.ovoenergy" %% "fs2-kafka" % "0.19.9",
       "com.kubukoz" %% "sup-core" % "0.4.0",
-      "com.kubukoz" %% "sup-doobie" % "0.4.0"
+      "com.kubukoz" %% "sup-doobie" % "0.4.0",
       "io.kamon" %% "kamon-core" % "1.1.0",
       "io.kamon" %% "kamon-prometheus" % "1.1.1",
       "io.kamon" %% "kamon-jdbc" % "1.0.2",

@@ -41,30 +41,43 @@ object Server {
       .bindHttp(port, "0.0.0.0")
       .withHttpApp(
         Router(
-          "/predictions" -> KamonSupport(new PredictionsController(
-            predictionsService
-          ).service),
-          "/projects" -> KamonSupport(new ProjectsController(
-            projectsService
-          ).service),
-          "/algorithms" -> KamonSupport(new AlgorithmsController(
-            algorithmsService
-          ).service),
-          "/examples" -> KamonSupport(new ExamplesController(
-            predictionsService
-          ).service),
-          "/features" -> KamonSupport(new FeaturesController(
-            domainService
-          ).service),
-          "/labels" -> KamonSupport(new LabelsController(
-            domainService
-          ).service,
-          "/_health" -> new HealthController(
-            xa,
-            kafkaService
-          ).service
+          "/predictions" -> KamonSupport(
+            new PredictionsController(
+              predictionsService
+            ).service
+          ),
+          "/projects" -> KamonSupport(
+            new ProjectsController(
+              projectsService
+            ).service
+          ),
+          "/algorithms" -> KamonSupport(
+            new AlgorithmsController(
+              algorithmsService
+            ).service
+          ),
+          "/examples" -> KamonSupport(
+            new ExamplesController(
+              predictionsService
+            ).service
+          ),
+          "/features" -> KamonSupport(
+            new FeaturesController(
+              domainService
+            ).service
+          ),
+          "/labels" -> KamonSupport(
+            new LabelsController(
+              domainService
+            ).service
+          ),
+          "/_health" -> KamonSupport(
+            new HealthController(
+              xa,
+              kafkaService
+            ).service
+          )
         ).orNotFound
       )
       .serve
-    )
 }
