@@ -1,7 +1,7 @@
 val Http4sVersion = "0.20.0"
 val Specs2Version = "4.1.0"
 val circeVersion = "0.11.1"
-val DoobieVersion = "0.7.0-M4"
+val DoobieVersion = "0.6.0"
 
 lazy val root = (project in file("."))
   .settings(
@@ -50,7 +50,9 @@ lazy val root = (project in file("."))
       ),
       "co.fs2" %% "fs2-core" % "1.0.4",
       "co.fs2" %% "fs2-io" % "1.0.4",
-      "com.ovoenergy" %% "fs2-kafka" % "0.19.9"
+      "com.ovoenergy" %% "fs2-kafka" % "0.19.9",
+      "com.kubukoz" %% "sup-core" % "0.4.0",
+      "com.kubukoz" %% "sup-doobie" % "0.4.0"
     ),
     addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.6"),
     addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.2.4"),

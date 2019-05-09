@@ -105,6 +105,7 @@ object Main extends IOApp with IOLogging {
           projectsService,
           algorithmsService,
           domainService,
+          kafkaService,
           projectsRepository,
           port
         )
