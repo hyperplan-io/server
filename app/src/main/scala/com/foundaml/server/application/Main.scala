@@ -50,7 +50,7 @@ object Main extends IOApp with IOLogging {
       _ <- logger.info("Connected to database")
       _ <- logger.debug("Running SQL scripts")
       _ <- PrometheusService.monitor
-      _ <- KamonSystemMonitorService.start
+      //_ <- KamonSystemMonitorService.start
       _ <- PostgresqlService.initSchema
       _ <- logger.debug("SQL scripts have been runned successfully")
       projectsRepository = new ProjectsRepository

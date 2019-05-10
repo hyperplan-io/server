@@ -1,7 +1,7 @@
 version: '3'
 services:
   foundaml-server:
-    build: .
+    image:  foundaml/server:0.0.1
     ports:
      - "8080:8080"
     restart: always
