@@ -20,6 +20,7 @@ import com.foundaml.server.domain.repositories.{
 import com.foundaml.server.infrastructure.streaming._
 import com.foundaml.server.domain.services._
 import org.http4s.server.Router
+import kamon.http4s.middleware.server.KamonSupport
 
 object Server {
   val port: Int = envOrNone("HTTP_PORT").fold(9090)(_.toInt)
@@ -40,30 +41,43 @@ object Server {
       .bindHttp(port, "0.0.0.0")
       .withHttpApp(
         Router(
-          "/predictions" -> new PredictionsController(
-            predictionsService
-          ).service,
-          "/projects" -> new ProjectsController(
-            projectsService
-          ).service,
-          "/algorithms" -> new AlgorithmsController(
-            algorithmsService
-          ).service,
-          "/examples" -> new ExamplesController(
-            predictionsService
-          ).service,
-          "/features" -> new FeaturesController(
-            domainService
-          ).service,
-          "/labels" -> new LabelsController(
-            domainService
-          ).service,
-          "/_health" -> new HealthController(
-            xa,
-            kafkaService
-          ).service
+          "/predictions" -> KamonSupport(
+            new PredictionsController(
+              predictionsService
+            ).service
+          ),
+          "/projects" -> KamonSupport(
+            new ProjectsController(
+              projectsService
+            ).service
+          ),
+          "/algorithms" -> KamonSupport(
+            new AlgorithmsController(
+              algorithmsService
+            ).service
+          ),
+          "/examples" -> KamonSupport(
+            new ExamplesController(
+              predictionsService
+            ).service
+          ),
+          "/features" -> KamonSupport(
+            new FeaturesController(
+              domainService
+            ).service
+          ),
+          "/labels" -> KamonSupport(
+            new LabelsController(
+              domainService
+            ).service
+          ),
+          "/_health" -> KamonSupport(
+            new HealthController(
+              xa,
+              kafkaService
+            ).service
+          )
         ).orNotFound
       )
       .serve
-
 }

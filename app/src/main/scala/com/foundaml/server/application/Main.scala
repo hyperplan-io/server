@@ -24,6 +24,11 @@ import pureconfig.generic.auto._
 import scala.concurrent.ExecutionContext.Implicits.global
 import com.foundaml.server.domain.repositories.DomainRepository
 
+import cats.effect.ContextShift
+import com.foundaml.server.infrastructure.streaming.KafkaService
+import com.foundaml.server.infrastructure.metrics.KamonSystemMonitorService
+import com.foundaml.server.infrastructure.metrics.PrometheusService
+
 object Main extends IOApp with IOLogging {
 
   override def main(args: Array[String]): Unit =
@@ -38,14 +43,14 @@ object Main extends IOApp with IOLogging {
       )
     )
 
-  import cats.effect.ContextShift
-  import com.foundaml.server.infrastructure.streaming.KafkaService
   def databaseConnected(
       config: FoundaMLConfig
   )(implicit xa: doobie.Transactor[IO]) =
     for {
       _ <- logger.info("Connected to database")
       _ <- logger.debug("Running SQL scripts")
+      _ <- PrometheusService.monitor
+      //_ <- KamonSystemMonitorService.start
       _ <- PostgresqlService.initSchema
       _ <- logger.debug("SQL scripts have been runned successfully")
       projectsRepository = new ProjectsRepository
