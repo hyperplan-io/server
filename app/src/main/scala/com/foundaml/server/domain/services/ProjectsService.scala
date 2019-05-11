@@ -138,10 +138,16 @@ class ProjectsService(
     }
   }
 
+  def readProjects = 
+    projectsRepository.readAll
+
   def readProject(id: String) =
     projectFactory.get(id).handleErrorWith {
       case UnexpectedEnd => IO.raiseError(ProjectDoesNotExist(id))
     }
 
   def updateProject(project: Project) = projectsRepository.update(project)
+
+
+
 }

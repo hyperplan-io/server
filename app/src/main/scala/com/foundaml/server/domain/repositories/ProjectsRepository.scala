@@ -7,7 +7,11 @@ import cats.implicits._
 import com.foundaml.server.domain.models._
 import com.foundaml.server.domain.models.errors.ProjectAlreadyExists
 import com.foundaml.server.infrastructure.serialization._
+import com.foundaml.server.domain.models.backends.Backend
 import doobie.postgres.sqlstate
+import com.foundaml.server.domain.models.errors.AlgorithmDataIncorrect
+
+import com.foundaml.server.domain.models._
 
 class ProjectsRepository(implicit xa: Transactor[IO]) {
 
@@ -35,6 +39,19 @@ class ProjectsRepository(implicit xa: Transactor[IO]) {
 
   implicit val projectConfigurationPut: Put[ProjectConfiguration] =
     Put[String].contramap(ProjectConfigurationSerializer.encodeJsonString)
+
+  implicit val backendGet: Get[Either[io.circe.Error, Backend]] =
+    Get[String].map(BackendSerializer.decodeJson)
+  implicit val backendPut: Put[Backend] =
+    Put[String].contramap(BackendSerializer.encodeJsonNoSpaces)
+
+  implicit val securityConfigurationGet
+      : Get[Either[io.circe.Error, SecurityConfiguration]] =
+    Get[String].map(SecurityConfigurationSerializer.decodeJson)
+  implicit val securityConfigurationPut: Put[SecurityConfiguration] =
+    Put[String].contramap(SecurityConfigurationSerializer.encodeJsonNoSpaces)
+
+  import ProjectsRepository._
 
   val separator = ";"
   implicit val labelsTypeGet: Get[Set[String]] =
@@ -75,12 +92,49 @@ class ProjectsRepository(implicit xa: Transactor[IO]) {
 
   def read(projectId: String) = readQuery(projectId).unique.transact(xa)
 
-  def readAll() =
+  def readAllProjectsQuery =
     sql"""
-        SELECT id, name, problem, algorithm_policy, configuration
-      FROM projects
+        SELECT projects.id, name, problem, algorithm_policy, configuration
+      FROM projects 
       """
       .query[ProjectsRepository.ProjectData]
+
+  def readProjectAlgorithmsQuery(projectId: String): doobie.Query0[AlgorithmData] =
+    sql"""
+      SELECT id, backend, project_id, security
+      FROM algorithms 
+      WHERE project_id=$projectId
+      """
+      .query[AlgorithmData]
+
+  def readProjectAlgorithms(projectId: String): IO[List[Algorithm]] =
+    readProjectAlgorithmsQuery(projectId)
+      .to[List]
+      .transact(xa)
+      .flatMap(dataListToAlgorithm)
+
+  def readAllAlgorithmsQuery(): doobie.Query0[AlgorithmData] =
+    sql"""
+      SELECT id, backend, project_id, security
+      FROM algorithms 
+      """
+      .query[AlgorithmData]
+
+
+  def readAll = readAllProjectsQuery.to[List].transact(xa).flatMap(dataListToProject).flatMap (_.map{
+    case project: ClassificationProject => 
+      readProjectAlgorithms(project.id).map { newAlgorithms => 
+        project.copy(
+          algorithms = newAlgorithms
+        )
+      }
+    case project: RegressionProject => 
+      readProjectAlgorithms(project.id).map { newAlgorithms => 
+        project.copy(
+          algorithms = newAlgorithms
+        )
+      }
+  }.sequence)
 
   def updateQuery(project: Project) =
     sql"""
@@ -99,4 +153,84 @@ object ProjectsRepository {
       Either[io.circe.Error, AlgorithmPolicy],
       Either[io.circe.Error, ProjectConfiguration]
   )
+
+  type AlgorithmData = (
+      String,
+      Either[io.circe.Error, Backend],
+      String,
+      Either[io.circe.Error, SecurityConfiguration]
+  )
+  
+  type ProjectEntityData = (
+      String,
+      String,
+      Either[io.circe.Error, ProblemType],
+      Either[io.circe.Error, AlgorithmPolicy],
+      Either[io.circe.Error, ProjectConfiguration],
+      String,
+      Either[io.circe.Error, Backend],
+      String,
+      Either[io.circe.Error, SecurityConfiguration]
+  )
+
+  import com.foundaml.server.domain.models.errors.ProjectDataInconsistent
+  def dataToProject(data: ProjectData) = data match {
+    case (
+            id,
+            name,
+            Right(Classification),
+            Right(policy),
+            Right(projectConfiguration: ClassificationConfiguration)
+          ) =>
+        IO.pure(
+          ClassificationProject(
+            id,
+            name,
+            projectConfiguration,
+            Nil,
+            policy
+          )
+        )
+      case (
+            id,
+            name,
+            Right(Regression),
+            Right(policy),
+            Right(projectConfiguration: RegressionConfiguration)
+          ) =>
+        IO.pure(
+          RegressionProject(
+            id,
+            name,
+            projectConfiguration,
+            Nil,
+            policy
+          )
+        )
+      case projectData =>
+        IO.raiseError(ProjectDataInconsistent(data._1))
+  }
+
+  def dataListToProject(dataList: List[ProjectData]) =
+    (dataList.map(dataToProject)).sequence
+
+
+  def dataToAlgorithm(data: AlgorithmData) = data match {
+    case (
+        id,
+        Right(backend),
+        projectId,
+        Right(security)
+        ) =>
+      IO.pure(
+        Algorithm(id, backend, projectId, security)
+      )
+    case algorithmData =>
+      IO.raiseError(AlgorithmDataIncorrect(data._1))
+  }
+
+  def dataListToAlgorithm(dataList: List[AlgorithmData]) =
+    (dataList.map(dataToAlgorithm)).sequence
+
+
 }

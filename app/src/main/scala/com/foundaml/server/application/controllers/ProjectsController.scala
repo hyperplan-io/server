@@ -63,6 +63,22 @@ class ProjectsController(
               )
           }
 
+      case GET -> Root =>
+        projectsService
+          .readProjects
+          .flatMap { projects =>
+            Ok(
+              ProjectSerializer.encodeJsonList(
+                projects
+              )
+            )
+          }.handleErrorWith {
+            case err =>
+              logger.error(s"Unhandled error: ${err.getMessage}") *> InternalServerError(
+                "An unknown error occurred"
+              )
+          }
+
       case GET -> Root / projectId =>
         projectsService
           .readProject(projectId)
