@@ -43,6 +43,11 @@ paths:
             type: array
             $ref: '#/definitions/LabelsConfiguration'
 definitions:
+  Project:
+    type: object
+    required:
+      - id
+
   FeaturesConfiguration:
     type: object
     required:
