@@ -90,7 +90,11 @@ class ProjectsRepository(implicit xa: Transactor[IO]) {
       """
       .query[ProjectsRepository.ProjectData]
 
-  def read(projectId: String) = readQuery(projectId).unique.transact(xa).flatMap(dataToProject).flatMap(retrieveProjectAlgorithms)
+  def read(projectId: String) =
+    readQuery(projectId).unique
+      .transact(xa)
+      .flatMap(dataToProject)
+      .flatMap(retrieveProjectAlgorithms)
 
   def readAllProjectsQuery =
     sql"""
@@ -99,7 +103,9 @@ class ProjectsRepository(implicit xa: Transactor[IO]) {
       """
       .query[ProjectsRepository.ProjectData]
 
-  def readProjectAlgorithmsQuery(projectId: String): doobie.Query0[AlgorithmData] =
+  def readProjectAlgorithmsQuery(
+      projectId: String
+  ): doobie.Query0[AlgorithmData] =
     sql"""
       SELECT id, backend, project_id, security
       FROM algorithms 
@@ -120,8 +126,12 @@ class ProjectsRepository(implicit xa: Transactor[IO]) {
       """
       .query[AlgorithmData]
 
-
-  def readAll = readAllProjectsQuery.to[List].transact(xa).flatMap(dataListToProject).flatMap(retrieveProjectsAlgorithms)
+  def readAll =
+    readAllProjectsQuery
+      .to[List]
+      .transact(xa)
+      .flatMap(dataListToProject)
+      .flatMap(retrieveProjectsAlgorithms)
 
   def updateQuery(project: Project) =
     sql"""
@@ -130,22 +140,24 @@ class ProjectsRepository(implicit xa: Transactor[IO]) {
 
   def update(project: Project) = updateQuery(project).run.transact(xa)
 
-  def retrieveProjectAlgorithms(project: Project) = (project match {
-    case project: ClassificationProject => 
-      readProjectAlgorithms(project.id).map { newAlgorithms => 
-        project.copy(
-          algorithms = newAlgorithms
-        )
-      }
-    case project: RegressionProject => 
-      readProjectAlgorithms(project.id).map { newAlgorithms => 
-        project.copy(
-          algorithms = newAlgorithms
-        )
-      }
-  })
+  def retrieveProjectAlgorithms(project: Project) =
+    (project match {
+      case project: ClassificationProject =>
+        readProjectAlgorithms(project.id).map { newAlgorithms =>
+          project.copy(
+            algorithms = newAlgorithms
+          )
+        }
+      case project: RegressionProject =>
+        readProjectAlgorithms(project.id).map { newAlgorithms =>
+          project.copy(
+            algorithms = newAlgorithms
+          )
+        }
+    })
 
-  def retrieveProjectsAlgorithms(projects: List[Project]) = projects.map(retrieveProjectAlgorithms).sequence
+  def retrieveProjectsAlgorithms(projects: List[Project]) =
+    projects.map(retrieveProjectAlgorithms).sequence
 
 }
 
@@ -164,7 +176,7 @@ object ProjectsRepository {
       String,
       Either[io.circe.Error, SecurityConfiguration]
   )
-  
+
   type ProjectEntityData = (
       String,
       String,
@@ -180,44 +192,43 @@ object ProjectsRepository {
   import com.foundaml.server.domain.models.errors.ProjectDataInconsistent
   def dataToProject(data: ProjectData) = data match {
     case (
-            id,
-            name,
-            Right(Classification),
-            Right(policy),
-            Right(projectConfiguration: ClassificationConfiguration)
-          ) =>
-        IO.pure(
-          ClassificationProject(
-            id,
-            name,
-            projectConfiguration,
-            Nil,
-            policy
-          )
+        id,
+        name,
+        Right(Classification),
+        Right(policy),
+        Right(projectConfiguration: ClassificationConfiguration)
+        ) =>
+      IO.pure(
+        ClassificationProject(
+          id,
+          name,
+          projectConfiguration,
+          Nil,
+          policy
         )
-      case (
-            id,
-            name,
-            Right(Regression),
-            Right(policy),
-            Right(projectConfiguration: RegressionConfiguration)
-          ) =>
-        IO.pure(
-          RegressionProject(
-            id,
-            name,
-            projectConfiguration,
-            Nil,
-            policy
-          )
+      )
+    case (
+        id,
+        name,
+        Right(Regression),
+        Right(policy),
+        Right(projectConfiguration: RegressionConfiguration)
+        ) =>
+      IO.pure(
+        RegressionProject(
+          id,
+          name,
+          projectConfiguration,
+          Nil,
+          policy
         )
-      case projectData =>
-        IO.raiseError(ProjectDataInconsistent(data._1))
+      )
+    case projectData =>
+      IO.raiseError(ProjectDataInconsistent(data._1))
   }
 
   def dataListToProject(dataList: List[ProjectData]) =
     (dataList.map(dataToProject)).sequence
-
 
   def dataToAlgorithm(data: AlgorithmData) = data match {
     case (
@@ -235,6 +246,5 @@ object ProjectsRepository {
 
   def dataListToAlgorithm(dataList: List[AlgorithmData]) =
     (dataList.map(dataToAlgorithm)).sequence
-
 
 }

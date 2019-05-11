@@ -136,14 +136,12 @@ class ProjectsService(
     }
   }
 
-  def readProjects = 
+  def readProjects =
     projectsRepository.readAll
 
   def readProject(id: String) =
     projectsRepository.read(id)
 
   def updateProject(project: Project) = projectsRepository.update(project)
-
-
 
 }

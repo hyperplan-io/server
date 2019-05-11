@@ -140,47 +140,49 @@ class AlgorithmsService(
       projectId,
       security
     )
-    projectsService.readProject(projectId).flatMap(
-          project => {
-            val errors = project match {
+    projectsService
+      .readProject(projectId)
+      .flatMap(
+        project => {
+          val errors = project match {
+            case classificationProject: ClassificationProject =>
+              validateClassificationAlgorithm(
+                algorithm,
+                classificationProject
+              )
+            case regressionProject: RegressionProject =>
+              validateRegressionAlgorithm(algorithm, regressionProject)
+          }
+          for {
+            _ <- if (errors.isEmpty) {
+              IO.unit
+            } else {
+              val message =
+                s"The following errors occurred: ${errors.mkString(", ")}"
+              logger.warn(message) *> IO.raiseError(
+                InvalidArgument(message)
+              )
+            }
+            insertResult <- algorithmsRepository.insert(algorithm)
+            result <- insertResult.fold(
+              err => {
+                IO.raiseError(err)
+              },
+              _ => IO.pure(algorithm)
+            )
+            _ <- project match {
               case classificationProject: ClassificationProject =>
-                validateClassificationAlgorithm(
-                  algorithm,
-                  classificationProject
+                projectsService.updateProject(
+                  classificationProject.copy(policy = DefaultAlgorithm(id))
                 )
               case regressionProject: RegressionProject =>
-                validateRegressionAlgorithm(algorithm, regressionProject)
-            }
-            for {
-              _ <- if (errors.isEmpty) {
-                IO.unit
-              } else {
-                val message =
-                  s"The following errors occurred: ${errors.mkString(", ")}"
-                logger.warn(message) *> IO.raiseError(
-                  InvalidArgument(message)
+                projectsService.updateProject(
+                  regressionProject.copy(policy = DefaultAlgorithm(id))
                 )
-              }
-              insertResult <- algorithmsRepository.insert(algorithm)
-              result <- insertResult.fold(
-                err => {
-                  IO.raiseError(err)
-                },
-                _ => IO.pure(algorithm)
-              )
-              _ <- project match {
-                case classificationProject: ClassificationProject =>
-                  projectsService.updateProject(
-                    classificationProject.copy(policy = DefaultAlgorithm(id))
-                  )
-                case regressionProject: RegressionProject =>
-                  projectsService.updateProject(
-                    regressionProject.copy(policy = DefaultAlgorithm(id))
-                  )
 
-              }
-            } yield result
-          }
+            }
+          } yield result
+        }
       )
   }
 }
