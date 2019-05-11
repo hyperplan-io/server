@@ -1,6 +1,5 @@
 package com.foundaml.server.domain.services
 
-import com.foundaml.server.domain.factories.ProjectFactory
 import com.foundaml.server.domain.repositories.DomainRepository
 import com.foundaml.server.controllers.requests.PostProjectRequest
 import com.foundaml.server.domain.models._
@@ -15,8 +14,7 @@ import cats.implicits._
 
 class ProjectsService(
     projectsRepository: ProjectsRepository,
-    domainService: DomainService,
-    projectFactory: ProjectFactory
+    domainService: DomainService
 ) extends IOLogging {
 
   val regex = "[0-9a-zA-Z-_]*"
@@ -138,10 +136,12 @@ class ProjectsService(
     }
   }
 
+  def readProjects =
+    projectsRepository.readAll
+
   def readProject(id: String) =
-    projectFactory.get(id).handleErrorWith {
-      case UnexpectedEnd => IO.raiseError(ProjectDoesNotExist(id))
-    }
+    projectsRepository.read(id)
 
   def updateProject(project: Project) = projectsRepository.update(project)
+
 }

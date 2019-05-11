@@ -2,7 +2,6 @@ package com.foundaml.server.test.domain.services
 
 import java.util.UUID
 
-import com.foundaml.server.domain.factories.ProjectFactory
 import com.foundaml.server.domain._
 import com.foundaml.server.domain.models._
 import com.foundaml.server.domain.models.errors.FeaturesValidationFailed
@@ -13,8 +12,10 @@ import com.foundaml.server.domain.models.features._
 import com.foundaml.server.domain.repositories.{
   AlgorithmsRepository,
   PredictionsRepository,
-  ProjectsRepository
+  ProjectsRepository,
+  DomainRepository
 }
+import com.foundaml.server.domain.services.{ProjectsService, DomainService}
 import com.foundaml.server.infrastructure.streaming.{
   KinesisService,
   PubSubService,
@@ -60,6 +61,12 @@ class PredictionsServiceSpec extends FlatSpec with TestDatabase {
       )
     )
   )
+
+  val projectsRepository = new ProjectsRepository()(xa)
+  val algorithmsRepository = new AlgorithmsRepository()(xa)
+  val predictionsRepository = new PredictionsRepository()(xa)
+  val domainRepository = new DomainRepository()(xa)
+
   val kinesisService: KinesisService =
     KinesisService("fake-region").unsafeRunSync()
   val pubSubService: PubSubService =
@@ -67,22 +74,21 @@ class PredictionsServiceSpec extends FlatSpec with TestDatabase {
   val kafkaService: KafkaService =
     KafkaService(config.kafka.topic, config.kafka.bootstrapServers)
       .unsafeRunSync()
-  val projectsRepository = new ProjectsRepository()(xa)
-  val algorithmsRepository = new AlgorithmsRepository()(xa)
-  val predictionsRepository = new PredictionsRepository()(xa)
-
-  val projectFactory = new ProjectFactory(
-    projectsRepository,
-    algorithmsRepository
+  val domainService = new DomainService(
+    domainRepository
   )
+  val projectsService = new ProjectsService(
+    projectsRepository,
+    domainService
+  )
+
   val predictionsService: PredictionsService =
     new PredictionsService(
-      projectsRepository,
       predictionsRepository,
+      projectsService,
       kinesisService,
       Some(pubSubService),
       Some(kafkaService),
-      projectFactory,
       config
     )
 

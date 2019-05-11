@@ -11,7 +11,6 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.{FiniteDuration, NANOSECONDS, TimeUnit}
 import scala.util.Properties.envOrNone
 import com.foundaml.server.application.controllers._
-import com.foundaml.server.domain.factories.ProjectFactory
 import com.foundaml.server.domain.repositories.{
   AlgorithmsRepository,
   ProjectsRepository

@@ -2,7 +2,6 @@ package com.foundaml.server.domain.services
 
 import cats.effect.IO
 import cats.implicits._
-import com.foundaml.server.domain.factories.ProjectFactory
 import com.foundaml.server.domain.models._
 import com.foundaml.server.domain.models.backends.{
   Backend,
@@ -27,8 +26,7 @@ import com.foundaml.server.infrastructure.logging.IOLogging
 class AlgorithmsService(
     projectsService: ProjectsService,
     algorithmsRepository: AlgorithmsRepository,
-    projectsRepository: ProjectsRepository,
-    projectFactory: ProjectFactory
+    projectsRepository: ProjectsRepository
 ) extends IOLogging {
 
   def validateFeaturesConfiguration(
@@ -142,54 +140,49 @@ class AlgorithmsService(
       projectId,
       security
     )
-    projectFactory
-      .get(projectId)
+    projectsService
+      .readProject(projectId)
       .flatMap(
-        _.fold(
-          err =>
-            logger.error(s"An error occurred when read the project: $err") *> IO
-              .raiseError(err),
-          project => {
-            val errors = project match {
+        project => {
+          val errors = project match {
+            case classificationProject: ClassificationProject =>
+              validateClassificationAlgorithm(
+                algorithm,
+                classificationProject
+              )
+            case regressionProject: RegressionProject =>
+              validateRegressionAlgorithm(algorithm, regressionProject)
+          }
+          for {
+            _ <- if (errors.isEmpty) {
+              IO.unit
+            } else {
+              val message =
+                s"The following errors occurred: ${errors.mkString(", ")}"
+              logger.warn(message) *> IO.raiseError(
+                InvalidArgument(message)
+              )
+            }
+            insertResult <- algorithmsRepository.insert(algorithm)
+            result <- insertResult.fold(
+              err => {
+                IO.raiseError(err)
+              },
+              _ => IO.pure(algorithm)
+            )
+            _ <- project match {
               case classificationProject: ClassificationProject =>
-                validateClassificationAlgorithm(
-                  algorithm,
-                  classificationProject
+                projectsService.updateProject(
+                  classificationProject.copy(policy = DefaultAlgorithm(id))
                 )
               case regressionProject: RegressionProject =>
-                validateRegressionAlgorithm(algorithm, regressionProject)
-            }
-            for {
-              _ <- if (errors.isEmpty) {
-                IO.unit
-              } else {
-                val message =
-                  s"The following errors occurred: ${errors.mkString(", ")}"
-                logger.warn(message) *> IO.raiseError(
-                  InvalidArgument(message)
+                projectsService.updateProject(
+                  regressionProject.copy(policy = DefaultAlgorithm(id))
                 )
-              }
-              insertResult <- algorithmsRepository.insert(algorithm)
-              result <- insertResult.fold(
-                err => {
-                  IO.raiseError(err)
-                },
-                _ => IO.pure(algorithm)
-              )
-              _ <- project match {
-                case classificationProject: ClassificationProject =>
-                  projectsService.updateProject(
-                    classificationProject.copy(policy = DefaultAlgorithm(id))
-                  )
-                case regressionProject: RegressionProject =>
-                  projectsService.updateProject(
-                    regressionProject.copy(policy = DefaultAlgorithm(id))
-                  )
 
-              }
-            } yield result
-          }
-        )
+            }
+          } yield result
+        }
       )
   }
 }

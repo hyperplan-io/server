@@ -109,6 +109,10 @@ object ProjectSerializer {
     project.asJson
   }
 
+  def encodeJsonList(projects: List[Project]): Json = {
+    projects.asJson
+  }
+
   def decodeJson(n: String): Project = {
     decode[Project](n).right.get
   }
