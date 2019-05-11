@@ -26,11 +26,11 @@ class AlgorithmsRepository(implicit xa: Transactor[IO]) extends IOLogging {
   implicit val backendPut: Put[Backend] =
     Put[String].contramap(BackendSerializer.encodeJsonNoSpaces)
 
-  implicit val securityConfigurationGet: Get[Either[io.circe.Error, SecurityConfiguration]] =
+  implicit val securityConfigurationGet
+      : Get[Either[io.circe.Error, SecurityConfiguration]] =
     Get[String].map(SecurityConfigurationSerializer.decodeJson)
   implicit val securityConfigurationPut: Put[SecurityConfiguration] =
     Put[String].contramap(SecurityConfigurationSerializer.encodeJsonNoSpaces)
-
 
   def insertQuery(algorithm: Algorithm): doobie.Update0 =
     sql"""INSERT INTO algorithms(
@@ -111,5 +111,10 @@ class AlgorithmsRepository(implicit xa: Transactor[IO]) extends IOLogging {
 }
 
 object AlgorithmsRepository {
-  type AlgorithmData = (String, Either[io.circe.Error, Backend], String, Either[io.circe.Error, SecurityConfiguration])
+  type AlgorithmData = (
+      String,
+      Either[io.circe.Error, Backend],
+      String,
+      Either[io.circe.Error, SecurityConfiguration]
+  )
 }

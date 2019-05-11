@@ -11,14 +11,14 @@ object SecurityConfigurationSerializer {
   val PLAIN = "plain"
   val AES = "aes"
 
-  implicit val configurationTypeEncoder: Encoder[Encryption] = 
+  implicit val configurationTypeEncoder: Encoder[Encryption] =
     (securityConfigurationType: Encryption) =>
       securityConfigurationType match {
         case PlainEncryption => Json.fromString(PLAIN)
         case AESEncryption => Json.fromString(AES)
       }
 
-  implicit val configurationDecoder: Decoder[Encryption] = 
+  implicit val configurationDecoder: Decoder[Encryption] =
     (c: HCursor) =>
       c.as[String].map {
         case PLAIN => PlainEncryption
@@ -28,16 +28,19 @@ object SecurityConfigurationSerializer {
     (security: SecurityConfiguration) =>
       Json.obj(
         "encryption" -> security.encryption.asJson,
-        "headers" -> Json.fromValues{security.headers.map { case (key, value) =>
-          Json.obj(
-            "key" -> Json.fromString(key),
-            "value" -> Json.fromString(value)
-          )
-        }},
+        "headers" -> Json.fromValues {
+          security.headers.map {
+            case (key, value) =>
+              Json.obj(
+                "key" -> Json.fromString(key),
+                "value" -> Json.fromString(value)
+              )
+          }
+        }
       )
 
   case class KeyValue(key: String, value: String)
-  implicit val decoderKeyValue: Decoder[KeyValue] = 
+  implicit val decoderKeyValue: Decoder[KeyValue] =
     (c: HCursor) =>
       for {
         key <- c.downField("key").as[String]

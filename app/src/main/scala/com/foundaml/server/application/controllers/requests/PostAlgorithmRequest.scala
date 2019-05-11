@@ -7,5 +7,5 @@ case class PostAlgorithmRequest(
     id: String,
     projectId: String,
     backend: Backend,
-    security: SecurityConfiguration 
+    security: SecurityConfiguration
 )

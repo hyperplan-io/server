@@ -31,14 +31,14 @@ object AlgorithmGenerator {
     )
 
   val defaultSecurityConfig = PlainSecurityConfiguration(
-      Nil
+    Nil
   )
 
   val defaultAlgorithm = Algorithm(
     "algorithm id",
     LocalClassification(computed),
     "test project id",
-    defaultSecurityConfig   
+    defaultSecurityConfig
   )
 
   def withLocalBackend(algorithmId: Option[String] = None) =

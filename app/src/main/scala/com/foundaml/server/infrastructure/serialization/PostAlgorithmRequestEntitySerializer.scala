@@ -14,7 +14,8 @@ import cats.implicits._
 object PostAlgorithmRequestEntitySerializer {
 
   implicit val backendDecoder: Decoder[Backend] = BackendSerializer.decoder
-  implicit val securityConfigurationDecoder: Decoder[SecurityConfiguration] = (SecurityConfigurationSerializer.decoder)
+  implicit val securityConfigurationDecoder: Decoder[SecurityConfiguration] =
+    (SecurityConfigurationSerializer.decoder)
 
   implicit val decoder: Decoder[PostAlgorithmRequest] =
     (c: HCursor) =>
