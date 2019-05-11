@@ -58,6 +58,11 @@ paths:
   /features/{featuresId}:
     get:
       description: ''
+      parameters:
+        - name: featuresId
+          in: path
+          description: The Id of the features object
+          required: true
       responses:
         '200':
           description: ''
@@ -95,6 +100,11 @@ paths:
   /labels/{labelsId}:
     get:
       description: ''
+      parameters:
+        - name: labelsId
+          in: path
+          description: The Id of the labels object
+          required: true
       responses:
         '200':
           description: ''
@@ -136,6 +146,11 @@ paths:
   /projects/{projectId}:
     get:
       description: ''
+      parameters:
+        - name: projectId
+          in: path
+          description: The Id of the project
+          required: true
       responses:
         '200':
           description: ''
