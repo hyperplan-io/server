@@ -7,6 +7,7 @@ import cats.implicits._
 import cats.effect.IO
 
 import com.foundaml.server.domain.models.Algorithm
+import com.foundaml.server.domain.models.SecurityConfiguration
 import com.foundaml.server.domain.models.backends._
 import com.foundaml.server.domain.models.errors.{
   AlgorithmAlreadyExists,
@@ -25,15 +26,23 @@ class AlgorithmsRepository(implicit xa: Transactor[IO]) extends IOLogging {
   implicit val backendPut: Put[Backend] =
     Put[String].contramap(BackendSerializer.encodeJsonNoSpaces)
 
+  implicit val securityConfigurationGet
+      : Get[Either[io.circe.Error, SecurityConfiguration]] =
+    Get[String].map(SecurityConfigurationSerializer.decodeJson)
+  implicit val securityConfigurationPut: Put[SecurityConfiguration] =
+    Put[String].contramap(SecurityConfigurationSerializer.encodeJsonNoSpaces)
+
   def insertQuery(algorithm: Algorithm): doobie.Update0 =
     sql"""INSERT INTO algorithms(
       id, 
       backend, 
-      project_id
+      project_id,
+      security
     ) VALUES(
       ${algorithm.id},
       ${algorithm.backend},
-      ${algorithm.projectId}
+      ${algorithm.projectId},
+      ${algorithm.security}
     )""".update
 
   def insert(algorithm: Algorithm) =
@@ -46,7 +55,7 @@ class AlgorithmsRepository(implicit xa: Transactor[IO]) extends IOLogging {
 
   def readQuery(algorithmId: String): doobie.Query0[AlgorithmData] =
     sql"""
-      SELECT id, backend, project_id 
+      SELECT id, backend, project_id, security
       FROM algorithms 
       WHERE id=$algorithmId
       """
@@ -57,7 +66,7 @@ class AlgorithmsRepository(implicit xa: Transactor[IO]) extends IOLogging {
 
   def readForProjectQuery(projectId: String): doobie.Query0[AlgorithmData] =
     sql"""
-      SELECT id, backend, project_id 
+      SELECT id, backend, project_id, security
       FROM algorithms 
       WHERE project_id=$projectId
       """
@@ -71,7 +80,7 @@ class AlgorithmsRepository(implicit xa: Transactor[IO]) extends IOLogging {
 
   def readAllQuery(): doobie.Query0[AlgorithmData] =
     sql"""
-      SELECT id, backend, project_id 
+      SELECT id, backend, project_id, security
       FROM algorithms 
       """
       .query[AlgorithmData]
@@ -83,10 +92,11 @@ class AlgorithmsRepository(implicit xa: Transactor[IO]) extends IOLogging {
     case (
         id,
         Right(backend),
-        projectId
+        projectId,
+        Right(security)
         ) =>
       IO.pure(
-        Algorithm(id, backend, projectId)
+        Algorithm(id, backend, projectId, security)
       )
 
     case algorithmData =>
@@ -101,5 +111,10 @@ class AlgorithmsRepository(implicit xa: Transactor[IO]) extends IOLogging {
 }
 
 object AlgorithmsRepository {
-  type AlgorithmData = (String, Either[io.circe.Error, Backend], String)
+  type AlgorithmData = (
+      String,
+      Either[io.circe.Error, Backend],
+      String,
+      Either[io.circe.Error, SecurityConfiguration]
+  )
 }

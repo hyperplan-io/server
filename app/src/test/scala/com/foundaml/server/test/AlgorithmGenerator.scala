@@ -4,7 +4,7 @@ import java.util.UUID
 
 import com.foundaml.server.domain.models.backends.LocalClassification
 import com.foundaml.server.domain.models.labels.Labels
-import com.foundaml.server.domain.models.{Algorithm, labels}
+import com.foundaml.server.domain.models._
 
 object AlgorithmGenerator {
 
@@ -30,17 +30,23 @@ object AlgorithmGenerator {
       )
     )
 
+  val defaultSecurityConfig = PlainSecurityConfiguration(
+    Nil
+  )
+
   val defaultAlgorithm = Algorithm(
     "algorithm id",
     LocalClassification(computed),
-    "test project id"
+    "test project id",
+    defaultSecurityConfig
   )
 
   def withLocalBackend(algorithmId: Option[String] = None) =
     Algorithm(
       algorithmId.getOrElse(UUID.randomUUID().toString),
       LocalClassification(computed),
-      UUID.randomUUID().toString
+      UUID.randomUUID().toString,
+      defaultSecurityConfig
     )
 
 }

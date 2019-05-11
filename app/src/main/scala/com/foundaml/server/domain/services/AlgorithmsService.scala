@@ -130,11 +130,17 @@ class AlgorithmsService(
     }
   }
 
-  def createAlgorithm(id: String, backend: Backend, projectId: String) = {
+  def createAlgorithm(
+      id: String,
+      backend: Backend,
+      projectId: String,
+      security: SecurityConfiguration
+  ) = {
     val algorithm = Algorithm(
       id,
       backend,
-      projectId
+      projectId,
+      security
     )
     projectFactory
       .get(projectId)

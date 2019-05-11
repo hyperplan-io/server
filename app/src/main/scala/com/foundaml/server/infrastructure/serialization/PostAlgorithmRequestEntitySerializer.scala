@@ -2,6 +2,7 @@ package com.foundaml.server.infrastructure.serialization
 
 import com.foundaml.server.application.controllers.requests.PostAlgorithmRequest
 import com.foundaml.server.domain.models.backends.Backend
+import com.foundaml.server.domain.models.SecurityConfiguration
 
 import io.circe._
 import org.http4s.EntityDecoder
@@ -13,6 +14,8 @@ import cats.implicits._
 object PostAlgorithmRequestEntitySerializer {
 
   implicit val backendDecoder: Decoder[Backend] = BackendSerializer.decoder
+  implicit val securityConfigurationDecoder: Decoder[SecurityConfiguration] =
+    (SecurityConfigurationSerializer.decoder)
 
   implicit val decoder: Decoder[PostAlgorithmRequest] =
     (c: HCursor) =>
@@ -20,7 +23,8 @@ object PostAlgorithmRequestEntitySerializer {
         id <- c.downField("id").as[String]
         projectId <- c.downField("projectId").as[String]
         backend <- c.downField("backend").as[Backend]
-      } yield PostAlgorithmRequest(id, projectId, backend)
+        security <- c.downField("security").as[SecurityConfiguration]
+      } yield PostAlgorithmRequest(id, projectId, backend, security)
 
   implicit val entityDecoder: EntityDecoder[IO, PostAlgorithmRequest] =
     jsonOf[IO, PostAlgorithmRequest]

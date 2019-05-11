@@ -62,6 +62,7 @@ object PostgresqlService {
         id VARCHAR(36) PRIMARY KEY,
         backend VARCHAR NOT NULL ,
         project_id VARCHAR(36) NOT NULL,
+        security VARCHAR NOT NULL,
         FOREIGN KEY (project_id) references projects(id)
       );
     """.update.run
