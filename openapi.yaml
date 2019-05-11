@@ -38,6 +38,25 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/FeaturesConfiguration'
+    post:
+      description: 'Create a new features object'
+      responses:
+        '201':
+          description: 'Successfully created a new features object'
+          content:
+            application.json:
+              schema:
+                $ref: '#/components/schemas/FeaturesConfiguration'
+  /features/{featuresId}:
+    get:
+      description: ''
+      responses:
+        '200':
+          description: ''
+          content:
+            application.json:
+              schema:
+                $ref: '#/components/schemas/FeaturesConfiguration'
   /labels:
     get:
       description: ''
@@ -47,7 +66,26 @@ paths:
           content:
             application.json:
               schema:
-                type: array
+                $ref: '#/components/schemas/LabelsConfiguration'
+    post:
+      description: 'Create a new labels object'
+      responses:
+        '201':
+          description: 'Successfully created a new labels object'
+          content:
+            application.json:
+              schema:
+                $ref: '#/components/schemas/LabelsConfiguration'
+  /labels/{labelsId}:
+    get:
+      description: ''
+      responses:
+        '200':
+          description: ''
+          content:
+            application.json:
+              schema:
+                type: object 
                 items:
                   $ref: '#/components/schemas/LabelsConfiguration'
   /projects:
@@ -62,6 +100,45 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/Project'
+    post:
+      description: 'Create a new project'
+      responses:
+        '201':
+          description: 'Successfully created a new project'
+          content:
+            application.json:
+              schema:
+                $ref: '#/components/schemas/Project'
+  /projects/{projectId}:
+    get:
+      description: ''
+      responses:
+        '200':
+          description: ''
+          content:
+            application.json:
+              schema:
+                $ref: '#/components/schemas/Project'
+  /algorithms:
+    post:
+      description: 'create a new algorithm'
+      responses:
+        '201':
+          description: 'Successfully created a new algorithm'
+          content:
+            application.json:
+              schema:
+                $ref: '#/components/schemas/Algorithm'
+  /predictions:
+    post:
+      description: 'Make a prediction on a project'
+      responses:
+        '200':
+          description: 'The prediction is successful'
+          content:
+            application.json:
+              schema:
+                $ref: '#/components/schemas/Prediction'
 components:
   schemas:
     Project:
@@ -214,3 +291,17 @@ components:
                 type: string
               description:
                 type: string
+    Prediction:
+      type: object
+      required:
+        - projectId
+        - features
+      properties:
+        projectId:
+          type: string
+        features:
+          type: array
+          items:
+            oneOf:
+              - type: string
+              - type: number 
