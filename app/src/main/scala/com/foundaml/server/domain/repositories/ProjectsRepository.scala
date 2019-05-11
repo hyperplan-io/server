@@ -90,7 +90,7 @@ class ProjectsRepository(implicit xa: Transactor[IO]) {
       """
       .query[ProjectsRepository.ProjectData]
 
-  def read(projectId: String) = readQuery(projectId).unique.transact(xa)
+  def read(projectId: String) = readQuery(projectId).unique.transact(xa).flatMap(dataToProject).flatMap(retrieveProjectAlgorithms)
 
   def readAllProjectsQuery =
     sql"""
@@ -121,7 +121,16 @@ class ProjectsRepository(implicit xa: Transactor[IO]) {
       .query[AlgorithmData]
 
 
-  def readAll = readAllProjectsQuery.to[List].transact(xa).flatMap(dataListToProject).flatMap (_.map{
+  def readAll = readAllProjectsQuery.to[List].transact(xa).flatMap(dataListToProject).flatMap(retrieveProjectsAlgorithms)
+
+  def updateQuery(project: Project) =
+    sql"""
+        UPDATE projects SET name=${project.name}, algorithm_policy = ${project.policy}
+      """.update
+
+  def update(project: Project) = updateQuery(project).run.transact(xa)
+
+  def retrieveProjectAlgorithms(project: Project) = (project match {
     case project: ClassificationProject => 
       readProjectAlgorithms(project.id).map { newAlgorithms => 
         project.copy(
@@ -134,14 +143,9 @@ class ProjectsRepository(implicit xa: Transactor[IO]) {
           algorithms = newAlgorithms
         )
       }
-  }.sequence)
+  })
 
-  def updateQuery(project: Project) =
-    sql"""
-        UPDATE projects SET name=${project.name}, algorithm_policy = ${project.policy}
-      """.update
-
-  def update(project: Project) = updateQuery(project).run.transact(xa)
+  def retrieveProjectsAlgorithms(projects: List[Project]) = projects.map(retrieveProjectAlgorithms).sequence
 
 }
 

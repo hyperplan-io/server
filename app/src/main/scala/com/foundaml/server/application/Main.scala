@@ -1,7 +1,6 @@
 package com.foundaml.server.application
 import cats.effect.Timer
 import com.foundaml.server.domain.FoundaMLConfig
-import com.foundaml.server.domain.factories.ProjectFactory
 import com.foundaml.server.domain.repositories.{
   AlgorithmsRepository,
   PredictionsRepository,
@@ -57,10 +56,6 @@ object Main extends IOApp with IOLogging {
       algorithmsRepository = new AlgorithmsRepository
       predictionsRepository = new PredictionsRepository
       domainRepository = new DomainRepository
-      projectFactory = new ProjectFactory(
-        projectsRepository,
-        algorithmsRepository
-      )
       _ = logger.info("Starting GCP Pubsub service")
       pubSubService <- if (config.gcp.pubsub.enabled) {
         logger.info("Starting GCP PubSub service") *> PubSubService(
@@ -77,28 +72,25 @@ object Main extends IOApp with IOLogging {
       } else {
         IO.pure(None)
       }
-      predictionsService = new PredictionsService(
-        projectsRepository,
-        predictionsRepository,
-        kinesisService,
-        pubSubService,
-        kafkaService,
-        projectFactory,
-        config
-      )
       domainService = new DomainService(
         domainRepository
       )
       projectsService = new ProjectsService(
         projectsRepository,
-        domainService,
-        projectFactory
+        domainService
+      )
+      predictionsService = new PredictionsService(
+        predictionsRepository,
+        projectsService,
+        kinesisService,
+        pubSubService,
+        kafkaService,
+        config
       )
       algorithmsService = new AlgorithmsService(
         projectsService,
         algorithmsRepository,
-        projectsRepository,
-        projectFactory
+        projectsRepository
       )
 
       port = 8080

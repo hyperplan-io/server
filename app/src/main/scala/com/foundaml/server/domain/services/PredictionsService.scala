@@ -7,7 +7,6 @@ import cats.effect.IO
 import cats.implicits._
 
 import com.foundaml.server.domain.{FoundaMLConfig, models}
-import com.foundaml.server.domain.factories.ProjectFactory
 import com.foundaml.server.domain.models._
 import com.foundaml.server.domain.models.backends._
 import com.foundaml.server.domain.models.errors._
@@ -36,12 +35,11 @@ import cats.effect.ContextShift
 
 import cats.effect.Timer
 class PredictionsService(
-    projectsRepository: ProjectsRepository,
     predictionsRepository: PredictionsRepository,
+    projectsService: ProjectsService,
     kinesisService: KinesisService,
     pubSubService: Option[PubSubService],
     kafkaService: Option[KafkaService],
-    projectFactory: ProjectFactory,
     config: FoundaMLConfig
 )(implicit cs: ContextShift[IO], timer: Timer[IO])
     extends IOLogging
@@ -293,13 +291,11 @@ class PredictionsService(
       projectId: String,
       features: Features,
       optionalAlgorithmId: Option[String]
-  ): IO[Prediction] = projectFactory.get(projectId).flatMap {
-    case Right(project: ClassificationProject) =>
+  ): IO[Prediction] = projectsService.readProject(projectId).flatMap {
+    case project: ClassificationProject =>
       predictForClassificationProject(project, features, optionalAlgorithmId)
-    case Right(project: RegressionProject) =>
+    case project: RegressionProject =>
       predictForRegressionProject(project, features, optionalAlgorithmId)
-    case Left(err) =>
-      logger.warn(err.getMessage) *> IO.raiseError(err)
   }
 
   def predictForClassificationProject(

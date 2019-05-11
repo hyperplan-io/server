@@ -83,14 +83,12 @@ class ProjectsController(
         projectsService
           .readProject(projectId)
           .flatMap {
-            case Right(project) =>
+            case project =>
               Ok(
                 ProjectSerializer.encodeJson(
                   project
                 )
               )
-            case Left(err) =>
-              NotFound()
           }
           .handleErrorWith {
             case ProjectDoesNotExist(_) =>

@@ -2,7 +2,6 @@ package com.foundaml.server.domain.services
 
 import cats.effect.IO
 import cats.implicits._
-import com.foundaml.server.domain.factories.ProjectFactory
 import com.foundaml.server.domain.models._
 import com.foundaml.server.domain.models.backends.{
   Backend,
@@ -27,8 +26,7 @@ import com.foundaml.server.infrastructure.logging.IOLogging
 class AlgorithmsService(
     projectsService: ProjectsService,
     algorithmsRepository: AlgorithmsRepository,
-    projectsRepository: ProjectsRepository,
-    projectFactory: ProjectFactory
+    projectsRepository: ProjectsRepository
 ) extends IOLogging {
 
   def validateFeaturesConfiguration(
@@ -142,13 +140,7 @@ class AlgorithmsService(
       projectId,
       security
     )
-    projectFactory
-      .get(projectId)
-      .flatMap(
-        _.fold(
-          err =>
-            logger.error(s"An error occurred when read the project: $err") *> IO
-              .raiseError(err),
+    projectsService.readProject(projectId).flatMap(
           project => {
             val errors = project match {
               case classificationProject: ClassificationProject =>
@@ -189,7 +181,6 @@ class AlgorithmsService(
               }
             } yield result
           }
-        )
       )
   }
 }
