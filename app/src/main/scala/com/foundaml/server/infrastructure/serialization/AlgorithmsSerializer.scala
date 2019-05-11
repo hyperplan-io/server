@@ -13,7 +13,8 @@ object AlgorithmsSerializer {
       Json.obj(
         "id" -> Json.fromString(algorithm.id),
         "projectId" -> Json.fromString(algorithm.projectId),
-        "backend" -> BackendSerializer.encodeJson(algorithm.backend)
+        "backend" -> BackendSerializer.encodeJson(algorithm.backend),
+        "security" -> SecurityConfigurationSerializer.encodeJson(algorithm.security)
       )
 
   implicit val decoder: Decoder[Algorithm] =
@@ -22,7 +23,8 @@ object AlgorithmsSerializer {
         id <- c.downField("id").as[String]
         projectId <- c.downField("projectId").as[String]
         backend <- c.downField("backend").as[Backend](BackendSerializer.decoder)
-      } yield Algorithm(id, backend, projectId)
+        security <- c.downField("security").as[SecurityConfiguration](SecurityConfigurationSerializer.decoder)
+      } yield Algorithm(id, backend, projectId, security)
 
   def encodeJson(algorithm: Algorithm): Json = {
     algorithm.asJson

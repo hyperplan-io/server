@@ -33,7 +33,8 @@ class AlgorithmsController(
           algorithm <- algorithmsService.createAlgorithm(
             request.id,
             request.backend,
-            request.projectId
+            request.projectId,
+            request.security
           )
           _ <- logger.info(
             s"Algorithm created with id ${algorithm.id} on project ${algorithm.projectId}"

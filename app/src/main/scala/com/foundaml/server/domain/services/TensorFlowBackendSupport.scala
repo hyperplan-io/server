@@ -68,8 +68,11 @@ trait TensorFlowBackendSupport extends IOLogging {
                   )
                 ),
               uri => {
+                import org.http4s.Headers
+                import org.http4s.Header
                 val request =
                   Request[IO](method = Method.POST, uri = uri)
+                    .withHeaders(Headers(algorithm.security.headers.map{ case (key, value) => Header(key, value)}))
                     .withEntity(tfFeatures)
                 BlazeClientBuilder[IO](ExecutionContext.global).resource
                   .use(
