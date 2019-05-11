@@ -40,6 +40,14 @@ paths:
                   $ref: '#/components/schemas/FeaturesConfiguration'
     post:
       description: 'Create a new features object'
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeaturesConfiguration'
+        required:
+          true
       responses:
         '201':
           description: 'Successfully created a new features object'
@@ -69,6 +77,14 @@ paths:
                 $ref: '#/components/schemas/LabelsConfiguration'
     post:
       description: 'Create a new labels object'
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LabelsConfiguration'
+        required:
+          true
       responses:
         '201':
           description: 'Successfully created a new labels object'
@@ -102,6 +118,14 @@ paths:
                   $ref: '#/components/schemas/Project'
     post:
       description: 'Create a new project'
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Project'
+        required:
+          true
       responses:
         '201':
           description: 'Successfully created a new project'
@@ -122,6 +146,14 @@ paths:
   /algorithms:
     post:
       description: 'create a new algorithm'
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Algorithm'
+        required:
+          true
       responses:
         '201':
           description: 'Successfully created a new algorithm'
@@ -132,9 +164,27 @@ paths:
   /predictions:
     post:
       description: 'Make a prediction on a project'
+      requestBody:
+        description: ''
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PredictionRequest'
+        required:
+          true
       responses:
         '200':
           description: 'The prediction is successful'
+          content:
+            application.json:
+              schema:
+                $ref: '#/components/schemas/Prediction'
+  /examples:
+    post:
+      description: 'Add a human validated example for a prediction'
+      responses:
+        '201':
+          description: 'The example has been created successfully'
           content:
             application.json:
               schema:
@@ -291,7 +341,7 @@ components:
                 type: string
               description:
                 type: string
-    Prediction:
+    PredictionRequest:
       type: object
       required:
         - projectId
@@ -305,3 +355,95 @@ components:
             oneOf:
               - type: string
               - type: number 
+    Prediction:
+      type: object
+      required:
+        - type
+        - id
+        - projectId
+        - algorithmId
+        - features
+        - labels
+        - examples
+      properties:
+        type:
+          type: "string"
+        id:
+          type: "string"
+        projectId:
+          type: "string"
+        algorithmId:
+          type: "string"
+        examples:
+          type: array
+          items:
+            type: string
+        features:
+          type: array
+          items:
+            oneOf:
+              - type: string
+              - type: number
+        labels:
+          type: object
+          required:
+            - label
+            - probability
+            - correctExampleUrl
+            - incorrectExampleUrl
+          properties:
+            label:
+              type: string
+            probability:
+              type: number 
+            correctExampleUrl:
+              type: string
+              description: 'Call this url relative to the host to validate this label and make it an example'
+            incorrectExampleUrl:
+              type: string
+              description: 'Call this url relative to the host to invalidate this label and make it a wrong example'
+    PredictionEvent:
+      type: object
+      required:
+        - type
+        - id
+        - projectId
+        - algorithmId
+        - features
+        - labels
+        - example
+      properties:
+        type:
+          type: "string"
+        id:
+          type: "string"
+        projectId:
+          type: "string"
+        algorithmId:
+          type: "string"
+        example:
+          type: "string" 
+        features:
+          type: array
+          items:
+            oneOf:
+              - type: string
+              - type: number
+        labels:
+          type: object
+          required:
+            - label
+            - probability
+            - correctExampleUrl
+            - incorrectExampleUrl
+          properties:
+            label:
+              type: string
+            probability:
+              type: number 
+            correctExampleUrl:
+              type: string
+              description: 'Call this url relative to the host to validate this label and make it an example'
+            incorrectExampleUrl:
+              type: string
+              description: 'Call this url relative to the host to invalidate this label and make it a wrong example'
