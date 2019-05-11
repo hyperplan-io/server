@@ -13,6 +13,10 @@ spec:
       labels:
         app: foundaml-server
     spec:
+      volumes:
+        - name: service-account-creds
+          secret:
+            secretName: service-account-creds
       containers:
       - name: foundaml-server 
         image: foundaml/server:0.0.1
@@ -35,6 +39,27 @@ spec:
             value: "postgres"
           - name: POSTGRESQL_PASSWORD
             value: "postgres"
+      # esp proxy
+      - name: esp
+        image: gcr.io/endpoints-release/endpoints-runtime:1
+        args: [
+          "--http_port=8081",
+          "--backend=127.0.0.1:8080",
+          "--service=foundaml-service",
+          "--rollout_strategy=managed",
+          "--service_account_key=/etc/nginx/creds/service-account-creds.json"
+          ]
+        ports:
+          - containerPort: 8081
+        volumeMounts:
+          - mountPath: /etc/nginx/creds
+            name: service-account-creds
+            readOnly: true
+        resources:
+          requests:
+            memory: "50Mi"
+            cpu: "50m"
+      # esp proxy
 ---
 kind: Service
 apiVersion: v1
@@ -46,5 +71,7 @@ spec:
     app: foundaml-server 
   ports:
   - protocol: TCP
-    port: 8080
+    port: 80
+    targetPort: 8081
+    name: http
 

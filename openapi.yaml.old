@@ -1,0 +1,101 @@
+openapi: "2.0.0"
+info:
+  title: FoundaMl
+  description: ''
+  termsOfService: ''
+  contact:
+    name: ''
+    url: ''
+    email: sauray.antoine@gmail.com
+  license:
+    name: Apache 2.0
+    url: 'https://www.apache.org/licenses/LICENSE-2.0.html'
+  version: 0.0.1
+host: "echo-api.endpoints.foundaml.cloud.goog"
+servers:
+  - url: 'http://{platform}.www.foundaml.org'
+    description: Test server
+    variables:
+      platform:
+        default: dev
+        description: this value is assigned by the service provider
+      port:
+        enum:
+          - '80'
+          - '443'
+        default: '80'
+      basePath:
+        default: ''
+paths:
+  /features:
+    get:
+      description: ''
+      responses:
+        '200':
+          description: ''
+          content:
+            application.json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FeaturesConfiguration'
+  /labels:
+    get:
+      description: ''
+      responses:
+        '200':
+          description: ''
+          content:
+            application.json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LabelsConfiguration'
+components:
+  schemas:
+    FeaturesConfiguration:
+      type: object
+      required:
+        - id
+        - data
+      properties:
+        id:
+          type: string
+        data:
+          type: array
+          items:
+            type: object
+            required:
+              - name
+              - type
+              - description
+            properties:
+              name:
+                type: string
+              type:
+                type: string
+              description:
+                type: string
+    LabelsConfiguration:
+      type: object
+      required:
+        - id
+        - data
+      properties:
+        id:
+          type: string
+        data:
+          type: array
+          items:
+            type: object
+            required:
+              - name
+              - type
+              - description
+            properties:
+              name:
+                type: string
+              type:
+                type: string
+              description:
+                type: string
