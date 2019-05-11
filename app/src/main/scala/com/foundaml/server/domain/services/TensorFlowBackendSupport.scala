@@ -68,8 +68,7 @@ trait TensorFlowBackendSupport extends IOLogging {
                   )
                 ),
               uri => {
-                import org.http4s.Headers
-                import org.http4s.Header
+                import org.http4s.{ Header, Headers }
                 val request =
                   Request[IO](method = Method.POST, uri = uri)
                     .withHeaders(Headers(algorithm.security.headers.map{ case (key, value) => Header(key, value)}))

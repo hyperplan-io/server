@@ -36,11 +36,20 @@ object SecurityConfigurationSerializer {
         }},
       )
 
+  case class KeyValue(key: String, value: String)
+  implicit val decoderKeyValue: Decoder[KeyValue] = 
+    (c: HCursor) =>
+      for {
+        key <- c.downField("key").as[String]
+        value <- c.downField("value").as[String]
+      } yield KeyValue(key, value)
+
   implicit val decoder: Decoder[SecurityConfiguration] =
     (c: HCursor) =>
       for {
         encryption <- c.downField("encryption").as[Encryption]
-        headers <- c.downField("headers").as[List[(String,String)]]
+        headersKV <- c.downField("headers").as[List[KeyValue]]
+        headers = headersKV.map(kv => (kv.key, kv.value))
       } yield PlainSecurityConfiguration(headers)
 
   def encodeJson(security: SecurityConfiguration): Json = {
