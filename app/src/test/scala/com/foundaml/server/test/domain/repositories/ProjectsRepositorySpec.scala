@@ -18,7 +18,7 @@ class ProjectsRepositorySpec
       val project = ProjectGenerator.withLocalBackend()
       val insertIO = projectRepository.insertQuery(project)
       val readIO = projectRepository.readQuery(project.id)
-      val readAllIO = projectRepository.readAll()
+      val readAllIO = projectRepository.readAllProjectsQuery
       check(insertIO)
       check(readIO)
       check(readAllIO)
