@@ -1,7 +1,7 @@
 openapi: "3.0.0"
 info:
   title: FoundaMl
-  description: ''
+  description: 'Manage your machine learning algorithms'
   termsOfService: ''
   contact:
     name: ''
@@ -28,10 +28,10 @@ servers:
 paths:
   /features:
     get:
-      description: ''
+      description: 'Get all the features objects'
       responses:
         '200':
-          description: ''
+          description: 'Successfully retrieved the features objects'
           content:
             application.json:
               schema:
@@ -41,7 +41,7 @@ paths:
     post:
       description: 'Create a new features object'
       requestBody:
-        description: ''
+        description: 'Successfully retrieved the features objects'
         content:
           application/json:
             schema:
@@ -57,7 +57,7 @@ paths:
                 $ref: '#/components/schemas/FeaturesConfiguration'
   /features/{featuresId}:
     get:
-      description: ''
+      description: 'Get a features object by id'
       parameters:
         - name: featuresId
           in: path
@@ -65,17 +65,17 @@ paths:
           required: true
       responses:
         '200':
-          description: ''
+          description: 'Successfully found the features object'
           content:
             application.json:
               schema:
                 $ref: '#/components/schemas/FeaturesConfiguration'
   /labels:
     get:
-      description: ''
+      description: 'Get all the labels object'
       responses:
         '200':
-          description: ''
+          description: 'Successfully retrieved the labels object'
           content:
             application.json:
               schema:
@@ -83,7 +83,7 @@ paths:
     post:
       description: 'Create a new labels object'
       requestBody:
-        description: ''
+        description: 'The new labels object'
         content:
           application/json:
             schema:
@@ -99,7 +99,7 @@ paths:
                 $ref: '#/components/schemas/LabelsConfiguration'
   /labels/{labelsId}:
     get:
-      description: ''
+      description: 'Get a labels object by id'
       parameters:
         - name: labelsId
           in: path
@@ -107,7 +107,7 @@ paths:
           required: true
       responses:
         '200':
-          description: ''
+          description: 'Successfully found the labels object'
           content:
             application.json:
               schema:
@@ -116,10 +116,10 @@ paths:
                   $ref: '#/components/schemas/LabelsConfiguration'
   /projects:
     get:
-      description: ''
+      description: 'Get all the projects'
       responses:
         '200':
-          description: ''
+          description: 'Successfully retrieved all the projects'
           content:
             application.json:
               schema:
@@ -129,7 +129,7 @@ paths:
     post:
       description: 'Create a new project'
       requestBody:
-        description: ''
+        description: 'The new project to create'
         content:
           application/json:
             schema:
@@ -145,7 +145,7 @@ paths:
                 $ref: '#/components/schemas/Project'
   /projects/{projectId}:
     get:
-      description: ''
+      description: 'Get a project by ud'
       parameters:
         - name: projectId
           in: path
@@ -153,7 +153,7 @@ paths:
           required: true
       responses:
         '200':
-          description: ''
+          description: 'Successfully found the project'
           content:
             application.json:
               schema:
@@ -162,7 +162,7 @@ paths:
     post:
       description: 'create a new algorithm'
       requestBody:
-        description: ''
+        description: 'the new algorithm to create'
         content:
           application/json:
             schema:
@@ -180,7 +180,7 @@ paths:
     post:
       description: 'Make a prediction on a project'
       requestBody:
-        description: ''
+        description: 'The prediction requets'
         content:
           application/json:
             schema:
