@@ -70,6 +70,12 @@ paths:
             application.json:
               schema:
                 $ref: '#/components/schemas/FeaturesConfiguration'
+        '404':
+          description: 'The features object does not exist'
+          content:
+            text.plain:
+              schema:
+                type: string
   /labels:
     get:
       description: 'Get all the labels object'
@@ -114,6 +120,12 @@ paths:
                 type: object 
                 items:
                   $ref: '#/components/schemas/LabelsConfiguration'
+        '404':
+          description: 'The labels object does not exist'
+          content:
+            text.plain:
+              schema:
+                type: string
   /projects:
     get:
       description: 'Get all the projects'
@@ -158,6 +170,13 @@ paths:
             application.json:
               schema:
                 $ref: '#/components/schemas/Project'
+        '404':
+          description: 'The project does not exist'
+          content:
+            text.plain:
+              schema:
+                type: string
+
   /algorithms:
     post:
       description: 'create a new algorithm'
@@ -278,9 +297,17 @@ components:
         port:
           type: integer
         featuresTransformer:
-          $ref: "#/components/schemas/TensorFlowFeaturesTransformer"
+          $ref: "#/components/schemas/FeaturesTransformer"
         labelsTransformer:
-          $ref: "#/components/schemas/TensorFlowLabelsTransformer"
+          $ref: "#/components/schemas/LabelsTransformer"
+    FeaturesTransformer:
+      type: object
+      oneOf:
+        - $ref '#/components/schemas/TensorFlowFeaturesTransformer'
+    LabelsTransformer:
+      type: object
+      oneOf:
+        - $ref '#/components/schemas/TensorFlowLabelsTransformer'
     TensorFlowFeaturesTransformer:
       type: object
       required:
