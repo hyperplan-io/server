@@ -155,6 +155,19 @@ paths:
             application.json:
               schema:
                 $ref: '#/components/schemas/Project'
+    patch:
+      description: 'Update a project'
+      requestBody:
+        description: 'The fields to patch'
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                policy:
+                  $ref: '#/components/schemas/AlgorithmPolicy'
   /projects/{projectId}:
     get:
       description: 'Get a project by ud'
@@ -245,6 +258,8 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Algorithm"
+        policy:
+          $ref: '#/components/schemas/AlgorithmPolicy'
     Algorithm:
       type: object
       required:
@@ -493,3 +508,37 @@ components:
             incorrectExampleUrl:
               type: string
               description: 'Call this url relative to the host to invalidate this label and make it a wrong example'
+    AlgorithmPolicy:
+      type: object
+      required:
+        - class
+      properties:
+        class:
+          type: string
+      discriminator:
+        propertyName: class
+    NoAlgorithmPolicy:
+      allOf:
+      - $ref: '#/components/schemas/AlgorithmPolicy'
+      - type: object 
+    DefaultAlgorithmPolicy:
+      allOf:
+      - $ref: '#/components/schemas/AlgorithmPolicy'
+      - type: object
+        properties:
+          algorithmId:
+            type: string
+    WeightedAlgorithmPolicy:
+      allOf:
+      - $ref: '#/components/schemas/WeightedAlgorithmPolicy'
+      - type: object
+        properties:
+          weights:
+            type: array
+            items:
+              type: object
+              properties:
+                algorithmId:
+                  type: string
+                weight:
+                  type: number
