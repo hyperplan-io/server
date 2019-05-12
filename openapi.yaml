@@ -285,29 +285,35 @@ components:
       type: object
       required:
         - class
-        - host
-        - port
-        - featuresTransformer
-        - labelsTransformer
       properties:
         class:
           type: string
-        host:
-          type: string
-        port:
-          type: integer
-        featuresTransformer:
-          $ref: "#/components/schemas/FeaturesTransformer"
-        labelsTransformer:
-          $ref: "#/components/schemas/LabelsTransformer"
-    FeaturesTransformer:
-      type: object
-      oneOf:
-        - $ref '#/components/schemas/TensorFlowFeaturesTransformer'
-    LabelsTransformer:
-      type: object
-      oneOf:
-        - $ref '#/components/schemas/TensorFlowLabelsTransformer'
+      discriminator:
+        propertyName: class
+    TensorFlowClassificationBackend:
+      allOf:
+        - $ref: '#/components/schemas/Backend'
+        - type: object 
+          properties:
+            host:
+              type: string
+            port:
+              type: integer
+            featuresTransformer:
+              $ref: '#/components/schemas/TensorFlowFeaturesTransformer'
+            labelsTransformer:
+              $ref: '#/components/schemas/TensorFlowLabelsTransformer'
+    TensorFlowRegressionBackend:
+      allOf:
+        - $ref: '#/components/schemas/Backend'
+        - type: object 
+          properties:
+            host:
+              type: string
+            port:
+              type: integer
+            featuresTransformer:
+              $ref: '#/components/schemas/TensorFlowFeaturesTransformer'
     TensorFlowFeaturesTransformer:
       type: object
       required:
@@ -322,8 +328,6 @@ components:
             type: string
     TensorFlowLabelsTransformer:
       type: object
-      required:
-        - fields
       properties:
         fields:
           type: array
