@@ -1,0 +1,544 @@
+openapi: "3.0.0"
+info:
+  title: FoundaMl
+  description: 'Manage your machine learning algorithms'
+  termsOfService: ''
+  contact:
+    name: 'Antoine Sauray'
+    url: ''
+    email: antoine@foundaml.org
+  license:
+    name: Apache 2.0
+    url: 'https://www.apache.org/licenses/LICENSE-2.0.html'
+  version: 0.0.1
+servers:
+  - url: 'http://{platform}.api.foundaml.org'
+    description: Api server
+    variables:
+      platform:
+        default: dev
+        description: this value is assigned by the service provider
+      port:
+        enum:
+          - '80'
+          - '443'
+        default: '80'
+      basePath:
+        default: ''
+paths:
+  /features:
+    get:
+      description: 'Get all the features objects'
+      responses:
+        '200':
+          description: 'Successfully retrieved the features objects'
+          content:
+            application.json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FeaturesConfiguration'
+    post:
+      description: 'Create a new features object'
+      requestBody:
+        description: 'Successfully retrieved the features objects'
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeaturesConfiguration'
+        required:
+          true
+      responses:
+        '201':
+          description: 'Successfully created a new features object'
+          content:
+            application.json:
+              schema:
+                $ref: '#/components/schemas/FeaturesConfiguration'
+  /features/{featuresId}:
+    get:
+      description: 'Get a features object by id'
+      parameters:
+        - name: featuresId
+          in: path
+          description: The Id of the features object
+          required: true
+      responses:
+        '200':
+          description: 'Successfully found the features object'
+          content:
+            application.json:
+              schema:
+                $ref: '#/components/schemas/FeaturesConfiguration'
+        '404':
+          description: 'The features object does not exist'
+          content:
+            text.plain:
+              schema:
+                type: string
+  /labels:
+    get:
+      description: 'Get all the labels object'
+      responses:
+        '200':
+          description: 'Successfully retrieved the labels object'
+          content:
+            application.json:
+              schema:
+                $ref: '#/components/schemas/LabelsConfiguration'
+    post:
+      description: 'Create a new labels object'
+      requestBody:
+        description: 'The new labels object'
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LabelsConfiguration'
+        required:
+          true
+      responses:
+        '201':
+          description: 'Successfully created a new labels object'
+          content:
+            application.json:
+              schema:
+                $ref: '#/components/schemas/LabelsConfiguration'
+  /labels/{labelsId}:
+    get:
+      description: 'Get a labels object by id'
+      parameters:
+        - name: labelsId
+          in: path
+          description: The Id of the labels object
+          required: true
+      responses:
+        '200':
+          description: 'Successfully found the labels object'
+          content:
+            application.json:
+              schema:
+                type: object 
+                items:
+                  $ref: '#/components/schemas/LabelsConfiguration'
+        '404':
+          description: 'The labels object does not exist'
+          content:
+            text.plain:
+              schema:
+                type: string
+  /projects:
+    get:
+      description: 'Get all the projects'
+      responses:
+        '200':
+          description: 'Successfully retrieved all the projects'
+          content:
+            application.json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Project'
+    post:
+      description: 'Create a new project'
+      requestBody:
+        description: 'The new project to create'
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Project'
+        required:
+          true
+      responses:
+        '201':
+          description: 'Successfully created a new project'
+          content:
+            application.json:
+              schema:
+                $ref: '#/components/schemas/Project'
+    patch:
+      description: 'Update a project'
+      requestBody:
+        description: 'The fields to patch'
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                policy:
+                  $ref: '#/components/schemas/AlgorithmPolicy'
+  /projects/{projectId}:
+    get:
+      description: 'Get a project by ud'
+      parameters:
+        - name: projectId
+          in: path
+          description: The Id of the project
+          required: true
+      responses:
+        '200':
+          description: 'Successfully found the project'
+          content:
+            application.json:
+              schema:
+                $ref: '#/components/schemas/Project'
+        '404':
+          description: 'The project does not exist'
+          content:
+            text.plain:
+              schema:
+                type: string
+
+  /algorithms:
+    post:
+      description: 'create a new algorithm'
+      requestBody:
+        description: 'the new algorithm to create'
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Algorithm'
+        required:
+          true
+      responses:
+        '201':
+          description: 'Successfully created a new algorithm'
+          content:
+            application.json:
+              schema:
+                $ref: '#/components/schemas/Algorithm'
+  /predictions:
+    post:
+      description: 'Make a prediction on a project'
+      requestBody:
+        description: 'The prediction requets'
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PredictionRequest'
+        required:
+          true
+      responses:
+        '200':
+          description: 'The prediction is successful'
+          content:
+            application.json:
+              schema:
+                $ref: '#/components/schemas/Prediction'
+  /examples:
+    post:
+      description: 'Add a human validated example for a prediction'
+      responses:
+        '201':
+          description: 'The example has been created successfully'
+          content:
+            application.json:
+              schema:
+                $ref: '#/components/schemas/Prediction'
+components:
+  schemas:
+    Project:
+      type: object
+      required:
+        - id
+        - name
+        - problem
+        - algorithms
+        - policy
+        - configuration
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        problem:
+          type: string
+        algorithms:
+          type: array
+          items:
+            $ref: "#/components/schemas/Algorithm"
+        policy:
+          $ref: '#/components/schemas/AlgorithmPolicy'
+    Algorithm:
+      type: object
+      required:
+        - id
+        - projectId
+        - backend
+        - security
+      properties:
+        id:
+          type: string
+        projectId:
+          type: string
+        backend:
+          $ref: "#/components/schemas/Backend"
+        security:
+          $ref: "#/components/schemas/SecurityConfiguration"
+    SecurityConfiguration:
+      type: object
+      required:
+        - encryption
+        - headers
+      properties:
+        encryption:
+          type: string
+        headers:
+          type: array
+          items:
+            type: object
+            required:
+              - key
+              - value
+            properties:
+              key:
+                type: string
+              value:
+                type: string
+    Backend:
+      type: object
+      required:
+        - class
+      properties:
+        class:
+          type: string
+      discriminator:
+        propertyName: class
+    TensorFlowClassificationBackend:
+      allOf:
+        - $ref: '#/components/schemas/Backend'
+        - type: object 
+          properties:
+            host:
+              type: string
+            port:
+              type: integer
+            featuresTransformer:
+              $ref: '#/components/schemas/TensorFlowFeaturesTransformer'
+            labelsTransformer:
+              $ref: '#/components/schemas/TensorFlowLabelsTransformer'
+    TensorFlowRegressionBackend:
+      allOf:
+        - $ref: '#/components/schemas/Backend'
+        - type: object 
+          properties:
+            host:
+              type: string
+            port:
+              type: integer
+            featuresTransformer:
+              $ref: '#/components/schemas/TensorFlowFeaturesTransformer'
+    TensorFlowFeaturesTransformer:
+      type: object
+      required:
+        - signatureName
+        - fields
+      properties:
+        signatureName:
+          type: string
+        fields:
+          type: array
+          items:
+            type: string
+    TensorFlowLabelsTransformer:
+      type: object
+      properties:
+        fields:
+          type: array
+          items:
+            type: object
+            required:
+              - from
+              - to
+            properties:
+              from:
+                type: string
+              to:
+                type: string
+    FeaturesConfiguration:
+      type: object
+      required:
+        - id
+        - data
+      properties:
+        id:
+          type: string
+        data:
+          type: array
+          items:
+            type: object
+            required:
+              - name
+              - type
+              - description
+            properties:
+              name:
+                type: string
+              type:
+                type: string
+              description:
+                type: string
+    LabelsConfiguration:
+      type: object
+      required:
+        - id
+        - data
+      properties:
+        id:
+          type: string
+        data:
+          type: array
+          items:
+            type: object
+            required:
+              - name
+              - type
+              - description
+            properties:
+              name:
+                type: string
+              type:
+                type: string
+              description:
+                type: string
+    PredictionRequest:
+      type: object
+      required:
+        - projectId
+        - features
+      properties:
+        projectId:
+          type: string
+        features:
+          type: array
+          items:
+            oneOf:
+              - type: string
+              - type: number 
+    Prediction:
+      type: object
+      required:
+        - type
+        - id
+        - projectId
+        - algorithmId
+        - features
+        - labels
+        - examples
+      properties:
+        type:
+          type: "string"
+        id:
+          type: "string"
+        projectId:
+          type: "string"
+        algorithmId:
+          type: "string"
+        examples:
+          type: array
+          items:
+            type: string
+        features:
+          type: array
+          items:
+            oneOf:
+              - type: string
+              - type: number
+        labels:
+          type: object
+          required:
+            - label
+            - probability
+            - correctExampleUrl
+            - incorrectExampleUrl
+          properties:
+            label:
+              type: string
+            probability:
+              type: number 
+            correctExampleUrl:
+              type: string
+              description: 'Call this url relative to the host to validate this label and make it an example'
+            incorrectExampleUrl:
+              type: string
+              description: 'Call this url relative to the host to invalidate this label and make it a wrong example'
+    PredictionEvent:
+      type: object
+      required:
+        - type
+        - id
+        - projectId
+        - algorithmId
+        - features
+        - labels
+        - example
+      properties:
+        type:
+          type: "string"
+        id:
+          type: "string"
+        projectId:
+          type: "string"
+        algorithmId:
+          type: "string"
+        example:
+          type: "string" 
+        features:
+          type: array
+          items:
+            oneOf:
+              - type: string
+              - type: number
+        labels:
+          type: object
+          required:
+            - label
+            - probability
+            - correctExampleUrl
+            - incorrectExampleUrl
+          properties:
+            label:
+              type: string
+            probability:
+              type: number 
+            correctExampleUrl:
+              type: string
+              description: 'Call this url relative to the host to validate this label and make it an example'
+            incorrectExampleUrl:
+              type: string
+              description: 'Call this url relative to the host to invalidate this label and make it a wrong example'
+    AlgorithmPolicy:
+      type: object
+      required:
+        - class
+      properties:
+        class:
+          type: string
+      discriminator:
+        propertyName: class
+    NoAlgorithmPolicy:
+      allOf:
+      - $ref: '#/components/schemas/AlgorithmPolicy'
+      - type: object 
+    DefaultAlgorithmPolicy:
+      allOf:
+      - $ref: '#/components/schemas/AlgorithmPolicy'
+      - type: object
+        properties:
+          algorithmId:
+            type: string
+    WeightedAlgorithmPolicy:
+      allOf:
+      - $ref: '#/components/schemas/WeightedAlgorithmPolicy'
+      - type: object
+        properties:
+          weights:
+            type: array
+            items:
+              type: object
+              properties:
+                algorithmId:
+                  type: string
+                weight:
+                  type: number
