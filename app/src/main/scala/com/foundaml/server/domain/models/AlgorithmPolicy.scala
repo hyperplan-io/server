@@ -26,23 +26,29 @@ object DefaultAlgorithm {
 }
 
 case class AlgorithmWeight(algorithmId: String, weight: Float)
-case class WeightedAlgorithm(weights: List[AlgorithmWeight]) extends AlgorithmPolicy {
+case class WeightedAlgorithm(weights: List[AlgorithmWeight])
+    extends AlgorithmPolicy {
 
-  val cumulativeWeights = weights.foldLeft[List[Float]](Nil){ case (acc, tuple) =>
-    acc :+ (acc.lastOption.getOrElse(0.0f) + tuple.weight)
+  val cumulativeWeights = weights.foldLeft[List[Float]](Nil) {
+    case (acc, tuple) =>
+      acc :+ (acc.lastOption.getOrElse(0.0f) + tuple.weight)
   }
   val weightsZipCumulativeWeights = weights.zip(cumulativeWeights)
 
   override def take(): Option[String] = {
     val rand = Random.nextFloat() * cumulativeWeights.lastOption.getOrElse(0f)
-    weightsZipCumulativeWeights.foldLeft[List[AlgorithmWeight]](Nil) { case (acc, tuple) => 
-      val (algorithmWeight, cumWeight) = tuple
-      if(cumWeight > rand) {
-        acc :+ algorithmWeight
-      } else {
-        acc
+    weightsZipCumulativeWeights
+      .foldLeft[List[AlgorithmWeight]](Nil) {
+        case (acc, tuple) =>
+          val (algorithmWeight, cumWeight) = tuple
+          if (cumWeight > rand) {
+            acc :+ algorithmWeight
+          } else {
+            acc
+          }
       }
-    }.headOption.map(_.algorithmId)
+      .headOption
+      .map(_.algorithmId)
   }
   val name = WeightedAlgorithm.name
 }

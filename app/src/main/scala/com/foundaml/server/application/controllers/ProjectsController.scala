@@ -85,8 +85,8 @@ class ProjectsController(
             case ProjectDoesNotExist(projectId) =>
               NotFound(s"The project $projectId does not exist")
             case ProjectDataInconsistent(projectId) =>
-              logger.error(s"The project $projectId has inconsistent data") *> 
-              InternalServerError(s"The project data is inconsistent")
+              logger.error(s"The project $projectId has inconsistent data") *>
+                InternalServerError(s"The project data is inconsistent")
             case err =>
               logger.error(s"Unhandled error: ${err}") *> InternalServerError(
                 "An unknown error occurred"

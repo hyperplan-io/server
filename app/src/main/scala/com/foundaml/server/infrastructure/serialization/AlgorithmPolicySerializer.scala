@@ -11,15 +11,15 @@ object AlgorithmPolicySerializer {
   object Implicits {
     implicit val discriminator: Configuration =
       Configuration.default.withDiscriminator("class")
-  
-    implicit val algorithmWeightDecoder: Decoder[AlgorithmWeight] = 
+
+    implicit val algorithmWeightDecoder: Decoder[AlgorithmWeight] =
       (c: HCursor) =>
         for {
           algorithmId <- c.downField("algorithmId").as[String]
           weight <- c.downField("weight").as[Float]
         } yield AlgorithmWeight(algorithmId, weight)
 
-    implicit val algorithmWeightEncoder: Encoder[AlgorithmWeight] = 
+    implicit val algorithmWeightEncoder: Encoder[AlgorithmWeight] =
       (algorithmWeight: AlgorithmWeight) =>
         Json.obj(
           "algorithmId" -> Json.fromString(algorithmWeight.algorithmId),
