@@ -11,6 +11,20 @@ object AlgorithmPolicySerializer {
   object Implicits {
     implicit val discriminator: Configuration =
       Configuration.default.withDiscriminator("class")
+  
+    implicit val algorithmWeightDecoder: Decoder[AlgorithmWeight] = 
+      (c: HCursor) =>
+        for {
+          algorithmId <- c.downField("algorithmId").as[String]
+          weight <- c.downField("weight").as[Float]
+        } yield AlgorithmWeight(algorithmId, weight)
+
+    implicit val algorithmWeightEncoder: Encoder[AlgorithmWeight] = 
+      (algorithmWeight: AlgorithmWeight) =>
+        Json.obj(
+          "algorithmId" -> Json.fromString(algorithmWeight.algorithmId),
+          "weight" -> Json.fromFloatOrNull(algorithmWeight.weight)
+        )
 
     implicit val encoder: Encoder[AlgorithmPolicy] = {
       case policy: NoAlgorithm =>
@@ -20,8 +34,13 @@ object AlgorithmPolicySerializer {
           "class" -> Json.fromString(policy.name),
           "algorithmId" -> Json.fromString(policy.algorithmId)
         )
-
+      case policy: WeightedAlgorithm =>
+        Json.obj(
+          "class" -> Json.fromString(policy.name),
+          "weights" -> Json.fromValues(policy.weights.map(_.asJson))
+        )
     }
+
     implicit val decoder: Decoder[AlgorithmPolicy] =
       (c: HCursor) =>
         c.downField("class").as[String].flatMap {
@@ -29,6 +48,10 @@ object AlgorithmPolicySerializer {
           case DefaultAlgorithm.name =>
             c.downField("algorithmId").as[String].map { algorithmId =>
               DefaultAlgorithm(algorithmId)
+            }
+          case WeightedAlgorithm.name =>
+            c.downField("weights").as[List[AlgorithmWeight]].map { weights =>
+              WeightedAlgorithm(weights)
             }
         }
   }
