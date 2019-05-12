@@ -61,7 +61,7 @@ class ProjectsController(
               logger.warn(err.getMessage)
               BadRequest(s"a regression project does not require labels")
             case err =>
-              logger.error(s"Unhandled error: ${err.getMessage}") *> InternalServerError(
+              logger.error(s"Unhandled error: ${err}") *> InternalServerError(
                 "An unknown error occurred"
               )
           }
@@ -84,8 +84,11 @@ class ProjectsController(
           .handleErrorWith {
             case ProjectDoesNotExist(projectId) =>
               NotFound(s"The project $projectId does not exist")
+            case ProjectDataInconsistent(projectId) =>
+              logger.error(s"The project $projectId has inconsistent data") *>
+                InternalServerError(s"The project data is inconsistent")
             case err =>
-              logger.error(s"Unhandled error: ${err.getMessage}") *> InternalServerError(
+              logger.error(s"Unhandled error: ${err}") *> InternalServerError(
                 "An unknown error occurred"
               )
           }
@@ -101,7 +104,7 @@ class ProjectsController(
           }
           .handleErrorWith {
             case err =>
-              logger.error(s"Unhandled error: ${err.getMessage}") *> InternalServerError(
+              logger.error(s"Unhandled error: ${err}") *> InternalServerError(
                 "An unknown error occurred"
               )
           }
@@ -125,7 +128,7 @@ class ProjectsController(
                 s"The project $projectId has inconsistent data"
               )
             case err =>
-              logger.error(s"Unhandled error: ${err.getMessage}") *> InternalServerError(
+              logger.error(s"Unhandled error: ${err}") *> InternalServerError(
                 "An unknown error occurred"
               )
           }

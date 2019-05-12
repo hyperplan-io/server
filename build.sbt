@@ -20,7 +20,15 @@ lazy val root = (project in file("."))
   ).aggregate(app, microsite)
     
   lazy val app = project.in(file("app"))
-    .settings(libraryDependencies ++= Seq(
+    .settings(
+      scalacOptions ++= Seq(
+        "-Ypartial-unification",
+        "-unchecked",
+        "-deprecation",
+        "-feature",
+        "-Xfatal-warnings"
+      ),
+      libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-blaze-server" % Http4sVersion,
       "org.http4s" %% "http4s-blaze-client" % Http4sVersion,
       "org.http4s" %% "http4s-circe" % Http4sVersion,
