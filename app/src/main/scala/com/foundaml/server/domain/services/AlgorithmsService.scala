@@ -173,11 +173,15 @@ class AlgorithmsService(
             _ <- project match {
               case classificationProject: ClassificationProject =>
                 projectsService.updateProject(
-                  classificationProject.copy(policy = DefaultAlgorithm(id))
+                  projectId,
+                  None,
+                  Some(DefaultAlgorithm(id))
                 )
               case regressionProject: RegressionProject =>
                 projectsService.updateProject(
-                  regressionProject.copy(policy = DefaultAlgorithm(id))
+                  projectId,
+                  None,
+                  Some(DefaultAlgorithm(id))
                 )
 
             }
