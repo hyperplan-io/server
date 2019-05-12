@@ -4,7 +4,7 @@ info:
   description: 'Manage your machine learning algorithms'
   termsOfService: ''
   contact:
-    name: ''
+    name: 'Antoine Sauray'
     url: ''
     email: sauray.antoine@gmail.com
   license:
@@ -12,8 +12,8 @@ info:
     url: 'https://www.apache.org/licenses/LICENSE-2.0.html'
   version: 0.0.1
 servers:
-  - url: 'http://{platform}.www.foundaml.org'
-    description: Test server
+  - url: 'http://{platform}.api.foundaml.org'
+    description: Api server
     variables:
       platform:
         default: dev
