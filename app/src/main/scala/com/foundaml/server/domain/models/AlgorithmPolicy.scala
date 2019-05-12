@@ -1,7 +1,6 @@
 package com.foundaml.server.domain.models
 
 import scala.util.Random
-import cats.implicits._
 
 sealed trait AlgorithmPolicy {
   def take(): Option[String]

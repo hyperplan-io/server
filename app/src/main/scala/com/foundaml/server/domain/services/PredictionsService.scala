@@ -272,7 +272,6 @@ class PredictionsService(
           case (StringVector2dFeature.featureClass, EmptyVector2dFeature) =>
             true
           case (config, feature) =>
-            println(s"config $config does not match $feature")
             false
         }
         .reduce(_ & _)
