@@ -136,12 +136,34 @@ class ProjectsService(
     }
   }
 
+  def updateProject(
+      projectId: String,
+      name: Option[String],
+      policy: Option[AlgorithmPolicy]
+  ): IO[Int] = projectsRepository.transact(
+    projectsRepository
+      .read(projectId)
+      .map {
+        case project: ClassificationProject =>
+          project.copy(
+            name = name.getOrElse(project.name),
+            policy = policy.getOrElse(project.policy)
+          )
+        case project: RegressionProject =>
+          project.copy(
+            name = name.getOrElse(project.name),
+            policy = policy.getOrElse(project.policy)
+          )
+      }
+      .flatMap { project =>
+        projectsRepository.update(project)
+      }
+  )
+
   def readProjects =
-    projectsRepository.readAll
+    projectsRepository.transact(projectsRepository.readAll)
 
   def readProject(id: String) =
-    projectsRepository.read(id)
-
-  def updateProject(project: Project) = projectsRepository.update(project)
+    projectsRepository.transact(projectsRepository.read(id))
 
 }

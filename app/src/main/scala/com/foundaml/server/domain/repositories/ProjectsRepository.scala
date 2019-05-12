@@ -59,6 +59,9 @@ class ProjectsRepository(implicit xa: Transactor[IO]) {
   implicit val labelsTypePut: Put[Set[String]] =
     Put[String].contramap(labels => s"${labels.mkString(separator)}")
 
+  def transact[T](io: ConnectionIO[T]) =
+    io.transact(xa)
+
   def insertQuery(project: Project) =
     sql"""INSERT INTO projects(
       id, 
@@ -90,11 +93,12 @@ class ProjectsRepository(implicit xa: Transactor[IO]) {
       """
       .query[ProjectsRepository.ProjectData]
 
-  def read(projectId: String) =
+  def read(projectId: String): ConnectionIO[Project] = {
+    readQuery(projectId).unique.flatMap(dataToProject)
     readQuery(projectId).unique
-      .transact(xa)
       .flatMap(dataToProject)
       .flatMap(retrieveProjectAlgorithms)
+  }
 
   def readAllProjectsQuery =
     sql"""
@@ -113,10 +117,9 @@ class ProjectsRepository(implicit xa: Transactor[IO]) {
       """
       .query[AlgorithmData]
 
-  def readProjectAlgorithms(projectId: String): IO[List[Algorithm]] =
+  def readProjectAlgorithms(projectId: String): ConnectionIO[List[Algorithm]] =
     readProjectAlgorithmsQuery(projectId)
       .to[List]
-      .transact(xa)
       .flatMap(dataListToAlgorithm)
 
   def readAllAlgorithmsQuery(): doobie.Query0[AlgorithmData] =
@@ -129,7 +132,6 @@ class ProjectsRepository(implicit xa: Transactor[IO]) {
   def readAll =
     readAllProjectsQuery
       .to[List]
-      .transact(xa)
       .flatMap(dataListToProject)
       .flatMap(retrieveProjectsAlgorithms)
 
@@ -138,9 +140,9 @@ class ProjectsRepository(implicit xa: Transactor[IO]) {
         UPDATE projects SET name=${project.name}, algorithm_policy = ${project.policy}
       """.update
 
-  def update(project: Project) = updateQuery(project).run.transact(xa)
+  def update(project: Project) = updateQuery(project).run
 
-  def retrieveProjectAlgorithms(project: Project) =
+  def retrieveProjectAlgorithms(project: Project): ConnectionIO[Project] =
     (project match {
       case project: ClassificationProject =>
         readProjectAlgorithms(project.id).map { newAlgorithms =>
@@ -190,7 +192,7 @@ object ProjectsRepository {
   )
 
   import com.foundaml.server.domain.models.errors.ProjectDataInconsistent
-  def dataToProject(data: ProjectData) = data match {
+  def dataToProject(data: ProjectData): ConnectionIO[Project] = data match {
     case (
         id,
         name,
@@ -198,15 +200,13 @@ object ProjectsRepository {
         Right(policy),
         Right(projectConfiguration: ClassificationConfiguration)
         ) =>
-      IO.pure(
-        ClassificationProject(
-          id,
-          name,
-          projectConfiguration,
-          Nil,
-          policy
-        )
-      )
+      (ClassificationProject(
+        id,
+        name,
+        projectConfiguration,
+        Nil,
+        policy
+      ): Project).pure[ConnectionIO]
     case (
         id,
         name,
@@ -214,37 +214,36 @@ object ProjectsRepository {
         Right(policy),
         Right(projectConfiguration: RegressionConfiguration)
         ) =>
-      IO.pure(
-        RegressionProject(
-          id,
-          name,
-          projectConfiguration,
-          Nil,
-          policy
-        )
-      )
+      (RegressionProject(
+        id,
+        name,
+        projectConfiguration,
+        Nil,
+        policy
+      ): Project).pure[ConnectionIO]
     case projectData =>
-      IO.raiseError(ProjectDataInconsistent(data._1))
+      AsyncConnectionIO.raiseError(ProjectDataInconsistent(data._1))
   }
 
   def dataListToProject(dataList: List[ProjectData]) =
     (dataList.map(dataToProject)).sequence
 
-  def dataToAlgorithm(data: AlgorithmData) = data match {
-    case (
-        id,
-        Right(backend),
-        projectId,
-        Right(security)
-        ) =>
-      IO.pure(
-        Algorithm(id, backend, projectId, security)
-      )
-    case algorithmData =>
-      IO.raiseError(AlgorithmDataIncorrect(data._1))
-  }
+  def dataToAlgorithm(data: AlgorithmData): ConnectionIO[Algorithm] =
+    data match {
+      case (
+          id,
+          Right(backend),
+          projectId,
+          Right(security)
+          ) =>
+        Algorithm(id, backend, projectId, security).pure[ConnectionIO]
+      case algorithmData =>
+        AsyncConnectionIO.raiseError(AlgorithmDataIncorrect(data._1))
+    }
 
-  def dataListToAlgorithm(dataList: List[AlgorithmData]) =
+  def dataListToAlgorithm(
+      dataList: List[AlgorithmData]
+  ): ConnectionIO[List[Algorithm]] =
     (dataList.map(dataToAlgorithm)).sequence
 
 }

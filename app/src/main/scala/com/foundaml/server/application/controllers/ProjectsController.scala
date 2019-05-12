@@ -1,7 +1,10 @@
 package com.foundaml.server.application.controllers
 
 import com.foundaml.server.application.controllers.requests._
-import com.foundaml.server.controllers.requests.PostProjectRequest
+import com.foundaml.server.controllers.requests.{
+  PostProjectRequest,
+  PatchProjectRequest
+}
 import com.foundaml.server.domain.models.errors._
 import com.foundaml.server.domain.services.ProjectsService
 import com.foundaml.server.infrastructure.serialization._
@@ -57,6 +60,30 @@ class ProjectsController(
             case err: RegressionProjectDoesNotRequireLabels =>
               logger.warn(err.getMessage)
               BadRequest(s"a regression project does not require labels")
+            case err =>
+              logger.error(s"Unhandled error: ${err.getMessage}") *> InternalServerError(
+                "An unknown error occurred"
+              )
+          }
+      case req @ PATCH -> Root / projectId =>
+        (for {
+          request <- req.as[PatchProjectRequest](
+            MonadError[IO, Throwable],
+            PatchProjectRequestSerializer.entityDecoder
+          )
+          project <- projectsService.updateProject(
+            projectId,
+            request.name,
+            request.policy
+          )
+          _ <- logger.info(s"Project ${projectId} updated")
+        } yield project)
+          .flatMap { project =>
+            NoContent()
+          }
+          .handleErrorWith {
+            case ProjectDoesNotExist(projectId) =>
+              NotFound(s"The project $projectId does not exist")
             case err =>
               logger.error(s"Unhandled error: ${err.getMessage}") *> InternalServerError(
                 "An unknown error occurred"
