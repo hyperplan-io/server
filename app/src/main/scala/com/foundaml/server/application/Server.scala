@@ -26,6 +26,7 @@ object Server {
   import org.http4s.implicits._
   import cats.effect.ContextShift
   import com.foundaml.server.infrastructure.auth.AuthenticationService
+  import com.foundaml.server.domain.FoundaMLConfig
 
   def stream(
       predictionsService: PredictionsService,
@@ -39,6 +40,7 @@ object Server {
       implicit cs: ContextShift[IO],
       timer: Timer[IO],
       xa: Transactor[IO],
+      config: FoundaMLConfig,
       publicKey: AuthenticationService.PublicKey,
       privateKey: AuthenticationService.PrivateKey
   ) = {
@@ -60,6 +62,11 @@ object Server {
     val labelsController = new LabelsController(
       domainService
     )
+    val authControler = new AuthenticationController(
+      config.credentials,
+      publicKey,
+      privateKey
+    )
     val healthController = new HealthController(
       xa,
       kafkaService
@@ -70,28 +77,48 @@ object Server {
       .withHttpApp(
         Router(
           "/predictions" -> (
-            predictionsController.service <+> AuthenticationMiddleware
-              .jwtAuthenticate(predictionsController.service)
-          ),
+            AuthenticationMiddleware
+              .jwtAuthenticate(
+                predictionsController.service,
+                AuthenticationService.PredictionScope
+              )
+            ),
           "/projects" -> (
-            projectsController.service <+> AuthenticationMiddleware
-              .jwtAuthenticate(projectsController.service)
-          ),
+            AuthenticationMiddleware
+              .jwtAuthenticate(
+                projectsController.service,
+                AuthenticationService.AdminScope
+              )
+            ),
           "/algorithms" -> (
-            algorithmsController.service <+> AuthenticationMiddleware
-              .jwtAuthenticate(algorithmsController.service)
-          ),
+            AuthenticationMiddleware
+              .jwtAuthenticate(
+                algorithmsController.service,
+                AuthenticationService.AdminScope
+              )
+            ),
           "/examples" -> (
-            examplesController.service <+> AuthenticationMiddleware
-              .jwtAuthenticate(examplesController.service)
-          ),
+            AuthenticationMiddleware
+              .jwtAuthenticate(
+                examplesController.service,
+                AuthenticationService.PredictionScope
+              )
+            ),
           "/features" -> (
-            featuresController.service <+> AuthenticationMiddleware
-              .jwtAuthenticate(featuresController.service)
+            AuthenticationMiddleware.jwtAuthenticate(
+              featuresController.service,
+              AuthenticationService.AdminScope
+            )
           ),
           "/labels" -> (
-            labelsController.service <+> AuthenticationMiddleware
-              .jwtAuthenticate(labelsController.service)
+            AuthenticationMiddleware
+              .jwtAuthenticate(
+                labelsController.service,
+                AuthenticationService.AdminScope
+              )
+            ),
+          "/authentication" -> (
+            authControler.service
           ),
           "/_health" -> (
             healthController.service

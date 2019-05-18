@@ -35,7 +35,7 @@ object Main extends IOApp with IOLogging {
     run(args.toList).runAsync(_ => IO(())).unsafeRunSync()
 
   import kamon.Kamon
-  def killAll: IO[Unit] = 
+  def killAll: IO[Unit] =
     IO.fromFuture(IO(Kamon.stopAllReporters()))
 
   override def run(args: List[String]): IO[ExitCode] =
@@ -108,6 +108,7 @@ object Main extends IOApp with IOLogging {
       _ <- {
         implicit val publicKeyImplicit = publicKey
         implicit val privateKeyImplicit = privateKey
+        implicit val configImplicit = config
         Server
           .stream(
             predictionsService,
