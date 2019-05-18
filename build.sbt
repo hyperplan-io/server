@@ -66,7 +66,8 @@ lazy val root = (project in file("."))
       "io.kamon" %% "kamon-jdbc" % "1.0.2",
       "io.kamon" %% "kamon-logback" % "1.0.6",
       "io.kamon" %% "kamon-system-metrics" % "1.0.0",
-      "io.kamon" %% "kamon-http4s" % "1.0.8"
+      "io.kamon" %% "kamon-http4s" % "1.0.8",
+      "com.auth0" % "java-jwt" % "3.8.0"
     ),
     addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.6"),
     addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.2.4"),
