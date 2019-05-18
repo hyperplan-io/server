@@ -25,6 +25,7 @@ object Server {
 
   import org.http4s.implicits._
   import cats.effect.ContextShift
+  import com.foundaml.server.infrastructure.auth.AuthenticationService
 
   def stream(
       predictionsService: PredictionsService,
@@ -34,48 +35,70 @@ object Server {
       kafkaService: Option[KafkaService],
       projectsRepository: ProjectsRepository,
       port: Int
-  )(implicit cs: ContextShift[IO], timer: Timer[IO], xa: Transactor[IO]) =
+  )(
+      implicit cs: ContextShift[IO],
+      timer: Timer[IO],
+      xa: Transactor[IO],
+      publicKey: AuthenticationService.PublicKey,
+      privateKey: AuthenticationService.PrivateKey
+  ) = {
+    val predictionsController = new PredictionsController(
+      predictionsService
+    )
+    val projectsController = new ProjectsController(
+      projectsService
+    )
+    val algorithmsController = new AlgorithmsController(
+      algorithmsService
+    )
+    val examplesController = new ExamplesController(
+      predictionsService
+    )
+    val featuresController = new FeaturesController(
+      domainService
+    )
+    val labelsController = new LabelsController(
+      domainService
+    )
+    val healthController = new HealthController(
+      xa,
+      kafkaService
+    )
+
     BlazeServerBuilder[IO]
       .bindHttp(port, "0.0.0.0")
       .withHttpApp(
         Router(
           "/predictions" -> (
-            new PredictionsController(
-              predictionsService
-            ).service
+            predictionsController.service <+> AuthenticationMiddleware
+              .jwtAuthenticate(predictionsController.service)
           ),
           "/projects" -> (
-            new ProjectsController(
-              projectsService
-            ).service
+            projectsController.service <+> AuthenticationMiddleware
+              .jwtAuthenticate(projectsController.service)
           ),
           "/algorithms" -> (
-            new AlgorithmsController(
-              algorithmsService
-            ).service
+            algorithmsController.service <+> AuthenticationMiddleware
+              .jwtAuthenticate(algorithmsController.service)
           ),
           "/examples" -> (
-            new ExamplesController(
-              predictionsService
-            ).service
+            examplesController.service <+> AuthenticationMiddleware
+              .jwtAuthenticate(examplesController.service)
           ),
           "/features" -> (
-            new FeaturesController(
-              domainService
-            ).service
+            featuresController.service <+> AuthenticationMiddleware
+              .jwtAuthenticate(featuresController.service)
           ),
           "/labels" -> (
-            new LabelsController(
-              domainService
-            ).service
+            labelsController.service <+> AuthenticationMiddleware
+              .jwtAuthenticate(labelsController.service)
           ),
           "/_health" -> (
-            new HealthController(
-              xa,
-              kafkaService
-            ).service
+            healthController.service
           )
         ).orNotFound
       )
       .serve
+  }
+
 }

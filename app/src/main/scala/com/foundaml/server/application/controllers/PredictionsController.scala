@@ -22,6 +22,7 @@ class PredictionsController(
     with IOLogging {
 
   import cats.MonadError
+  import com.foundaml.server.application.AuthenticationMiddleware
   val service: HttpRoutes[IO] = {
     HttpRoutes.of[IO] {
       case req @ POST -> Root =>

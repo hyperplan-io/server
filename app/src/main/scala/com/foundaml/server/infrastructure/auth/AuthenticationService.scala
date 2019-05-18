@@ -18,9 +18,9 @@ trait AuthenticationService {
       data: AuthenticationService.AuthenticationData,
       publicKey: AuthenticationService.PublicKey,
       privateKey: AuthenticationService.PrivateKey
-  ): IO[AuthenticationService.Token]
+  ): IO[String]
   def validate(
-      token: AuthenticationService.Token,
+      token: String,
       publicKey: AuthenticationService.PublicKey,
       privateKey: AuthenticationService.PrivateKey
   ): IO[AuthenticationService.AuthenticationData]
@@ -34,7 +34,6 @@ object AuthenticationService {
   sealed trait PrivateKey
   case class JwtPrivateKey(key: RSAPrivateKey) extends PrivateKey
 
-  case class Token(token: String)
   case class AuthenticationData(
       scope: List[AuthenticationScope],
       issuer: String,
@@ -112,7 +111,7 @@ object JwtAuthenticationService extends AuthenticationService {
       data: AuthenticationService.AuthenticationData,
       publicKey: AuthenticationService.PublicKey,
       privateKey: AuthenticationService.PrivateKey
-  ): IO[AuthenticationService.Token] = (publicKey, privateKey) match {
+  ): IO[String] = (publicKey, privateKey) match {
     case (
         jwtPublicKey: AuthenticationService.JwtPublicKey,
         jwtPrivateKey: AuthenticationService.JwtPrivateKey
@@ -129,15 +128,13 @@ object JwtAuthenticationService extends AuthenticationService {
       }.flatMap(
           builder => IO(builder.sign(algorithm(jwtPublicKey, jwtPrivateKey)))
         )
-        .map { token =>
-          AuthenticationService.Token(token)
-        }
+        
     case _ =>
       IO.raiseError(AuthenticationService.IncompatibleKey)
   }
 
   def validate(
-      token: AuthenticationService.Token,
+      token: String,
       publicKey: AuthenticationService.PublicKey,
       privateKey: AuthenticationService.PrivateKey
   ): IO[AuthenticationService.AuthenticationData] =
@@ -150,7 +147,7 @@ object JwtAuthenticationService extends AuthenticationService {
           JWT
             .require(algorithm(jwtPublicKey, jwtPrivateKey))
             .build()
-            .verify(token.token)
+            .verify(token)
         }.flatMap { decoded =>
             IO {
               val issuer = decoded.getIssuer()
