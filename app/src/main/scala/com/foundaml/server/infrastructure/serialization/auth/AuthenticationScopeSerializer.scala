@@ -28,8 +28,10 @@ object AuthenticationScopeSerializer {
           Right(AuthenticationService.PredictionScope)
       }
 
-  implicit val decoderList: Decoder[List[AuthenticationService.AuthenticationScope]] =
-    (c: HCursor) => Decoder.decodeList[AuthenticationService.AuthenticationScope](decoder)(c)
+  implicit val decoderList
+      : Decoder[List[AuthenticationService.AuthenticationScope]] =
+    (c: HCursor) =>
+      Decoder.decodeList[AuthenticationService.AuthenticationScope](decoder)(c)
 
   def encodeJsonString(
       scope: AuthenticationService.AuthenticationScope
@@ -46,7 +48,9 @@ object AuthenticationScopeSerializer {
     scope.asJson
   }
 
-  def encodeJsonList(scope: List[AuthenticationService.AuthenticationScope]): Json = {
+  def encodeJsonList(
+      scope: List[AuthenticationService.AuthenticationScope]
+  ): Json = {
     scope.asJson
   }
   def decodeJson(
