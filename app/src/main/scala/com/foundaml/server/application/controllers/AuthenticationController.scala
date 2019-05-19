@@ -1,7 +1,8 @@
 package com.foundaml.server.application.controllers
 
 import cats.Functor
-import org.http4s.{HttpRoutes, HttpService}
+import org.http4s._
+import org.http4s.headers._
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
 import cats.effect.IO
@@ -35,6 +36,10 @@ class AuthenticationController(
   import java.time.Instant
   import java.time.temporal.ChronoUnit
   import org.http4s.headers.Authorization
+  import org.http4s.Status
+  import org.http4s.Response
+  import org.http4s.Challenge
+  import cats.data.NonEmptyList
   val service: HttpRoutes[IO] = {
     HttpRoutes.of[IO] {
       case req @ POST -> Root =>
@@ -72,7 +77,18 @@ class AuthenticationController(
           }
           .handleErrorWith {
             case InvalidCredentials =>
-              BadRequest("")
+              Unauthorized(
+                `WWW-Authenticate`(
+                  NonEmptyList(
+                    Challenge(
+                      "Bearer",
+                      "Please provide a valid access token"
+                    ),
+                    Nil
+                  )
+                ),
+                "Authentication failed"
+              )
           }
     }
   }
