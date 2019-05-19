@@ -105,6 +105,7 @@ object Main extends IOApp with IOLogging {
       privateKeyRaw = config.encryption.privateKey
       publicKey <- JwtAuthenticationService.publicKey(publicKeyRaw)
       privateKey <- JwtAuthenticationService.privateKey(privateKeyRaw)
+      _ <- logger.info("encryption keys initialized")
       _ <- {
         implicit val publicKeyImplicit = publicKey
         implicit val privateKeyImplicit = privateKey
