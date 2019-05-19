@@ -48,7 +48,7 @@ class AuthenticationController(
             request.password,
             adminCredentials
           )
-          token <- correctCredentials match {
+          authResponse <- correctCredentials match {
             case CorrectCredentials =>
               JwtAuthenticationService.generateToken(
                 AuthenticationData(
@@ -62,12 +62,12 @@ class AuthenticationController(
             case InCorrectCredentials =>
               IO.raiseError(InvalidCredentials)
           }
-        } yield token)
+        } yield authResponse)
           .flatMap {
-            case token =>
+            case authResponse =>
               Ok(
                 AuthenticationResponseSerializer
-                  .encodeJson(AuthenticationResponse(token))
+                  .encodeJson(authResponse)
               )
           }
           .handleErrorWith {

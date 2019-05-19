@@ -71,7 +71,12 @@ class AuthenticationServiceSpec extends FlatSpec with Matchers {
       .unsafeRunSync
 
     val decoded = JwtAuthenticationService
-      .validate(token, AuthenticationService.AdminScope, publicKey, privateKey)
+      .validate(
+        token.token,
+        AuthenticationService.AdminScope,
+        publicKey,
+        privateKey
+      )
       .unsafeRunSync
     decoded.scope should be(authData.scope)
     decoded.issuer should be(authData.issuer)
@@ -109,7 +114,12 @@ class AuthenticationServiceSpec extends FlatSpec with Matchers {
       .unsafeRunSync
 
     val decoded = JwtAuthenticationService
-      .validate(token, AuthenticationService.AdminScope, publicKey, privateKey)
+      .validate(
+        token.token,
+        AuthenticationService.AdminScope,
+        publicKey,
+        privateKey
+      )
       .unsafeRunSync
     decoded.scope should be(authData.scope)
     decoded.issuer should be(authData.issuer)

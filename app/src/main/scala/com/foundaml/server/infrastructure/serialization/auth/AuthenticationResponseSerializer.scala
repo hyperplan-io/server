@@ -13,7 +13,10 @@ object AuthenticationResponseSerializer {
       : Encoder[AuthenticationService.AuthenticationResponse] = {
     (response: AuthenticationService.AuthenticationResponse) =>
       Json.obj(
-        "token" -> Json.fromString(response.token)
+        "token" -> Json.fromString(response.token),
+        "scope" -> Json.fromValues(
+          response.scope.map(scope => Json.fromString(scope.scope))
+        )
       )
   }
 

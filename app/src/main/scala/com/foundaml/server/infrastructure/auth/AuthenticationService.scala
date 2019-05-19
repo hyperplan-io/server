@@ -20,7 +20,7 @@ trait AuthenticationService {
       data: AuthenticationService.AuthenticationData,
       publicKey: AuthenticationService.PublicKey,
       privateKey: AuthenticationService.PrivateKey
-  ): IO[String]
+  ): IO[AuthenticationService.AuthenticationResponse]
   def validate(
       token: String,
       scope: AuthenticationService.AuthenticationScope,
@@ -36,7 +36,8 @@ object AuthenticationService {
   case object InCorrectCredentials extends CredentialsValidationResult
 
   case class AuthenticationResponse(
-      token: String
+      token: String,
+      scope: List[AuthenticationScope]
   )
 
   def validateCredentials(
@@ -139,31 +140,38 @@ object JwtAuthenticationService extends AuthenticationService {
       data: AuthenticationService.AuthenticationData,
       publicKey: AuthenticationService.PublicKey,
       privateKey: AuthenticationService.PrivateKey
-  ): IO[String] = (publicKey, privateKey) match {
-    case (
-        jwtPublicKey: AuthenticationService.JwtPublicKey,
-        jwtPrivateKey: AuthenticationService.JwtPrivateKey
-        ) =>
-      IO {
-        JWT
-          .create()
-          .withIssuer(data.issuer)
-          .withClaim(
-            "scope",
-            AuthenticationScopeSerializer.encodeJsonListString(data.scope)
+  ): IO[AuthenticationService.AuthenticationResponse] =
+    (publicKey, privateKey) match {
+      case (
+          jwtPublicKey: AuthenticationService.JwtPublicKey,
+          jwtPrivateKey: AuthenticationService.JwtPrivateKey
+          ) =>
+        IO {
+          JWT
+            .create()
+            .withIssuer(data.issuer)
+            .withClaim(
+              "scope",
+              AuthenticationScopeSerializer.encodeJsonListString(data.scope)
+            )
+        }.map { builder =>
+            data.expiresAt.fold(builder)(
+              expiresAt => builder.withExpiresAt(ju.Date.from(expiresAt))
+            )
+          }
+          .flatMap(
+            builder => IO(builder.sign(algorithm(jwtPublicKey, jwtPrivateKey)))
           )
-      }.map { builder =>
-          data.expiresAt.fold(builder)(
-            expiresAt => builder.withExpiresAt(ju.Date.from(expiresAt))
-          )
-        }
-        .flatMap(
-          builder => IO(builder.sign(algorithm(jwtPublicKey, jwtPrivateKey)))
-        )
+          .map { token =>
+            AuthenticationService.AuthenticationResponse(
+              token,
+              data.scope
+            )
+          }
 
-    case _ =>
-      IO.raiseError(AuthenticationService.IncompatibleKey)
-  }
+      case _ =>
+        IO.raiseError(AuthenticationService.IncompatibleKey)
+    }
 
   def validate(
       token: String,
