@@ -27,21 +27,26 @@ import cats.effect.ContextShift
 import com.foundaml.server.infrastructure.streaming.KafkaService
 import com.foundaml.server.infrastructure.metrics.KamonSystemMonitorService
 import com.foundaml.server.infrastructure.metrics.PrometheusService
+import cats.effect.ExitCode
 
 object Main extends IOApp with IOLogging {
 
   override def main(args: Array[String]): Unit =
     run(args.toList).runAsync(_ => IO(())).unsafeRunSync()
 
-  import cats.effect.ExitCode
+  import kamon.Kamon
+  def killAll: IO[Unit] =
+    IO.fromFuture(IO(Kamon.stopAllReporters()))
+
   override def run(args: List[String]): IO[ExitCode] =
     loadConfigAndStart().attempt.flatMap(
       _.fold(
-        err => logger.error(err.getMessage) *> IO.pure(ExitCode.Error),
+        err => killAll *> logger.error(err.getMessage).as(ExitCode.Error),
         res => IO.pure(ExitCode.Success)
       )
     )
 
+  import com.foundaml.server.infrastructure.auth.JwtAuthenticationService
   def databaseConnected(
       config: FoundaMLConfig
   )(implicit xa: doobie.Transactor[IO]) =
@@ -96,18 +101,28 @@ object Main extends IOApp with IOLogging {
       port = 8080
       _ <- logger.info("Services have been correctly instantiated")
       _ <- logger.info(s"Starting http server on port $port")
-      _ <- Server
-        .stream(
-          predictionsService,
-          projectsService,
-          algorithmsService,
-          domainService,
-          kafkaService,
-          projectsRepository,
-          port
-        )
-        .compile
-        .drain
+      publicKeyRaw = config.encryption.publicKey
+      privateKeyRaw = config.encryption.privateKey
+      publicKey <- JwtAuthenticationService.publicKey(publicKeyRaw)
+      privateKey <- JwtAuthenticationService.privateKey(privateKeyRaw)
+      _ <- logger.info("encryption keys initialized")
+      _ <- {
+        implicit val publicKeyImplicit = publicKey
+        implicit val privateKeyImplicit = privateKey
+        implicit val configImplicit = config
+        Server
+          .stream(
+            predictionsService,
+            projectsService,
+            algorithmsService,
+            domainService,
+            kafkaService,
+            projectsRepository,
+            port
+          )
+          .compile
+          .drain
+      }
     } yield ()
 
   def loadConfigAndStart() =

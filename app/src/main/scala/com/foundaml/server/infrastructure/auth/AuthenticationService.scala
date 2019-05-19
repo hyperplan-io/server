@@ -12,15 +12,18 @@ import java.security.interfaces.{RSAPublicKey, RSAPrivateKey}
 import java.security.spec.PKCS8EncodedKeySpec
 import java.security.KeyFactory
 import java.security.spec.X509EncodedKeySpec
+import com.foundaml.server.domain.FoundaMLConfig
+import com.foundaml.server.domain._
 
 trait AuthenticationService {
   def generateToken(
       data: AuthenticationService.AuthenticationData,
       publicKey: AuthenticationService.PublicKey,
       privateKey: AuthenticationService.PrivateKey
-  ): IO[AuthenticationService.Token]
+  ): IO[AuthenticationService.AuthenticationResponse]
   def validate(
-      token: AuthenticationService.Token,
+      token: String,
+      scope: AuthenticationService.AuthenticationScope,
       publicKey: AuthenticationService.PublicKey,
       privateKey: AuthenticationService.PrivateKey
   ): IO[AuthenticationService.AuthenticationData]
@@ -28,17 +31,34 @@ trait AuthenticationService {
 
 object AuthenticationService {
 
+  sealed trait CredentialsValidationResult
+  case object CorrectCredentials extends CredentialsValidationResult
+  case object InCorrectCredentials extends CredentialsValidationResult
+
+  case class AuthenticationResponse(
+      token: String,
+      scope: List[AuthenticationScope]
+  )
+
+  def validateCredentials(
+      username: String,
+      password: String,
+      adminCredentials: AdminCredentials
+  ): CredentialsValidationResult =
+    if (username == adminCredentials.username && password == adminCredentials.password)
+      CorrectCredentials
+    else InCorrectCredentials
+
   sealed trait PublicKey
   case class JwtPublicKey(key: RSAPublicKey) extends PublicKey
 
   sealed trait PrivateKey
   case class JwtPrivateKey(key: RSAPrivateKey) extends PrivateKey
 
-  case class Token(token: String)
   case class AuthenticationData(
       scope: List[AuthenticationScope],
       issuer: String,
-      expiresAt: Instant
+      expiresAt: Option[Instant]
   )
 
   sealed trait AuthenticationScope {
@@ -57,9 +77,17 @@ object AuthenticationService {
   }
   case object IncompatibleKey extends AuthenticationServiceError {
     val message =
-      "the keys are incompatible, you need to use JwtPublicKey and JwtPrivateKey with JwtAuthenticationService"
+      "The keys are incompatible, you need to use JwtPublicKey and JwtPrivateKey with JwtAuthenticationService"
   }
 
+  case object InvalidCredentials extends AuthenticationServiceError {
+    val message = "The credentials are invalid"
+  }
+
+  case class UnauthorizedScope(scope: AuthenticationScope)
+      extends AuthenticationServiceError {
+    val message = s"You do not have the permission for the scope ${scope.scope}"
+  }
 }
 
 object JwtAuthenticationService extends AuthenticationService {
@@ -112,32 +140,42 @@ object JwtAuthenticationService extends AuthenticationService {
       data: AuthenticationService.AuthenticationData,
       publicKey: AuthenticationService.PublicKey,
       privateKey: AuthenticationService.PrivateKey
-  ): IO[AuthenticationService.Token] = (publicKey, privateKey) match {
-    case (
-        jwtPublicKey: AuthenticationService.JwtPublicKey,
-        jwtPrivateKey: AuthenticationService.JwtPrivateKey
-        ) =>
-      IO {
-        JWT
-          .create()
-          .withIssuer(data.issuer)
-          .withClaim(
-            "scope",
-            AuthenticationScopeSerializer.encodeJsonListString(data.scope)
+  ): IO[AuthenticationService.AuthenticationResponse] =
+    (publicKey, privateKey) match {
+      case (
+          jwtPublicKey: AuthenticationService.JwtPublicKey,
+          jwtPrivateKey: AuthenticationService.JwtPrivateKey
+          ) =>
+        IO {
+          JWT
+            .create()
+            .withIssuer(data.issuer)
+            .withClaim(
+              "scope",
+              AuthenticationScopeSerializer.encodeJsonListString(data.scope)
+            )
+        }.map { builder =>
+            data.expiresAt.fold(builder)(
+              expiresAt => builder.withExpiresAt(ju.Date.from(expiresAt))
+            )
+          }
+          .flatMap(
+            builder => IO(builder.sign(algorithm(jwtPublicKey, jwtPrivateKey)))
           )
-          .withExpiresAt(ju.Date.from(data.expiresAt))
-      }.flatMap(
-          builder => IO(builder.sign(algorithm(jwtPublicKey, jwtPrivateKey)))
-        )
-        .map { token =>
-          AuthenticationService.Token(token)
-        }
-    case _ =>
-      IO.raiseError(AuthenticationService.IncompatibleKey)
-  }
+          .map { token =>
+            AuthenticationService.AuthenticationResponse(
+              token,
+              data.scope
+            )
+          }
+
+      case _ =>
+        IO.raiseError(AuthenticationService.IncompatibleKey)
+    }
 
   def validate(
-      token: AuthenticationService.Token,
+      token: String,
+      requiredScope: AuthenticationService.AuthenticationScope,
       publicKey: AuthenticationService.PublicKey,
       privateKey: AuthenticationService.PrivateKey
   ): IO[AuthenticationService.AuthenticationData] =
@@ -150,11 +188,11 @@ object JwtAuthenticationService extends AuthenticationService {
           JWT
             .require(algorithm(jwtPublicKey, jwtPrivateKey))
             .build()
-            .verify(token.token)
+            .verify(token)
         }.flatMap { decoded =>
             IO {
               val issuer = decoded.getIssuer()
-              val expiresAt = decoded.getExpiresAt().toInstant()
+              val expiresAt = Option(decoded.getExpiresAt()).map(_.toInstant())
               val scope = decoded.getClaim("scope").asString()
               (scope, issuer, expiresAt)
             }
@@ -165,10 +203,17 @@ object JwtAuthenticationService extends AuthenticationService {
                 .decodeJsonList(scopeJson)
                 .fold[IO[AuthenticationService.AuthenticationData]](
                   err => IO.raiseError(new Exception("")),
-                  scope =>
-                    AuthenticationService
-                      .AuthenticationData(scope, issuer, expiresAt)
-                      .pure[IO]
+                  scope => {
+                    if (scope.contains(requiredScope)) {
+                      AuthenticationService
+                        .AuthenticationData(scope, issuer, expiresAt)
+                        .pure[IO]
+                    } else {
+                      IO.raiseError(
+                        AuthenticationService.UnauthorizedScope(requiredScope)
+                      )
+                    }
+                  }
                 )
           }
       case _ =>

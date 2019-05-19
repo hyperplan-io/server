@@ -7,6 +7,7 @@ import java.time.Instant
 import java.time.temporal.TemporalUnit
 import java.util.concurrent.TimeUnit
 import java.time.temporal.ChronoUnit
+import cats.implicits._
 
 class AuthenticationServiceSpec extends FlatSpec with Matchers {
 
@@ -45,7 +46,51 @@ class AuthenticationServiceSpec extends FlatSpec with Matchers {
     privateKey.unsafeRunSync()
   }
 
-  it should "correctly encode and decode a token jwt token" in {
+  it should "correctly encode and decode a token jwt token with an expiration date" in {
+    val publicKeyStr = loadResource("public.der")
+    val publicKey =
+      JwtAuthenticationService.publicKey(publicKeyStr).unsafeRunSync
+    val privateKeyStr = loadResource("private.pem")
+    val privateKey =
+      JwtAuthenticationService.privateKey(privateKeyStr).unsafeRunSync
+
+    val expiresAt = Instant.now().plus(1, ChronoUnit.HOURS)
+    val authData = AuthenticationService.AuthenticationData(
+      List(
+        AuthenticationService.AdminScope
+      ),
+      "test",
+      expiresAt.some
+    )
+    val token = JwtAuthenticationService
+      .generateToken(
+        authData,
+        publicKey,
+        privateKey
+      )
+      .unsafeRunSync
+
+    val decoded = JwtAuthenticationService
+      .validate(
+        token.token,
+        AuthenticationService.AdminScope,
+        publicKey,
+        privateKey
+      )
+      .unsafeRunSync
+    decoded.scope should be(authData.scope)
+    decoded.issuer should be(authData.issuer)
+    println(
+      (expiresAt.toEpochMilli()) - decoded.expiresAt.get.toEpochMilli
+    )
+    // Instant to Date conversation loses some information
+    // We check if the dates are close enough
+    // (less than 1 second of difference)
+    assert(
+      expiresAt.toEpochMilli() - decoded.expiresAt.get.toEpochMilli < 1000
+    )
+  }
+  it should "correctly encode and decode a token jwt token without an expiration date" in {
     val publicKeyStr = loadResource("public.der")
     val publicKey =
       JwtAuthenticationService.publicKey(publicKeyStr).unsafeRunSync
@@ -58,7 +103,7 @@ class AuthenticationServiceSpec extends FlatSpec with Matchers {
         AuthenticationService.AdminScope
       ),
       "test",
-      Instant.now().plus(1, ChronoUnit.HOURS)
+      None
     )
     val token = JwtAuthenticationService
       .generateToken(
@@ -69,19 +114,17 @@ class AuthenticationServiceSpec extends FlatSpec with Matchers {
       .unsafeRunSync
 
     val decoded = JwtAuthenticationService
-      .validate(token, publicKey, privateKey)
+      .validate(
+        token.token,
+        AuthenticationService.AdminScope,
+        publicKey,
+        privateKey
+      )
       .unsafeRunSync
     decoded.scope should be(authData.scope)
     decoded.issuer should be(authData.issuer)
-    println(
-      decoded.expiresAt.toEpochMilli - (authData.expiresAt.toEpochMilli())
-    )
-    // Instant to Date conversation loses some information
-    // We check if the dates are close enough
-    // (less than 1 second of difference)
     assert(
-      authData.expiresAt.toEpochMilli() - decoded.expiresAt.toEpochMilli < 1000
+      decoded.expiresAt.isEmpty
     )
   }
-
 }

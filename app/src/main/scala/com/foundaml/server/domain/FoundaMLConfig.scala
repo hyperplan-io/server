@@ -24,10 +24,19 @@ case class PostgreSqlConfig(
     schema: String
 )
 case class DatabaseConfig(postgresql: PostgreSqlConfig)
-
+case class EncryptionConfig(
+    publicKey: String,
+    privateKey: String
+)
+case class AdminCredentials(
+    username: String,
+    password: String
+)
 case class FoundaMLConfig(
     kinesis: KinesisConfig,
     gcp: GCPConfig,
     kafka: KafkaConfig,
-    database: DatabaseConfig
+    database: DatabaseConfig,
+    encryption: EncryptionConfig,
+    credentials: AdminCredentials
 )
