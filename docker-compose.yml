@@ -5,14 +5,8 @@ services:
     ports:
      - "8080:8080"
     restart: always
-    environment:
-     - POSTGRESQL_HOST=postgres
-     - POSTGRESQL_PORT=5432
-     - POSTGRESQL_DATABASE=postgres
-     - POSTGRESQL_USERNAME=postgres
-     - POSTGRESQL_PASSWORD=postgres
-     - KINESIS_ENABLED=false
-     - GCP_PUBSUB_ENABLED=false
+    env_file:
+      - .env
   postgres:
     image: "postgres:latest"
     environment:
