@@ -27,29 +27,31 @@ object FeaturesParserService {
     val test = configuration.data.map{ featuresConfiguration => 
       println(s"features configuration: $featuresConfiguration")
       val jsonField = hcursor.downField(featuresConfiguration.name)
-      featuresConfiguration.featuresType match {
-        case FloatFeature.featureClass =>
+      (featuresConfiguration.featuresType, featuresConfiguration.dimension) match {
+        case (FloatFeature.featureClass, One) =>
           IO.fromEither(jsonField.as[Float]).map[Features](value => List(FloatFeature(value)))
-        case FloatVectorFeature.featureClass =>
+        case (FloatFeature.featureClass, Vector) =>
           IO.fromEither(jsonField.as[List[Float]]).map[Features](value => List(FloatVectorFeature(value)))
-        case FloatVector2dFeature.featureClass =>
+        case (FloatFeature.featureClass, Matrix) =>
           IO.fromEither(jsonField.as[List[List[Float]]]).map[Features](value => List(FloatVector2dFeature(value)))
-        case IntFeature.featureClass =>
+        case (IntFeature.featureClass, One) =>
           IO.fromEither(jsonField.as[Int]).map[Features](value => List(IntFeature(value)))
-        case IntVectorFeature.featureClass =>
+        case (IntFeature.featureClass, Vector) =>
           IO.fromEither(jsonField.as[List[Int]]).map[Features](value => List(IntVectorFeature(value)))
-        case IntVector2dFeature.featureClass =>
+        case (IntFeature.featureClass, Matrix) =>
           IO.fromEither(jsonField.as[List[List[Int]]]).map[Features](value => List(IntVector2dFeature(value)))
-        case StringFeature.featureClass =>
+        case (StringFeature.featureClass, One) =>
           IO.fromEither(jsonField.as[String]).map[Features](value => List(StringFeature(value)))
-        case StringVectorFeature.featureClass =>
+        case (StringFeature.featureClass, Vector) =>
           IO.fromEither(jsonField.as[List[String]]).map[Features](value => List(StringVectorFeature(value)))
-        case StringVector2dFeature.featureClass =>
+        case (StringFeature.featureClass, Matrix) =>
           IO.fromEither(jsonField.as[List[List[String]]]).map[Features](value => List(StringVector2dFeature(value)))
-        case reference =>
+        case (reference, One) =>
           domainService.readFeatures(reference).flatMap { config =>
             FeaturesParserService.parseFeatures(config, jsonField)
           }
+        case (reference, dimension) =>
+          IO.raiseError(new Exception(s"The reference $reference features cannot be of dimension $dimension"))
       }
     }
     test.sequence.map(_.flatten)

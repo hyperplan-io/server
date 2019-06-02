@@ -39,12 +39,7 @@ class ProjectsService(
           FloatFeature.featureClass,
           IntFeature.featureClass,
           StringFeature.featureClass,
-          FloatVectorFeature.featureClass,
-          IntVectorFeature.featureClass,
-          StringVectorFeature.featureClass,
-          FloatVector2dFeature.featureClass,
-          IntVector2dFeature.featureClass,
-          StringVector2dFeature.featureClass
+          ReferenceFeature.featureClass
         )
 
         featureConfigurations.flatMap { featureConfiguration =>
@@ -63,7 +58,7 @@ class ProjectsService(
   def validateClassificationConfiguration(
       configuration: ClassificationConfiguration
   ): List[ProjectError] = {
-    validateFeatureClasses(configuration.features)
+    Nil
   }
 
   def createEmptyProject(

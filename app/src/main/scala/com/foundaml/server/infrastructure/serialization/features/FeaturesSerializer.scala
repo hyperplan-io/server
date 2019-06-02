@@ -55,6 +55,8 @@ object FeaturesSerializer {
         Json.fromValues(values2d.map { v =>
           Json.fromValues(v.map(Json.fromString))
         })
+      case ReferenceFeature(value) =>
+        ???
 
       case EmptyVector2dFeature => Json.fromValues(Nil)
     }

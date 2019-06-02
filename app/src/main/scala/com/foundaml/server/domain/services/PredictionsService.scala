@@ -247,6 +247,7 @@ class PredictionsService(
         id,
         featuresConfigList: List[FeatureConfiguration]
         ) =>
+      /*
       lazy val sameSize = features.size == featuresConfigList.size
       lazy val sameClasses = featuresConfigList
         .map(_.featuresType)
@@ -276,6 +277,8 @@ class PredictionsService(
         }
         .reduce(_ & _)
       sameSize && sameClasses
+      */
+     true
   }
 
   def validateClassificationLabels(
