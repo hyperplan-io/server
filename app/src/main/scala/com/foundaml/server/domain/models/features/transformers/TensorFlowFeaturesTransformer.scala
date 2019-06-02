@@ -38,7 +38,7 @@ case class TensorFlowFeaturesTransformer(
           TensorFlowEmptyVectorFeature(field)
 
       }
-
+      println(s"features transformer : $examples.mkString(",")")
       Right(TensorFlowFeatures(signatureName, examples))
     } else {
       Left(new IllegalArgumentException("Feature transformer failed"))

@@ -9,31 +9,46 @@ import cats.effect.IO
 import cats.implicits._
 import com.foundaml.server.application.controllers.requests._
 import com.foundaml.server.domain.models.errors._
-import com.foundaml.server.domain.services.PredictionsService
+import com.foundaml.server.domain.services.{ DomainService, PredictionsService, ProjectsService }
 import com.foundaml.server.infrastructure.logging.IOLogging
 import com.foundaml.server.infrastructure.serialization.{
   PredictionRequestEntitySerializer,
   PredictionSerializer
 }
+import io.circe._, io.circe.parser._
 
 class PredictionsController(
-    predictionsService: PredictionsService
+  projectsService: ProjectsService,
+  domainService: DomainService,
+  predictionsService: PredictionsService
 ) extends Http4sDsl[IO]
     with IOLogging {
 
   import cats.MonadError
   import com.foundaml.server.application.AuthenticationMiddleware
+  implicit val implicitDomainService = domainService
   val service: HttpRoutes[IO] = {
     HttpRoutes.of[IO] {
       case req @ POST -> Root =>
+        import com.foundaml.server.domain.services.FeaturesParserService
+        import io.circe.Json
+        import java.nio.charset.StandardCharsets
         (for {
           predictionRequest <- req.as[PredictionRequest](
             MonadError[IO, Throwable],
             PredictionRequestEntitySerializer.requestDecoder
           )
+          project <- projectsService.readProject(predictionRequest.projectId)
+          _ = println(s"read project ok")
+          body <- req.body.compile.toList
+          _ = println(s"body ok")
+          jsonBody <- IO.fromEither(parse(new String(body.toArray, StandardCharsets.UTF_8)))
+          _ = println(s"json body is $jsonBody")
+          features <- FeaturesParserService.parseFeatures(project.configuration, jsonBody)
+          _ = println(s"got features")
           prediction <- predictionsService.predict(
             predictionRequest.projectId,
-            predictionRequest.features,
+            features,
             predictionRequest.algorithmId
           )
           _ <- logger.debug(

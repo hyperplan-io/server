@@ -303,11 +303,6 @@ class PredictionsService(
       features: Features,
       optionalAlgorithmId: Option[String]
   ) = {
-
-    if (validateFeatures(
-        project.configuration.features,
-        features
-      )) {
       optionalAlgorithmId.fold(
         predictClassificationWithProjectPolicy(features, project)
       )(
@@ -342,15 +337,6 @@ class PredictionsService(
                 }
             )
       )
-    } else {
-      val message =
-        s"The features do not match the configuration of project ${project.id}"
-      logger.warn(message) *> IO.raiseError(
-        FeaturesValidationFailed(
-          message
-        )
-      )
-    }
   }
 
   def predictForRegressionProject(
