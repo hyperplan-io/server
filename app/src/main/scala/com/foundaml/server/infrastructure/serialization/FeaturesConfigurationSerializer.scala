@@ -22,11 +22,10 @@ object FeaturesConfigurationSerializer {
   import io.circe.{Decoder, Encoder}
   import io.circe.syntax._
 
-  implicit val featureDimensionEncoder: Encoder[FeatureDimension] = 
-    (d: FeatureDimension) =>
-      Json.fromString(d.name)
+  implicit val featureDimensionEncoder: Encoder[FeatureDimension] =
+    (d: FeatureDimension) => Json.fromString(d.name)
 
-  implicit val featureDimensionDecoder: Decoder[FeatureDimension] = 
+  implicit val featureDimensionDecoder: Decoder[FeatureDimension] =
     (c: HCursor) =>
       c.as[String].flatMap {
         case One.name => Right(One)

@@ -277,8 +277,8 @@ class PredictionsService(
         }
         .reduce(_ & _)
       sameSize && sameClasses
-      */
-     true
+       */
+      true
   }
 
   def validateClassificationLabels(
@@ -306,40 +306,40 @@ class PredictionsService(
       features: Features,
       optionalAlgorithmId: Option[String]
   ) = {
-      optionalAlgorithmId.fold(
-        predictClassificationWithProjectPolicy(features, project)
-      )(
-        algorithmId =>
-          project.algorithmsMap
-            .get(algorithmId)
-            .fold[IO[Prediction]](
-              IO.raiseError(
-                AlgorithmDoesNotExist(algorithmId)
-              )
-            )(
-              algorithm =>
-                predictClassificationWithAlgorithm(
-                  project,
-                  algorithm,
-                  features
-                ).flatMap { prediction =>
-                  if (validateClassificationLabels(
-                      project.configuration.labels,
-                      prediction.labels
-                    )) {
-                    IO.pure(prediction)
-                  } else {
-                    val message =
-                      s"The labels do not match the configuration of project ${project.id}"
-                    logger.warn(message) *> IO.raiseError(
-                      LabelsValidationFailed(
-                        message
-                      )
-                    )
-                  }
-                }
+    optionalAlgorithmId.fold(
+      predictClassificationWithProjectPolicy(features, project)
+    )(
+      algorithmId =>
+        project.algorithmsMap
+          .get(algorithmId)
+          .fold[IO[Prediction]](
+            IO.raiseError(
+              AlgorithmDoesNotExist(algorithmId)
             )
-      )
+          )(
+            algorithm =>
+              predictClassificationWithAlgorithm(
+                project,
+                algorithm,
+                features
+              ).flatMap { prediction =>
+                if (validateClassificationLabels(
+                    project.configuration.labels,
+                    prediction.labels
+                  )) {
+                  IO.pure(prediction)
+                } else {
+                  val message =
+                    s"The labels do not match the configuration of project ${project.id}"
+                  logger.warn(message) *> IO.raiseError(
+                    LabelsValidationFailed(
+                      message
+                    )
+                  )
+                }
+              }
+          )
+    )
   }
 
   def predictForRegressionProject(

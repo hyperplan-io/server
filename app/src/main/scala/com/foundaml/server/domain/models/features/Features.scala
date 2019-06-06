@@ -26,7 +26,7 @@ case class FloatVectorFeature(data: List[Float]) extends Feature {
 }
 
 case class FloatVector2dFeature(data: List[List[Float]]) extends Feature {
-  val dimension = Matrix 
+  val dimension = Matrix
 }
 
 case class IntVectorFeature(data: List[Int]) extends Feature {
@@ -40,7 +40,6 @@ case object EmptyVectorFeature extends Feature {
 case class IntVector2dFeature(data: List[List[Int]]) extends Feature {
   val dimension = Matrix
 }
-
 
 case class StringVectorFeature(data: List[String]) extends Feature {
   val dimension = Vector

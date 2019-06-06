@@ -9,7 +9,11 @@ import cats.effect.IO
 import cats.implicits._
 import com.foundaml.server.application.controllers.requests._
 import com.foundaml.server.domain.models.errors._
-import com.foundaml.server.domain.services.{ DomainService, PredictionsService, ProjectsService }
+import com.foundaml.server.domain.services.{
+  DomainService,
+  PredictionsService,
+  ProjectsService
+}
 import com.foundaml.server.infrastructure.logging.IOLogging
 import com.foundaml.server.infrastructure.serialization.{
   PredictionRequestEntitySerializer,
@@ -18,9 +22,9 @@ import com.foundaml.server.infrastructure.serialization.{
 import io.circe._, io.circe.parser._
 
 class PredictionsController(
-  projectsService: ProjectsService,
-  domainService: DomainService,
-  predictionsService: PredictionsService
+    projectsService: ProjectsService,
+    domainService: DomainService,
+    predictionsService: PredictionsService
 ) extends Http4sDsl[IO]
     with IOLogging {
 
@@ -42,9 +46,14 @@ class PredictionsController(
           _ = println(s"read project ok")
           body <- req.body.compile.toList
           _ = println(s"body ok")
-          jsonBody <- IO.fromEither(parse(new String(body.toArray, StandardCharsets.UTF_8)))
+          jsonBody <- IO.fromEither(
+            parse(new String(body.toArray, StandardCharsets.UTF_8))
+          )
           _ = println(s"json body is $jsonBody")
-          features <- FeaturesParserService.parseFeatures(project.configuration, jsonBody)
+          features <- FeaturesParserService.parseFeatures(
+            project.configuration,
+            jsonBody
+          )
           _ = println(s"got features")
           prediction <- predictionsService.predict(
             predictionRequest.projectId,
