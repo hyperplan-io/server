@@ -10,8 +10,13 @@ object FeaturesTransformerSerializer {
     (transformer: TensorFlowFeaturesTransformer) =>
       Json.obj(
         ("signatureName", Json.fromString(transformer.signatureName)),
-        ("mapping", transformer.fields.map(keyValue => keyValue._1-> Json.fromString(keyValue._2)).asJson
-      ))
+        (
+          "mapping",
+          transformer.fields
+            .map(keyValue => keyValue._1 -> Json.fromString(keyValue._2))
+            .asJson
+        )
+      )
 
   val tfTransformerDecoder: Decoder[TensorFlowFeaturesTransformer] =
     (c: HCursor) =>

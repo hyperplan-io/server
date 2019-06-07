@@ -66,7 +66,8 @@ class BackendSerializerSpec
       )
 
     testEncoder(backend: Backend) { json =>
-      val featuresJson = """{"keyf1":"feature1","keyf2":"feature2","keyf3":"feature3","keyf4":"feature4"}"""
+      val featuresJson =
+        """{"keyf1":"feature1","keyf2":"feature2","keyf3":"feature3","keyf4":"feature4"}"""
 
       val labelsJson =
         """{"tf_class1":"class1","tf_class2":"class2","tf_class3":"class3","tf_class4":"class4"}"""
@@ -106,7 +107,8 @@ class BackendSerializerSpec
     val expectedLabelsTransformer = TensorFlowLabelsTransformer(
       expectedLabelFields
     )
-    val featuresJson = """{"keyf1":"feature1","keyf2":"feature2","keyf3":"feature3","keyf4":"feature4"}"""
+    val featuresJson =
+      """{"keyf1":"feature1","keyf2":"feature2","keyf3":"feature3","keyf4":"feature4"}"""
     val labelsJson =
       """{"tf_class1":"class1","tf_class2":"class2","tf_class3":"class3","tf_class4":"class4"}"""
 

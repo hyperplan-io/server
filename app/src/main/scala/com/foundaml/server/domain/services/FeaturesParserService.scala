@@ -29,12 +29,16 @@ object FeaturesParserService {
       )
   }
 
-  def parseFeatures(configuration: FeaturesConfiguration, hcursor: ACursor)(
+  def parseFeatures(
+      configuration: FeaturesConfiguration,
+      hcursor: ACursor,
+      prefix: String = ""
+  )(
       implicit domainService: DomainService
   ): IO[Features] = {
     configuration.data
       .map { featuresConfiguration =>
-        val key = featuresConfiguration.name
+        val key = s"${prefix}${featuresConfiguration.name}"
         val jsonField = hcursor.downField(featuresConfiguration.name)
         (featuresConfiguration.featuresType, featuresConfiguration.dimension) match {
           case (FloatFeatureType, One) =>
@@ -66,7 +70,8 @@ object FeaturesParserService {
               .map[Features](value => List(StringVector2dFeature(key, value)))
           case (ReferenceFeatureType(reference), One) =>
             domainService.readFeatures(reference).flatMap { config =>
-              FeaturesParserService.parseFeatures(config, jsonField)
+              FeaturesParserService
+                .parseFeatures(config, jsonField, prefix = s"${key}_")
             }
           case (reference, dimension) =>
             IO.raiseError(
