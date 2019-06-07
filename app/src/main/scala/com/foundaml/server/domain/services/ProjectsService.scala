@@ -39,12 +39,7 @@ class ProjectsService(
           FloatFeature.featureClass,
           IntFeature.featureClass,
           StringFeature.featureClass,
-          FloatVectorFeature.featureClass,
-          IntVectorFeature.featureClass,
-          StringVectorFeature.featureClass,
-          FloatVector2dFeature.featureClass,
-          IntVector2dFeature.featureClass,
-          StringVector2dFeature.featureClass
+          ReferenceFeature.featureClass
         )
 
         featureConfigurations.flatMap { featureConfiguration =>
@@ -59,12 +54,6 @@ class ProjectsService(
           }
         }
     }
-
-  def validateClassificationConfiguration(
-      configuration: ClassificationConfiguration
-  ): List[ProjectError] = {
-    validateFeatureClasses(configuration.features)
-  }
 
   def createEmptyProject(
       projectRequest: PostProjectRequest
@@ -112,20 +101,7 @@ class ProjectsService(
         )
 
     }).flatMap { project =>
-      val errors = project match {
-        case classificationProject: ClassificationProject =>
-          validateClassificationConfiguration(
-            classificationProject.configuration
-          )
-        case _ => Nil
-      }
-
       for {
-        _ <- errors.headOption.fold[IO[Unit]](
-          IO.pure(Unit)
-        )(
-          err => logger.warn(err.getMessage) *> IO.raiseError(err)
-        )
         insertResult <- projectsRepository.insert(project)
         result <- insertResult.fold(
           err => logger.warn(err.getMessage) *> IO.raiseError(err),

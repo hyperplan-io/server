@@ -7,22 +7,36 @@ import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
 import cats.effect.IO
 import cats.implicits._
+import cats.MonadError
+
+import com.foundaml.server.application.AuthenticationMiddleware
 import com.foundaml.server.application.controllers.requests._
 import com.foundaml.server.domain.models.errors._
-import com.foundaml.server.domain.services.PredictionsService
+import com.foundaml.server.domain.services.{
+  DomainService,
+  PredictionsService,
+  ProjectsService
+}
 import com.foundaml.server.infrastructure.logging.IOLogging
 import com.foundaml.server.infrastructure.serialization.{
   PredictionRequestEntitySerializer,
   PredictionSerializer
 }
+import com.foundaml.server.domain.services.FeaturesParserService
+
+import java.nio.charset.StandardCharsets
+
+import io.circe.Json
+import io.circe._, io.circe.parser._
 
 class PredictionsController(
+    projectsService: ProjectsService,
+    domainService: DomainService,
     predictionsService: PredictionsService
 ) extends Http4sDsl[IO]
     with IOLogging {
 
-  import cats.MonadError
-  import com.foundaml.server.application.AuthenticationMiddleware
+  implicit val implicitDomainService = domainService
   val service: HttpRoutes[IO] = {
     HttpRoutes.of[IO] {
       case req @ POST -> Root =>
@@ -31,9 +45,18 @@ class PredictionsController(
             MonadError[IO, Throwable],
             PredictionRequestEntitySerializer.requestDecoder
           )
+          project <- projectsService.readProject(predictionRequest.projectId)
+          body <- req.body.compile.toList
+          jsonBody <- IO.fromEither(
+            parse(new String(body.toArray, StandardCharsets.UTF_8))
+          )
+          features <- FeaturesParserService.parseFeatures(
+            project.configuration,
+            jsonBody
+          )
           prediction <- predictionsService.predict(
             predictionRequest.projectId,
-            predictionRequest.features,
+            features,
             predictionRequest.algorithmId
           )
           _ <- logger.debug(

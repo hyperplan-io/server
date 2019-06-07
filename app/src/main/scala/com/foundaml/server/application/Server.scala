@@ -45,6 +45,8 @@ object Server {
       privateKey: AuthenticationService.PrivateKey
   ) = {
     val predictionsController = new PredictionsController(
+      projectsService,
+      domainService,
       predictionsService
     )
     val projectsController = new ProjectsController(

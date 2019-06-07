@@ -7,3 +7,5 @@ target
 *.xml
 .idea
 scala-logging.log
+*.html
+*.DS_Store

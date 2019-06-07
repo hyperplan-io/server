@@ -239,45 +239,6 @@ class PredictionsService(
     }
   }
 
-  def validateFeatures(
-      featuresConfiguration: FeaturesConfiguration,
-      features: Features
-  ) = featuresConfiguration match {
-    case FeaturesConfiguration(
-        id,
-        featuresConfigList: List[FeatureConfiguration]
-        ) =>
-      lazy val sameSize = features.size == featuresConfigList.size
-      lazy val sameClasses = featuresConfigList
-        .map(_.featuresType)
-        .zip(features)
-        .map {
-          case (FloatFeature.featureClass, FloatFeature(_)) => true
-          case (IntFeature.featureClass, IntFeature(_)) => true
-          case (StringFeature.featureClass, StringFeature(_)) => true
-          case (FloatVectorFeature.featureClass, FloatVectorFeature(_)) => true
-          case (FloatVectorFeature.featureClass, EmptyVectorFeature) => true
-          case (IntVectorFeature.featureClass, IntVectorFeature(_)) => true
-          case (IntVectorFeature.featureClass, EmptyVectorFeature) => true
-          case (StringVectorFeature.featureClass, StringVectorFeature(_)) =>
-            true
-          case (StringVectorFeature.featureClass, EmptyVectorFeature) => true
-          case (FloatVector2dFeature.featureClass, FloatVector2dFeature(_)) =>
-            true
-          case (FloatVector2dFeature.featureClass, EmptyVectorFeature) => true
-          case (IntVector2dFeature.featureClass, IntVector2dFeature(_)) => true
-          case (IntVector2dFeature.featureClass, EmptyVectorFeature) => true
-          case (StringVector2dFeature.featureClass, StringVector2dFeature(_)) =>
-            true
-          case (StringVector2dFeature.featureClass, EmptyVector2dFeature) =>
-            true
-          case (config, feature) =>
-            false
-        }
-        .reduce(_ & _)
-      sameSize && sameClasses
-  }
-
   def validateClassificationLabels(
       labelsConfiguration: LabelsConfiguration,
       labels: Set[ClassificationLabel]
@@ -303,91 +264,62 @@ class PredictionsService(
       features: Features,
       optionalAlgorithmId: Option[String]
   ) = {
-
-    if (validateFeatures(
-        project.configuration.features,
-        features
-      )) {
-      optionalAlgorithmId.fold(
-        predictClassificationWithProjectPolicy(features, project)
-      )(
-        algorithmId =>
-          project.algorithmsMap
-            .get(algorithmId)
-            .fold[IO[Prediction]](
-              IO.raiseError(
-                AlgorithmDoesNotExist(algorithmId)
-              )
-            )(
-              algorithm =>
-                predictClassificationWithAlgorithm(
-                  project,
-                  algorithm,
-                  features
-                ).flatMap { prediction =>
-                  if (validateClassificationLabels(
-                      project.configuration.labels,
-                      prediction.labels
-                    )) {
-                    IO.pure(prediction)
-                  } else {
-                    val message =
-                      s"The labels do not match the configuration of project ${project.id}"
-                    logger.warn(message) *> IO.raiseError(
-                      LabelsValidationFailed(
-                        message
-                      )
-                    )
-                  }
-                }
+    optionalAlgorithmId.fold(
+      predictClassificationWithProjectPolicy(features, project)
+    )(
+      algorithmId =>
+        project.algorithmsMap
+          .get(algorithmId)
+          .fold[IO[Prediction]](
+            IO.raiseError(
+              AlgorithmDoesNotExist(algorithmId)
             )
-      )
-    } else {
-      val message =
-        s"The features do not match the configuration of project ${project.id}"
-      logger.warn(message) *> IO.raiseError(
-        FeaturesValidationFailed(
-          message
-        )
-      )
-    }
+          )(
+            algorithm =>
+              predictClassificationWithAlgorithm(
+                project,
+                algorithm,
+                features
+              ).flatMap { prediction =>
+                if (validateClassificationLabels(
+                    project.configuration.labels,
+                    prediction.labels
+                  )) {
+                  IO.pure(prediction)
+                } else {
+                  val message =
+                    s"The labels do not match the configuration of project ${project.id}"
+                  logger.warn(message) *> IO.raiseError(
+                    LabelsValidationFailed(
+                      message
+                    )
+                  )
+                }
+              }
+          )
+    )
   }
 
   def predictForRegressionProject(
       project: RegressionProject,
       features: Features,
       optionalAlgorithmId: Option[String]
-  ) = {
-
-    if (validateFeatures(
-        project.configuration.features,
-        features
-      )) {
-      optionalAlgorithmId.fold(
-        predictRegressionWithProjectPolicy(features, project)
-      )(
-        algorithmId =>
-          project.algorithmsMap
-            .get(algorithmId)
-            .fold[IO[Prediction]](
-              IO.raiseError(
-                AlgorithmDoesNotExist(algorithmId)
-              )
-            )(
-              algorithm =>
-                predictRegressionWithAlgorithm(project, algorithm, features)
+  ) =
+    optionalAlgorithmId.fold(
+      predictRegressionWithProjectPolicy(features, project)
+    )(
+      algorithmId =>
+        project.algorithmsMap
+          .get(algorithmId)
+          .fold[IO[Prediction]](
+            IO.raiseError(
+              AlgorithmDoesNotExist(algorithmId)
             )
-      )
-    } else {
-      val message =
-        s"The features do not match the configuration of project ${project.id}"
-      logger.warn(message) *> IO.raiseError(
-        FeaturesValidationFailed(
-          message
-        )
-      )
-    }
-  }
+          )(
+            algorithm =>
+              predictRegressionWithAlgorithm(project, algorithm, features)
+          )
+    )
 
   def addClassificationExample(
       labels: Option[String],

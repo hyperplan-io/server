@@ -4,51 +4,95 @@ object Features {
   type Features = List[Feature]
 }
 
-sealed trait Feature
-
-case class FloatVectorFeature(data: List[Float]) extends Feature
-object FloatVectorFeature {
-  val featureClass = "FloatVector"
+sealed trait Feature {
+  val dimension: FeatureDimension
 }
 
-case class FloatVector2dFeature(data: List[List[Float]]) extends Feature
-object FloatVector2dFeature {
-  val featureClass = "FloatVector2d"
-}
-case class IntVectorFeature(data: List[Int]) extends Feature
-object IntVectorFeature {
-  val featureClass = "IntVector"
+sealed trait FeatureType {
+  val name: String
 }
 
-case object EmptyVectorFeature extends Feature
-
-case class IntVector2dFeature(data: List[List[Int]]) extends Feature
-object IntVector2dFeature {
-  val featureClass = "IntVector2d"
+case object FloatFeatureType extends FeatureType {
+  val name = "Float"
 }
 
-case class StringVectorFeature(data: List[String]) extends Feature
-object StringVectorFeature {
-  val featureClass = "StringVector"
+case object IntFeatureType extends FeatureType {
+  val name = "Int"
 }
 
-case class StringVector2dFeature(data: List[List[String]]) extends Feature
-object StringVector2dFeature {
-  val featureClass = "StringVector2d"
+case object StringFeatureType extends FeatureType {
+  val name = "String"
 }
 
-case object EmptyVector2dFeature extends Feature
+case class ReferenceFeatureType(name: String) extends FeatureType
 
-case class FloatFeature(value: Float) extends Feature
+sealed trait FeatureDimension {
+  val name: String
+}
+case object One extends FeatureDimension {
+  val name = "One"
+}
+case object Vector extends FeatureDimension {
+  val name = "Vector"
+}
+case object Matrix extends FeatureDimension {
+  val name = "Matrix"
+}
+
+case class FloatVectorFeature(data: List[Float]) extends Feature {
+  val dimension = Vector
+}
+
+case class FloatVector2dFeature(data: List[List[Float]]) extends Feature {
+  val dimension = Matrix
+}
+
+case class IntVectorFeature(data: List[Int]) extends Feature {
+  val dimension = Vector
+}
+
+case object EmptyVectorFeature extends Feature {
+  val dimension = Vector
+}
+
+case class IntVector2dFeature(data: List[List[Int]]) extends Feature {
+  val dimension = Matrix
+}
+
+case class StringVectorFeature(data: List[String]) extends Feature {
+  val dimension = Vector
+}
+
+case class StringVector2dFeature(data: List[List[String]]) extends Feature {
+  val dimension = Matrix
+}
+case object EmptyVector2dFeature extends Feature {
+  val dimension = Matrix
+}
+
+case class FloatFeature(value: Float) extends Feature {
+  val dimension = One
+}
 object FloatFeature {
   val featureClass = "Float"
 }
 
-case class IntFeature(value: Int) extends Feature
+case class IntFeature(value: Int) extends Feature {
+  val dimension = One
+}
 object IntFeature {
   val featureClass = "Int"
 }
-case class StringFeature(value: String) extends Feature
+case class StringFeature(value: String) extends Feature {
+  val dimension = One
+}
 object StringFeature {
   val featureClass = "String"
+}
+
+case class ReferenceFeature(value: Features.Features) extends Feature {
+  val dimension = One
+}
+object ReferenceFeature {
+  val featureClass = "Reference"
 }

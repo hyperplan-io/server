@@ -4,6 +4,7 @@ import com.foundaml.server.domain.models.{
   FeatureConfiguration,
   FeaturesConfiguration
 }
+import com.foundaml.server.domain.models.features._
 import io.circe
 import io.circe.{HCursor, Json}
 import io.circe.parser._
@@ -21,11 +22,35 @@ object FeaturesConfigurationSerializer {
   import io.circe.{Decoder, Encoder}
   import io.circe.syntax._
 
+  implicit val featureDimensionEncoder: Encoder[FeatureDimension] =
+    (d: FeatureDimension) => Json.fromString(d.name)
+
+  implicit val featureDimensionDecoder: Decoder[FeatureDimension] =
+    (c: HCursor) =>
+      c.as[String].flatMap {
+        case One.name => Right(One)
+        case Vector.name => Right(Vector)
+        case Matrix.name => Right(Matrix)
+      }
+
+  implicit val featureTypeEncoder: Encoder[FeatureType] =
+    (d: FeatureType) => Json.fromString(d.name)
+
+  implicit val featureTypeDecoder: Decoder[FeatureType] =
+    (c: HCursor) =>
+      c.as[String].flatMap {
+        case FloatFeatureType.name => Right(FloatFeatureType)
+        case IntFeatureType.name => Right(IntFeatureType)
+        case StringFeatureType.name => Right(StringFeatureType)
+        case reference => Right(ReferenceFeatureType(reference))
+      }
+
   implicit val customFeatureEncoder: Encoder[FeatureConfiguration] =
     (a: FeatureConfiguration) =>
       Json.obj(
         ("name", Json.fromString(a.name)),
-        ("type", Json.fromString(a.featuresType)),
+        ("type", a.featuresType.asJson),
+        ("dimension", a.dimension.asJson),
         ("description", Json.fromString(a.description))
       )
 
@@ -33,10 +58,11 @@ object FeaturesConfigurationSerializer {
     (c: HCursor) =>
       for {
         name <- c.downField("name").as[String]
-        featuresType <- c.downField("type").as[String]
+        featuresType <- c.downField("type").as[FeatureType]
+        dimension <- c.downField("dimension").as[FeatureDimension]
         description <- c.downField("description").as[String]
       } yield {
-        FeatureConfiguration(name, featuresType, description)
+        FeatureConfiguration(name, featuresType, dimension, description)
       }
 
   implicit val customFeatureListEncoder: Encoder[List[FeatureConfiguration]] =
