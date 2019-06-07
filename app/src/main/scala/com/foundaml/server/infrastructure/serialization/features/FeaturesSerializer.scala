@@ -6,6 +6,7 @@ import io.circe.{Decoder, Encoder, HCursor, Json}
 import io.circe.parser.decode
 import io.circe.syntax._
 import org.http4s.circe.jsonOf
+import io.circe.DecodingFailure
 
 object FeaturesSerializer {
 
@@ -56,12 +57,10 @@ object FeaturesSerializer {
           Json.fromValues(v.map(Json.fromString))
         })
       case ReferenceFeature(value) =>
-        ???
-
+        encodeJson(value)
       case EmptyVector2dFeature => Json.fromValues(Nil)
     }
 
-    import io.circe.DecodingFailure
     def computeType(value: Json): Either[DecodingFailure, Feature] =
       if (value.isNumber) {
         if (value.noSpaces.contains(".")) {

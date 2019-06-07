@@ -72,11 +72,7 @@ case class TensorFlowFeaturesTransformer(
           }
 
       }
-    println(
-      s"features transformer : ${tensorFlowFeatures.examples.mkString(",")}"
-    )
     Right(tensorFlowFeatures)
-
   }
 
 }

@@ -8,6 +8,24 @@ sealed trait Feature {
   val dimension: FeatureDimension
 }
 
+sealed trait FeatureType {
+  val name: String
+}
+
+case object FloatFeatureType extends FeatureType {
+  val name = "Float"
+}
+
+case object IntFeatureType extends FeatureType {
+  val name = "Int"
+}
+
+case object StringFeatureType extends FeatureType {
+  val name = "String"
+}
+
+case class ReferenceFeatureType(name: String) extends FeatureType
+
 sealed trait FeatureDimension {
   val name: String
 }

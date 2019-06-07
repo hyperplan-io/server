@@ -55,12 +55,6 @@ class ProjectsService(
         }
     }
 
-  def validateClassificationConfiguration(
-      configuration: ClassificationConfiguration
-  ): List[ProjectError] = {
-    Nil
-  }
-
   def createEmptyProject(
       projectRequest: PostProjectRequest
   ): IO[Project] = {
@@ -107,20 +101,7 @@ class ProjectsService(
         )
 
     }).flatMap { project =>
-      val errors = project match {
-        case classificationProject: ClassificationProject =>
-          validateClassificationConfiguration(
-            classificationProject.configuration
-          )
-        case _ => Nil
-      }
-
       for {
-        _ <- errors.headOption.fold[IO[Unit]](
-          IO.pure(Unit)
-        )(
-          err => logger.warn(err.getMessage) *> IO.raiseError(err)
-        )
         insertResult <- projectsRepository.insert(project)
         result <- insertResult.fold(
           err => logger.warn(err.getMessage) *> IO.raiseError(err),

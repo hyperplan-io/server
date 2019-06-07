@@ -1,13 +1,14 @@
 package com.foundaml.server.domain.models
 
 import com.foundaml.server.domain.models.features.FeatureDimension
+import com.foundaml.server.domain.models.features.FeatureType
 
 case class FeaturesConfiguration(id: String, data: List[FeatureConfiguration])
 case class LabelsConfiguration(id: String, data: LabelConfiguration)
 
 case class FeatureConfiguration(
     name: String,
-    featuresType: String,
+    featuresType: FeatureType,
     dimension: FeatureDimension,
     description: String
 )
