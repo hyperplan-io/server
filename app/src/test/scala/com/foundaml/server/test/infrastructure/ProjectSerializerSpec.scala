@@ -20,6 +20,7 @@ class ProjectSerializerSpec
 
     val projectId = "test-project-encode"
     val projectName = "test project"
+    import com.foundaml.server.domain.models.features.One
     val configuration = ClassificationConfiguration(
       FeaturesConfiguration(
         "id",
@@ -27,6 +28,7 @@ class ProjectSerializerSpec
           FeatureConfiguration(
             "",
             "",
+            One,
             ""
           )
         )
@@ -48,8 +50,9 @@ class ProjectSerializerSpec
     )
 
     testEncoder(project: Project) { json =>
+      println(json.noSpaces)
       val expectedJson =
-        """{"id":"test-project-encode","name":"test project","problem":"classification","algorithms":[],"policy":{"class":"NoAlgorithm"},"configuration":{"features":{"id":"id","data":[{"name":"","type":"","description":""}]},"labels":{"id":"id","data":{"type":"oneOf","oneOf":[""],"description":""}}}}"""
+        """{"id":"test-project-encode","name":"test project","problem":"classification","algorithms":[],"policy":{"class":"NoAlgorithm"},"configuration":{"features":{"id":"id","data":[{"name":"","type":"","dimension":"One","description":""}]},"labels":{"id":"id","data":{"type":"oneOf","oneOf":[""],"description":""}}}}"""
       json.noSpaces should be(expectedJson)
     }(encoder)
   }
@@ -59,7 +62,7 @@ class ProjectSerializerSpec
     val projectName = "test project"
 
     val projectJson =
-      s"""{"id":"$projectId","name":"$projectName","problem":"classification","algorithms":[],"policy":{"class":"NoAlgorithm"},"configuration":{"features":{"id":"id","data":[{"name":"","type":"","description":""}]},"labels":{"id":"id","data":{"type":"oneOf","oneOf":[""],"description":""}}}}"""
+      s"""{"id":"$projectId","name":"$projectName","problem":"classification","algorithms":[],"policy":{"class":"NoAlgorithm"},"configuration":{"features":{"id":"id","data":[{"name":"","type":"","dimension":"One","description":""}]},"labels":{"id":"id","data":{"type":"oneOf","oneOf":[""],"description":""}}}}"""
 
     testDecoder[Project](projectJson) {
       case project: ClassificationProject =>

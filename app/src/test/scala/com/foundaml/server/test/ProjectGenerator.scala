@@ -9,6 +9,7 @@ import com.foundaml.server.domain.models.features.{
   StringVectorFeature
 }
 import com.foundaml.server.domain.models.labels.Labels
+import com.foundaml.server.domain.models.features.One
 
 object ProjectGenerator {
 
@@ -49,6 +50,7 @@ object ProjectGenerator {
             FeatureConfiguration(
               "my feature",
               StringFeature.featureClass,
+              One,
               "this is a description of the features"
             )
           )
