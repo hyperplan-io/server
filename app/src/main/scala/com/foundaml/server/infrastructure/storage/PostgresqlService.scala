@@ -31,10 +31,11 @@ object PostgresqlService {
       database: String,
       username: String,
       password: String,
-      schema: String
+      schema: String,
+      threadPool: Int
   )(implicit cs: ContextShift[IO]): Resource[IO, doobie.Transactor[IO]] = {
     for {
-      ce <- ExecutionContexts.fixedThreadPool[IO](32) // our connect EC
+      ce <- ExecutionContexts.fixedThreadPool[IO](threadPool) // our connect EC
       te <- ExecutionContexts.cachedThreadPool[IO]
       xa <- HikariTransactor.newHikariTransactor[IO](
         "org.postgresql.Driver",

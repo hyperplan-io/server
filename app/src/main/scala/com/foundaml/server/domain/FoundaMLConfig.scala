@@ -21,7 +21,8 @@ case class PostgreSqlConfig(
     database: String,
     username: String,
     password: String,
-    schema: String
+    schema: String,
+    threadPool: Int
 )
 case class DatabaseConfig(postgresql: PostgreSqlConfig)
 case class EncryptionConfig(
