@@ -5,16 +5,21 @@ import com.foundaml.server.domain.models.features._
 
 case class TensorFlowFeaturesTransformer(
     signatureName: String,
-    fields: Set[String]
+    fields: Map[String, String]
 ) {
 
   def transform(
       features: Features,
       signatureName: String = signatureName,
-      fields: Set[String] = fields
+      fields: Map[String, String] = fields
   ): Either[Throwable, TensorFlowFeatures] = {
-    val tensorFlowFeatures = features
-      .zip(fields)
+    
+    val tensorFlowFeatures = 
+      features.flatMap { feature =>
+        fields.get(feature.key).map { newKey =>
+          feature -> newKey
+        }
+      }
       .foldLeft(TensorFlowFeatures(signatureName, List.empty)) {
         case (tfFeatures, feature) =>
           feature match {
@@ -60,8 +65,8 @@ case class TensorFlowFeaturesTransformer(
               )
             case (ReferenceFeature(key, values), field) =>
               val newFields = values.map { feature =>
-                s"$field\_$feature"
-              }.toSet
+                feature.key -> s"$field\_$feature"
+              }.toMap
               tfFeatures.copy(
                 examples = transform(values, signatureName, newFields).toOption.get.examples ::: tfFeatures.examples
               )

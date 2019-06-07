@@ -31,15 +31,16 @@ class PredictionEventSerializerSpec
     val projectId = "test-project-encode"
     val algorithmId = "test-algorithm-encode"
     val labelId = UUID.randomUUID().toString
+    import scala.util.Random
     val prediction = ClassificationPredictionEvent(
       eventId,
       predictionId,
       projectId,
       algorithmId,
       List(
-        FloatFeature(0.0f),
-        FloatFeature(0.0f),
-        FloatFeature(0.5f)
+        FloatFeature("f1", 0.0f),
+        FloatFeature("f2", 0.0f),
+        FloatFeature("f3", .5f)
       ),
       Set(
         ClassificationLabel(
@@ -54,7 +55,7 @@ class PredictionEventSerializerSpec
 
     testEncoder(prediction: PredictionEvent) { json =>
       val expectedJson =
-        s"""{"type":"classification","id":"$eventId","predictionId":"$predictionId","projectId":"test-project-encode","algorithmId":"test-algorithm-encode","features":[0.0,0.0,0.5],"labels":[{"label":"mylabel","probability":0.5}],"example":"mylabel"}"""
+        s"""{"type":"classification","id":"$eventId","predictionId":"$predictionId","projectId":"test-project-encode","algorithmId":"test-algorithm-encode","features":{"f1":0.0,"f2":0.0,"f3":0.5},"labels":[{"label":"mylabel","probability":0.5}],"example":"mylabel"}"""
       json.noSpaces should be(expectedJson)
     }(encoder)
   }
