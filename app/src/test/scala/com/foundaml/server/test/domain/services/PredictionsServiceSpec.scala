@@ -57,7 +57,8 @@ class PredictionsServiceSpec extends FlatSpec with TestDatabase {
         "database",
         "username",
         "password",
-        "public"
+        "public",
+        2
       )
     ),
     EncryptionConfig(
