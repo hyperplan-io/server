@@ -51,7 +51,6 @@ class ProjectSerializerSpec
     )
 
     testEncoder(project: Project) { json =>
-      println(json.noSpaces)
       val expectedJson =
         """{"id":"test-project-encode","name":"test project","problem":"classification","algorithms":[],"policy":{"class":"NoAlgorithm"},"configuration":{"features":{"id":"id","data":[{"name":"","type":"String","dimension":"One","description":""}]},"labels":{"id":"id","data":{"type":"oneOf","oneOf":[""],"description":""}}}}"""
       json.noSpaces should be(expectedJson)

@@ -73,9 +73,6 @@ class BackendSerializerSpec
         """{"tf_class1":"class1","tf_class2":"class2","tf_class3":"class3","tf_class4":"class4"}"""
       val expectedJson =
         s"""{"class":"TensorFlowClassificationBackend","host":"$host","port":$port,"featuresTransformer":{"signatureName":"$signatureName","mapping":$featuresJson},"labelsTransformer":{"fields":$labelsJson}}"""
-
-      println(json.noSpaces)
-      println(expectedJson)
       json.noSpaces should be(expectedJson)
     }(encoder)
   }

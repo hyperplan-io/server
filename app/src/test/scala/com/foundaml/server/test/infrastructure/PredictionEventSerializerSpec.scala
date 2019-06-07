@@ -55,7 +55,7 @@ class PredictionEventSerializerSpec
 
     testEncoder(prediction: PredictionEvent) { json =>
       val expectedJson =
-        s"""{"type":"classification","id":"$eventId","predictionId":"$predictionId","projectId":"test-project-encode","algorithmId":"test-algorithm-encode","features":{"f1":0.0,"f2":0.0,"f3":0.5},"labels":[{"label":"mylabel","probability":0.5}],"example":"mylabel"}"""
+        s"""{"type":"classification","id":"$eventId","predictionId":"$predictionId","projectId":"test-project-encode","algorithmId":"test-algorithm-encode","features":[{"key":"f1","type":"Float","dimension":"One","value":0.0},{"key":"f2","type":"Float","dimension":"One","value":0.0},{"key":"f3","type":"Float","dimension":"One","value":0.5}],"labels":[{"label":"mylabel","probability":0.5}],"example":"mylabel"}"""
       json.noSpaces should be(expectedJson)
     }(encoder)
   }
@@ -63,7 +63,8 @@ class PredictionEventSerializerSpec
   it should "correctly decode a prediction" in {
     val eventId = "ce79716b-df0c-4641-9c23-e291d924326a"
     val eventJson =
-      """{"type":"classification","id":"ce79716b-df0c-4641-9c23-e291d924326a","predictionId":"adf18431-754e-4375-9094-2ef71a75b62e","projectId":"test-project-encode","algorithmId":"test-algorithm-encode","features":[0.0,0.0,0.5],"labels":[{"label":"mylabel","probability":0.5}],"example":"mylabel"}"""
+      """{"type":"classification","id":"ce79716b-df0c-4641-9c23-e291d924326a","predictionId":"adf18431-754e-4375-9094-2ef71a75b62e","projectId":"test-project-encode","algorithmId":"test-algorithm-encode","features":[{"key":"f1","type":"Float","dimension":"One","value":
+0.0},{"key":"f2","type":"Float","dimension":"One","value":0.0},{"key":"f3","type":"Float","dimension":"One","value":0.5}],"labels":[{"label":"mylabel","probability":0.5}],"example":"mylabel"}"""
     testDecoder[PredictionEvent](eventJson) {
       case event: ClassificationPredictionEvent =>
         assert(event.id == eventId)

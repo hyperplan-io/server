@@ -238,7 +238,6 @@ object ProjectsRepository {
           ) =>
         Algorithm(id, backend, projectId, security).pure[ConnectionIO]
       case algorithmData =>
-        println(algorithmData)
         AsyncConnectionIO.raiseError(AlgorithmDataIncorrect(data._1))
     }
 

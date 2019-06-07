@@ -130,7 +130,7 @@ object FeaturesSerializer {
           "key" -> Json.fromString(key),
           "type" -> (feature.featureType: FeatureType).asJson,
           "dimension" -> (feature.dimension: FeatureDimension).asJson,
-          "value" -> Json.obj()
+          "value" -> value.asJson
         )
     }
 
@@ -224,8 +224,13 @@ object FeaturesSerializer {
                 )
               }
 
-            case _ =>
-              Left(DecodingFailure("", Nil))
+            case (feature, dimension) =>
+              Left(
+                DecodingFailure(
+                  s"The feature $feature is unsupported with dimension $dimension",
+                  Nil
+                )
+              )
           }
         } yield featureValue
     }
