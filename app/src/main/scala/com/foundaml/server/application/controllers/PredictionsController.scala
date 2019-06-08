@@ -101,6 +101,10 @@ class PredictionsController(
               logger.warn("An error occured with json body", err) *> BadRequest(
                 "Json payload is not correct"
               )
+            case err: DecodingFailure =>
+              logger.warn(s"The features object could not be parsed: ${err.getMessage}") *> BadRequest(
+                "The features object is not correct"
+              )
             case err =>
               logger.error(s"Unhandled error", err) *> InternalServerError(
                 "unknown error"
