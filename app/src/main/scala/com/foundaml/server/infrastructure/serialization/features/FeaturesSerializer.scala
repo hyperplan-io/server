@@ -2,6 +2,8 @@ package com.foundaml.server.infrastructure.serialization.features
 
 import com.foundaml.server.domain.models.features.Features.Features
 import com.foundaml.server.domain.models.features._
+import com.foundaml.server.infrastructure.serialization.FeaturesConfigurationSerializer
+
 import io.circe.{Decoder, Encoder, HCursor, Json}
 import io.circe.parser.decode
 import io.circe.syntax._
@@ -34,132 +36,203 @@ object FeaturesSerializer {
     implicit val stringVectorDecoder: Decoder[StringVectorFeature] =
       deriveDecoder
 
+    implicit val featureTypeEncoder: Encoder[FeatureType] =
+      FeaturesConfigurationSerializer.featureTypeEncoder
+    implicit val featureTypeDecoder: Decoder[FeatureType] =
+      FeaturesConfigurationSerializer.featureTypeDecoder
+
+    implicit val featureDimensionEncoder: Encoder[FeatureDimension] =
+      FeaturesConfigurationSerializer.featureDimensionEncoder
+
+    implicit val featureDimensionDecoder: Decoder[FeatureDimension] =
+      FeaturesConfigurationSerializer.featureDimensionDecoder
+
     implicit val featureEncoder: Encoder[Feature] = {
-      case FloatFeature(value) => Json.fromDoubleOrNull(value)
-      case IntFeature(value) => Json.fromInt(value)
-      case StringFeature(value) => Json.fromString(value)
-      case FloatVectorFeature(values) =>
-        Json.fromValues(values.flatMap(Json.fromFloat))
-      case IntVectorFeature(values) => Json.fromValues(values.map(Json.fromInt))
-      case StringVectorFeature(values) =>
-        Json.fromValues(values.map(Json.fromString))
-      case EmptyVectorFeature => Json.fromValues(Nil)
-      case FloatVector2dFeature(values2d) =>
-        Json.fromValues(values2d.map { v =>
-          Json.fromValues(v.map(Json.fromFloatOrNull))
-        })
-      case IntVector2dFeature(values2d) =>
-        Json.fromValues(values2d.map { v =>
-          Json.fromValues(v.map(Json.fromInt))
-        })
-      case StringVector2dFeature(values2d) =>
-        Json.fromValues(values2d.map { v =>
-          Json.fromValues(v.map(Json.fromString))
-        })
-      case ReferenceFeature(value) =>
-        encodeJson(value)
-      case EmptyVector2dFeature => Json.fromValues(Nil)
+      case feature @ FloatFeature(key, value) =>
+        Json.obj(
+          "key" -> Json.fromString(key),
+          "type" -> (feature.featureType: FeatureType).asJson,
+          "dimension" -> (feature.dimension: FeatureDimension).asJson,
+          "value" -> Json.fromDoubleOrNull(value)
+        )
+
+      case feature @ IntFeature(key, value) =>
+        Json.obj(
+          "key" -> Json.fromString(key),
+          "type" -> (feature.featureType: FeatureType).asJson,
+          "dimension" -> (feature.dimension: FeatureDimension).asJson,
+          "value" -> Json.fromInt(value)
+        )
+
+      case feature @ StringFeature(key, value) =>
+        Json.obj(
+          "key" -> Json.fromString(key),
+          "type" -> (feature.featureType: FeatureType).asJson,
+          "dimension" -> (feature.dimension: FeatureDimension).asJson,
+          "value" -> Json.fromString(value)
+        )
+
+      case feature @ FloatVectorFeature(key, values) =>
+        Json.obj(
+          "key" -> Json.fromString(key),
+          "type" -> (feature.featureType: FeatureType).asJson,
+          "dimension" -> (feature.dimension: FeatureDimension).asJson,
+          "value" -> Json.fromValues(values.flatMap(Json.fromFloat))
+        )
+
+      case feature @ IntVectorFeature(key, values) =>
+        Json.obj(
+          "key" -> Json.fromString(key),
+          "type" -> (feature.featureType: FeatureType).asJson,
+          "dimension" -> (feature.dimension: FeatureDimension).asJson,
+          "value" -> Json.fromValues(values.map(Json.fromInt))
+        )
+
+      case feature @ StringVectorFeature(key, values) =>
+        Json.obj(
+          "key" -> Json.fromString(key),
+          "type" -> (feature.featureType: FeatureType).asJson,
+          "dimension" -> (feature.dimension: FeatureDimension).asJson,
+          "value" -> Json.fromValues(values.map(Json.fromString))
+        )
+
+      case feature @ FloatVector2dFeature(key, values2d) =>
+        Json.obj(
+          "key" -> Json.fromString(key),
+          "type" -> (feature.featureType: FeatureType).asJson,
+          "dimension" -> (feature.dimension: FeatureDimension).asJson,
+          "value" -> Json.fromValues(values2d.map { v =>
+            Json.fromValues(v.map(Json.fromFloatOrNull))
+          })
+        )
+
+      case feature @ IntVector2dFeature(key, values2d) =>
+        Json.obj(
+          "key" -> Json.fromString(key),
+          "type" -> (feature.featureType: FeatureType).asJson,
+          "dimension" -> (feature.dimension: FeatureDimension).asJson,
+          "value" -> Json.fromValues(values2d.map { v =>
+            Json.fromValues(v.map(Json.fromInt))
+          })
+        )
+
+      case feature @ StringVector2dFeature(key, values2d) =>
+        Json.obj(
+          "key" -> Json.fromString(key),
+          "type" -> (feature.featureType: FeatureType).asJson,
+          "dimension" -> (feature.dimension: FeatureDimension).asJson,
+          "value" -> Json.fromValues(values2d.map { v =>
+            Json.fromValues(v.map(Json.fromString))
+          })
+        )
+      case feature @ ReferenceFeature(key, reference, value) =>
+        Json.obj(
+          "key" -> Json.fromString(key),
+          "type" -> (feature.featureType: FeatureType).asJson,
+          "dimension" -> (feature.dimension: FeatureDimension).asJson,
+          "value" -> value.asJson
+        )
     }
 
-    def computeType(value: Json): Either[DecodingFailure, Feature] =
-      if (value.isNumber) {
-        if (value.noSpaces.contains(".")) {
-          value.as[Float].map(d => FloatFeature(d))
-        } else {
-          value.as[Int].map(d => IntFeature(d))
-        }
-      } else {
-        value.as[String].map(s => StringFeature(s))
-      }
-
-    def parseFeature: Decoder[Feature] = (c: HCursor) => {
-      if (c.value.isArray) {
-        c.value.asArray.headOption.fold[Decoder.Result[Feature]](
-          Right(EmptyVectorFeature)
-        )(
-          listHead =>
-            listHead.headOption.fold[Decoder.Result[Feature]](
-              Right(EmptyVectorFeature)
-            ) { head =>
-              computeType(head) match {
-                case Right(StringFeature(_)) =>
-                  c.value
-                    .as[List[String]]
-                    .map(values => StringVectorFeature(values))
-                case Right(FloatFeature(_)) =>
-                  c.value
-                    .as[List[Float]]
-                    .map(values => FloatVectorFeature(values))
-                case Right(IntFeature(_)) =>
-                  c.value.as[List[Int]].map(values => IntVectorFeature(values))
-                case Right(_) =>
-                  Decoder.failedWithMessage[Feature](
-                    "Vectors of dimension > 2 are not supported"
-                  )(c)
-                case Left(_) =>
-                  Decoder.failedWithMessage[Feature]("Unrecognized type")(c)
-
+    implicit val featureDecoder: Decoder[Feature] = new Decoder[Feature] {
+      import org.http4s.circe.DecodingFailures
+      import cats.data.NonEmptyList
+      def apply(c: HCursor): Decoder.Result[Feature] =
+        for {
+          featureKey <- c.downField("key").as[String]
+          featureType <- c.downField("type").as[FeatureType]
+          featureDimension <- c.downField("dimension").as[FeatureDimension]
+          featureValue <- (featureType, featureDimension) match {
+            case (FloatFeatureType, One) =>
+              c.downField("value").as[Float].map[Feature] { value =>
+                FloatFeature(
+                  featureKey,
+                  value
+                )
               }
-            }
-        )
-      } else {
-        computeType(c.value)
-      }
-    }
 
-    implicit val featureDecoder: Decoder[Feature] = (c: HCursor) => {
-      if (c.value.isArray) {
-        c.value.asArray.fold[Decoder.Result[Feature]](
-          Decoder.failedWithMessage[Feature]("features key is not an array")(c)
-        )(
-          jsonArr => {
-            jsonArr.headOption.fold[Decoder.Result[Feature]] {
-              Right(EmptyVectorFeature)
-            } { headJson =>
-              parseFeature(headJson.hcursor).fold(
-                err => {
-                  Decoder.failedWithMessage[Feature](
-                    "features array could not be parsed"
-                  )(c)
-                }, {
-                  case FloatFeature(values) =>
-                    c.value
-                      .as[List[Float]]
-                      .map(values => FloatVectorFeature(values))
-                  case IntFeature(values) =>
-                    c.value
-                      .as[List[Int]]
-                      .map(values => IntVectorFeature(values))
-                  case StringFeature(values) =>
-                    c.value
-                      .as[List[String]]
-                      .map(values => StringVectorFeature(values))
-                  case FloatVectorFeature(values) =>
-                    c.value
-                      .as[List[List[Float]]]
-                      .map(values => FloatVector2dFeature(values))
-                  case IntVectorFeature(values) =>
-                    c.value
-                      .as[List[List[Int]]]
-                      .map(values => IntVector2dFeature(values))
-                  case StringVectorFeature(values) =>
-                    c.value
-                      .as[List[List[String]]]
-                      .map(values => StringVector2dFeature(values))
-                  case EmptyVectorFeature =>
-                    Right(EmptyVector2dFeature)
-                  case _ =>
-                    Decoder.failedWithMessage[Feature](
-                      "Vectors of dimension > 2 are not supported"
-                    )(c)
-                }
+            case (FloatFeatureType, Vector) =>
+              c.downField("value").as[List[Float]].map[Feature] { value =>
+                FloatVectorFeature(
+                  featureKey,
+                  value
+                )
+              }
+
+            case (FloatFeatureType, Matrix) =>
+              c.downField("value").as[List[List[Float]]].map[Feature] { value =>
+                FloatVector2dFeature(
+                  featureKey,
+                  value
+                )
+              }
+
+            case (IntFeatureType, One) =>
+              c.downField("value").as[Int].map[Feature] { value =>
+                IntFeature(
+                  featureKey,
+                  value
+                )
+              }
+            case (IntFeatureType, Vector) =>
+              c.downField("value").as[List[Int]].map[Feature] { value =>
+                IntVectorFeature(
+                  featureKey,
+                  value
+                )
+              }
+
+            case (IntFeatureType, Matrix) =>
+              c.downField("value").as[List[List[Int]]].map[Feature] { value =>
+                IntVector2dFeature(
+                  featureKey,
+                  value
+                )
+              }
+
+            case (StringFeatureType, One) =>
+              c.downField("value").as[String].map[Feature] { value =>
+                StringFeature(
+                  featureKey,
+                  value
+                )
+              }
+
+            case (StringFeatureType, Vector) =>
+              c.downField("value").as[List[String]].map[Feature] { value =>
+                StringVectorFeature(
+                  featureKey,
+                  value
+                )
+              }
+
+            case (StringFeatureType, Matrix) =>
+              c.downField("value").as[List[List[String]]].map[Feature] {
+                value =>
+                  StringVector2dFeature(
+                    featureKey,
+                    value
+                  )
+              }
+
+            case (ReferenceFeatureType(reference), One) =>
+              c.downField("value").as[List[Feature]].map[Feature] { value =>
+                ReferenceFeature(
+                  featureKey,
+                  reference,
+                  value
+                )
+              }
+
+            case (feature, dimension) =>
+              Left(
+                DecodingFailure(
+                  s"The feature $feature is unsupported with dimension $dimension",
+                  Nil
+                )
               )
-            }
           }
-        )
-      } else {
-        parseFeature(c)
-      }
+        } yield featureValue
     }
 
   }

@@ -30,31 +30,6 @@ class ProjectsService(
     }
   }
 
-  def validateFeatureClasses(
-      featuresConfiguration: FeaturesConfiguration
-  ): List[ProjectError] =
-    featuresConfiguration match {
-      case FeaturesConfiguration(id, featureConfigurations) =>
-        val allowedFeatureClasses = List(
-          FloatFeature.featureClass,
-          IntFeature.featureClass,
-          StringFeature.featureClass,
-          ReferenceFeature.featureClass
-        )
-
-        featureConfigurations.flatMap { featureConfiguration =>
-          if (allowedFeatureClasses.contains(featureConfiguration.featuresType)) {
-            None
-          } else {
-            Some(
-              FeaturesConfigurationError(
-                s"${featureConfiguration.featuresType} is not an accepted type for feature ${featureConfiguration.name}"
-              )
-            )
-          }
-        }
-    }
-
   def createEmptyProject(
       projectRequest: PostProjectRequest
   ): IO[Project] = {

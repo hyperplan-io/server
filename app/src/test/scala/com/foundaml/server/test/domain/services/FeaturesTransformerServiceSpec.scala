@@ -10,21 +10,26 @@ import io.circe._
 import io.circe.syntax._
 import io.circe.parser._
 
+import scala.util.Random
+
 class FeaturesTransformerServiceSpec extends FlatSpec {
 
   it should "transform features to a tensorflow classify compatible format" in {
+    val f1 = Random.nextString(10)
+    val f2 = Random.nextString(10)
+    val f3 = Random.nextString(10)
     val features = List(
-      StringFeature("test instance"),
-      IntFeature(1),
-      FloatFeature(0.5f)
+      StringFeature(f1, "test instance"),
+      IntFeature(f2, 1),
+      FloatFeature(f3, 0.5f)
     )
 
     val transformer = TensorFlowFeaturesTransformer(
       "my_signature_name",
-      Set(
-        "test",
-        "toto",
-        "titi"
+      Map(
+        f1 -> "test",
+        f2 -> "toto",
+        f3 -> "titi"
       )
     )
 

@@ -11,6 +11,7 @@ import com.foundaml.server.domain.repositories.{
 }
 import com.foundaml.server.test.{AlgorithmGenerator, TaskChecker, TestDatabase}
 import org.scalatest._
+import scala.util.Random
 
 class PredictionsRepositorySpec
     extends FlatSpec
@@ -29,6 +30,7 @@ class PredictionsRepositorySpec
         UUID.randomUUID().toString,
         List(
           StringFeature(
+            Random.nextString(10),
             "x"
           )
         ),

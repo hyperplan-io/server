@@ -35,11 +35,11 @@ class BackendSerializerSpec
     val host = "127.0.0.1"
     val port = 8080
     val signatureName = "my signature"
-    val featureFields = Set(
-      "feature1",
-      "feature2",
-      "feature3",
-      "feature4"
+    val featureFields = Map(
+      "keyf1" -> "feature1",
+      "keyf2" -> "feature2",
+      "keyf3" -> "feature3",
+      "keyf4" -> "feature4"
     )
 
     val labelFields = Map(
@@ -66,15 +66,13 @@ class BackendSerializerSpec
       )
 
     testEncoder(backend: Backend) { json =>
-      val featuresJson = featureFields
-        .map(field => s"$doubleQuote$field$doubleQuote")
-        .mkString(",")
+      val featuresJson =
+        """{"keyf1":"feature1","keyf2":"feature2","keyf3":"feature3","keyf4":"feature4"}"""
 
       val labelsJson =
         """{"tf_class1":"class1","tf_class2":"class2","tf_class3":"class3","tf_class4":"class4"}"""
-
       val expectedJson =
-        s"""{"class":"TensorFlowClassificationBackend","host":"$host","port":$port,"featuresTransformer":{"signatureName":"$signatureName","fields":[$featuresJson]},"labelsTransformer":{"fields":$labelsJson}}"""
+        s"""{"class":"TensorFlowClassificationBackend","host":"$host","port":$port,"featuresTransformer":{"signatureName":"$signatureName","mapping":$featuresJson},"labelsTransformer":{"fields":$labelsJson}}"""
       json.noSpaces should be(expectedJson)
     }(encoder)
   }
@@ -84,11 +82,11 @@ class BackendSerializerSpec
     val expectedHost = "127.0.0.1"
     val expectedPort = 8080
     val expectedSignatureName = "my signature"
-    val expectedFeatureFields = Set(
-      "feature1",
-      "feature2",
-      "feature3",
-      "feature4"
+    val expectedFeatureFields = Map(
+      "keyf1" -> "feature1",
+      "keyf2" -> "feature2",
+      "keyf3" -> "feature3",
+      "keyf4" -> "feature4"
     )
 
     val expectedLabelFields = Map(
@@ -106,14 +104,13 @@ class BackendSerializerSpec
     val expectedLabelsTransformer = TensorFlowLabelsTransformer(
       expectedLabelFields
     )
-    val featuresJson = expectedFeatureFields
-      .map(field => s"$doubleQuote$field$doubleQuote")
-      .mkString(",")
+    val featuresJson =
+      """{"keyf1":"feature1","keyf2":"feature2","keyf3":"feature3","keyf4":"feature4"}"""
     val labelsJson =
       """{"tf_class1":"class1","tf_class2":"class2","tf_class3":"class3","tf_class4":"class4"}"""
 
     val backendJson =
-      s"""{"class":"TensorFlowClassificationBackend","host":"$expectedHost","port":$expectedPort,"featuresTransformer":{"signatureName":"$expectedSignatureName","fields":[$featuresJson]},"labelsTransformer":{"fields":$labelsJson}}"""
+      s"""{"class":"TensorFlowClassificationBackend","host":"$expectedHost","port":$expectedPort,"featuresTransformer":{"signatureName":"$expectedSignatureName","mapping":$featuresJson},"labelsTransformer":{"fields":$labelsJson}}"""
 
     testDecoder[Backend](backendJson) { backend =>
       inside(backend) {

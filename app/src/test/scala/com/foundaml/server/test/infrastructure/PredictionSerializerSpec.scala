@@ -32,14 +32,15 @@ class PredictionSerializerSpec
     val projectId = "test-project-encode"
     val algorithmId = "test-algorithm-encode"
     val labelId = UUID.randomUUID().toString
+    import scala.util.Random
     val prediction = ClassificationPrediction(
       predictionId,
       projectId,
       algorithmId,
       List(
-        FloatFeature(0.0f),
-        FloatFeature(0.0f),
-        FloatFeature(0.5f)
+        FloatFeature("f1", 0.0f),
+        FloatFeature("f2", 0.0f),
+        FloatFeature("f3", 0.5f)
       ),
       List.empty,
       Set(
@@ -54,7 +55,7 @@ class PredictionSerializerSpec
 
     testEncoder(prediction) { json =>
       val expectedJson =
-        s"""{"type":"classification","id":"$predictionId","projectId":"$projectId","algorithmId":"$algorithmId","features":[0.0,0.0,0.5],"labels":[{"label":"mylabel","probability":0.5,"correctExampleUrl":"correct_example_url","incorrectExampleUrl":"incorrect_example_url"}],"examples":[]}"""
+        s"""{"type":"classification","id":"$predictionId","projectId":"$projectId","algorithmId":"$algorithmId","features":[{"key":"f1","type":"Float","dimension":"One","value":0.0},{"key":"f2","type":"Float","dimension":"One","value":0.0},{"key":"f3","type":"Float","dimension":"One","value":0.5}],"labels":[{"label":"mylabel","probability":0.5,"correctExampleUrl":"correct_example_url","incorrectExampleUrl":"incorrect_example_url"}],"examples":[]}"""
       json.noSpaces should be(expectedJson)
     }(encoder)
   }
@@ -66,7 +67,7 @@ class PredictionSerializerSpec
     val projectId = "test-project-decode"
     val algorithmId = "test-algorithm-decode"
     val predictionJson =
-      s"""{"type":"classification","id":"$predictionId","projectId":"$projectId","algorithmId":"$algorithmId","features":[0.0,0.0,0.5],"labels":[{"label":"mylabel","probability":0.5,"correctExampleUrl":"correct_example_url","incorrectExampleUrl":"incorrect_example_url"}],"examples":[]}"""
+      s"""{"type":"classification","id":"$predictionId","projectId":"$projectId","algorithmId":"$algorithmId","features":[{"key":"f1","type":"Float","dimension":"One","value":0.0},{"key":"f2","type":"Float","dimension":"One","value":0.0},{"key":"f3","type":"Float","dimension":"One","value":0.5}],"labels":[{"label":"mylabel","probability":0.5,"correctExampleUrl":"correct_example_url","incorrectExampleUrl":"incorrect_example_url"}],"examples":[]}"""
 
     testDecoder[Prediction](predictionJson) {
       case prediction: ClassificationPrediction =>
