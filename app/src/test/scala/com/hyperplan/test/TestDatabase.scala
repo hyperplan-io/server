@@ -1,4 +1,4 @@
-package com.hyperplan.server.test
+package com.hyperplan.test
 
 import doobie._
 import cats.effect.IO

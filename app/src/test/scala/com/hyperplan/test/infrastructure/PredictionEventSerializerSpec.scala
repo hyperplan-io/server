@@ -1,4 +1,4 @@
-package com.hyperplan.server.test.infrastructure
+package com.hyperplan.test.infrastructure
 
 import java.util.UUID
 
@@ -9,7 +9,7 @@ import com.hyperplan.domain.models.events.{
 import com.hyperplan.domain.models.features.FloatFeature
 import com.hyperplan.domain.models.labels.ClassificationLabel
 import com.hyperplan.infrastructure.serialization.events.PredictionEventSerializer
-import com.hyperplan.server.test.SerializerTester
+import com.hyperplan.test.SerializerTester
 import io.circe.{Decoder, Encoder}
 import org.scalatest.{FlatSpec, Matchers}
 

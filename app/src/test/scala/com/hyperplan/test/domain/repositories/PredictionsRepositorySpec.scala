@@ -1,4 +1,4 @@
-package com.hyperplan.server.test.domain.repositories
+package com.hyperplan.test.domain.repositories
 
 import java.util.UUID
 
@@ -6,7 +6,8 @@ import com.hyperplan.domain.models.ClassificationPrediction
 import com.hyperplan.domain.models.features.StringFeature
 import com.hyperplan.domain.models.labels.ClassificationLabel
 import com.hyperplan.domain.repositories.PredictionsRepository
-import com.hyperplan.server.test.{TaskChecker, TestDatabase}
+import com.hyperplan.test.{TaskChecker, TestDatabase}
+import com.hyperplan.test.{TaskChecker, TestDatabase}
 import org.scalatest._
 
 import scala.util.Random

@@ -1,4 +1,4 @@
-package com.hyperplan.server.test.infrastructure
+package com.hyperplan.test.infrastructure
 
 import java.util.UUID
 
@@ -9,8 +9,8 @@ import com.hyperplan.domain.models.backends.{
 import com.hyperplan.domain.models.features.transformers.TensorFlowFeaturesTransformer
 import com.hyperplan.domain.models.labels.transformers.TensorFlowLabelsTransformer
 import com.hyperplan.infrastructure.serialization.BackendSerializer
-
-import com.hyperplan.server.test.SerializerTester
+import com.hyperplan.test.SerializerTester
+import com.hyperplan.test.SerializerTester
 import io.circe.{Decoder, Encoder}
 import org.scalatest.{FlatSpec, Matchers}
 import org.scalatest.Inside.inside

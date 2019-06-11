@@ -1,7 +1,8 @@
-package com.hyperplan.server.test.domain.repositories
+package com.hyperplan.test.domain.repositories
 
 import com.hyperplan.domain.repositories.AlgorithmsRepository
-import com.hyperplan.server.test.{AlgorithmGenerator, TaskChecker, TestDatabase}
+import com.hyperplan.test.{AlgorithmGenerator, TaskChecker, TestDatabase}
+import com.hyperplan.test.{AlgorithmGenerator, TaskChecker, TestDatabase}
 import org.scalatest._
 
 class AlgorithmsRepositorySpec

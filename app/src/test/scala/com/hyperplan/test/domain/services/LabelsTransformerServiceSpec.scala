@@ -1,4 +1,4 @@
-package com.hyperplan.server.test.domain.services
+package com.hyperplan.test.domain.services
 
 import java.util.UUID
 

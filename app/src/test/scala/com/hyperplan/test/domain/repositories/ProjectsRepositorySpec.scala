@@ -1,7 +1,8 @@
-package com.hyperplan.server.test.domain.repositories
+package com.hyperplan.test.domain.repositories
 
 import com.hyperplan.domain.repositories._
-import com.hyperplan.server.test.{ProjectGenerator, TaskChecker, TestDatabase}
+import com.hyperplan.test.{ProjectGenerator, TaskChecker, TestDatabase}
+import com.hyperplan.test.{ProjectGenerator, TaskChecker, TestDatabase}
 import org.scalatest._
 
 class ProjectsRepositorySpec

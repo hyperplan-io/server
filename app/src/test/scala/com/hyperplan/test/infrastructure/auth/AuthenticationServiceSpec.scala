@@ -1,4 +1,4 @@
-package com.hyperplan.server.test.infrastructure.auth
+package com.hyperplan.test.infrastructure.auth
 
 import org.scalatest.{FlatSpec, Matchers}
 import com.hyperplan.infrastructure.auth._

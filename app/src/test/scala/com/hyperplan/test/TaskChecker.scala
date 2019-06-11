@@ -1,4 +1,4 @@
-package com.hyperplan.server.test
+package com.hyperplan.test
 
 import cats.effect.Effect
 import doobie.scalatest.imports.Checker

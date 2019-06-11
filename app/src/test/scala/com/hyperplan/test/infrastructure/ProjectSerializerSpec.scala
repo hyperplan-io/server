@@ -1,8 +1,9 @@
-package com.hyperplan.server.test.infrastructure
+package com.hyperplan.test.infrastructure
 
 import com.hyperplan.domain.models._
 import com.hyperplan.infrastructure.serialization.ProjectSerializer
-import com.hyperplan.server.test.SerializerTester
+import com.hyperplan.test.SerializerTester
+import com.hyperplan.test.SerializerTester
 import io.circe.{Decoder, Encoder}
 import org.scalatest.{FlatSpec, Matchers}
 

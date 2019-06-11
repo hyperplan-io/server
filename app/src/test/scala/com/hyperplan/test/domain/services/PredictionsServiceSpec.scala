@@ -1,4 +1,4 @@
-package com.hyperplan.server.test.domain.services
+package com.hyperplan.test.domain.services
 
 import cats.effect.{IO, Timer}
 import com.hyperplan.application._
@@ -18,7 +18,8 @@ import com.hyperplan.infrastructure.streaming.{
   KinesisService,
   PubSubService
 }
-import com.hyperplan.server.test.TestDatabase
+import com.hyperplan.test.TestDatabase
+import com.hyperplan.test.TestDatabase
 import org.scalatest._
 
 import scala.concurrent.ExecutionContext
