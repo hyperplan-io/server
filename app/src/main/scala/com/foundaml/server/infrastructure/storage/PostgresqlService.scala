@@ -76,7 +76,8 @@ object PostgresqlService {
         algorithm_id VARCHAR(36) NOT NULL,
         features VARCHAR NOT NULL,
         labels VARCHAR NOT NULL,
-        examples VARCHAR NOT NULL
+        examples VARCHAR NOT NULL,
+        entity_link JSONB
       )
     """.update.run
 

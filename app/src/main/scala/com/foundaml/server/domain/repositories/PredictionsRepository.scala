@@ -164,6 +164,18 @@ class PredictionsRepository(implicit xa: Transactor[IO]) extends IOLogging {
   ) =
     sql"""UPDATE predictions SET examples = $examples WHERE id=$predictionId""".update
 
+    def deletePredictionsLinkedToEntity(
+      entityName: String,
+      entityId: String
+  ) = deletePredictionsLinkedToEntityQuery(entityName, entityId).run
+
+  def deletePredictionsLinkedToEntityQuery(
+      entityName: String,
+      entityId: String
+  ) =
+    sql"""DELETE FROM predictions WHERE entity @> '{"$entityName": "$entityId"}'""".update
+
+
   def updateRegressionExamples(
       predictionId: String,
       examples: RegressionExamples
