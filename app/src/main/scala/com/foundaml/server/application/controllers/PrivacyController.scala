@@ -14,7 +14,7 @@ import com.foundaml.server.infrastructure.logging.IOLogging
 import com.foundaml.server.infrastructure.serialization._
 
 class PrivacyController(
-  privacyService: PrivacyService 
+    privacyService: PrivacyService
 ) extends Http4sDsl[IO]
     with IOLogging {
 
@@ -30,11 +30,19 @@ class PrivacyController(
             request.entityName,
             request.entityId
           )
-        } yield ForgetPredictionsResponse(
-          request.entityName,
-          request.entityId,
-          noForgotten)).flatMap { response =>
-            Ok(ForgetPredictionsResponseSerializer.encodeJson(response)) 
+        } yield
+          ForgetPredictionsResponse(
+            request.entityName,
+            request.entityId,
+            noForgotten
+          ))
+          .flatMap { response =>
+            Ok(ForgetPredictionsResponseSerializer.encodeJson(response))
+          }
+          .handleErrorWith {
+            case err =>
+              logger.error(s"Unhandled error: ${err.getMessage}") *> IO
+                .raiseError(err)
           }
     }
   }

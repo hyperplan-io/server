@@ -33,6 +33,7 @@ object Server {
       projectsService: ProjectsService,
       algorithmsService: AlgorithmsService,
       domainService: DomainService,
+      privacyService: PrivacyService,
       kafkaService: Option[KafkaService],
       projectsRepository: ProjectsRepository,
       port: Int
@@ -68,6 +69,9 @@ object Server {
       config.credentials,
       publicKey,
       privateKey
+    )
+    val privacyController = new PrivacyController(
+      privacyService
     )
     val healthController = new HealthController(
       xa,
@@ -116,6 +120,13 @@ object Server {
             AuthenticationMiddleware
               .jwtAuthenticate(
                 labelsController.service,
+                AuthenticationService.AdminScope
+              )
+            ),
+          "/privacy" -> (
+            AuthenticationMiddleware
+              .jwtAuthenticate(
+                privacyController.service,
                 AuthenticationService.AdminScope
               )
             ),

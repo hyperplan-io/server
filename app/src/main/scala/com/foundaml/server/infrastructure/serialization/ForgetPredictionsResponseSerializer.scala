@@ -15,7 +15,7 @@ object ForgetPredictionsResponseSerializer {
         ("count", Json.fromInt(response.count))
       )
 
-  def encodeJson(response: ForgetPredictionsResponse) = 
+  def encodeJson(response: ForgetPredictionsResponse) =
     response.asJson
 
 }

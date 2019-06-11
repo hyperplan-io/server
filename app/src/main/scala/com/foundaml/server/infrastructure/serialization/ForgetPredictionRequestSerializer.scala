@@ -21,5 +21,4 @@ object ForgetPredictionRequestSerializer {
   implicit val entityDecoder: EntityDecoder[IO, ForgetPredictionRequest] =
     jsonOf[IO, ForgetPredictionRequest]
 
-
 }

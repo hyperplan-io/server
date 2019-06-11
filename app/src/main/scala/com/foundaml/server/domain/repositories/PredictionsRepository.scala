@@ -34,6 +34,8 @@ import cats.implicits._
 
 class PredictionsRepository(implicit xa: Transactor[IO]) extends IOLogging {
 
+  type EntityLinkPrediction = (String, String, String)
+
   implicit val featuresGet: Get[Either[io.circe.Error, Features]] =
     Get[String].map(FeaturesSerializer.decodeJson)
   implicit val featuresPut: Put[Features] =
@@ -92,17 +94,16 @@ class PredictionsRepository(implicit xa: Transactor[IO]) extends IOLogging {
       ${prediction.features},
       ${prediction.labels},
       ${prediction.examples}
-    )""".update
+      )""".update
 
   def insertClassificationPrediction(
       prediction: ClassificationPrediction
-  ): IO[Either[PredictionError, Int]] =
+  ): ConnectionIO[Either[PredictionError, Int]] =
     insertClassificationPredictionQuery(prediction).run
       .attemptSomeSqlState {
         case sqlstate.class23.UNIQUE_VIOLATION =>
           PredictionAlreadyExist(prediction.id)
       }
-      .transact(xa)
 
   def insertRegressionPredictionQuery(
       prediction: RegressionPrediction
@@ -127,18 +128,34 @@ class PredictionsRepository(implicit xa: Transactor[IO]) extends IOLogging {
 
   def insertRegressionPrediction(
       prediction: RegressionPrediction
-  ): IO[Either[PredictionError, Int]] =
+  ): ConnectionIO[Either[PredictionError, Int]] =
     insertRegressionPredictionQuery(prediction).run
       .attemptSomeSqlState {
         case sqlstate.class23.UNIQUE_VIOLATION =>
           PredictionAlreadyExist(prediction.id)
       }
-      .transact(xa)
+
+  def insertEntityLink(
+      predictionId: String,
+      entityLinks: List[(String, String)]
+  ): ConnectionIO[Int] = {
+    val sql = """
+      INSERT INTO entity_links(
+        prediction_id,
+        entity_name,
+        entity_id
+      ) VALUES(?,?,?)
+      """
+    Update[EntityLinkPrediction](sql).updateMany(
+      entityLinks.map(link => (predictionId, link._1, link._2))
+    )
+  }
 
   def readQuery(predictionId: String) =
     sql"""
       SELECT id, project_id, algorithm_id, type, features, labels, examples
       FROM predictions
+      LEFT JOIN entity_links ON prediction_id = id
       WHERE id=$predictionId
       """
       .query[PredictionData]
@@ -164,17 +181,26 @@ class PredictionsRepository(implicit xa: Transactor[IO]) extends IOLogging {
   ) =
     sql"""UPDATE predictions SET examples = $examples WHERE id=$predictionId""".update
 
-    def deletePredictionsLinkedToEntity(
+  def deletePredictionsLinkedToEntity(
       entityName: String,
       entityId: String
-  ) = deletePredictionsLinkedToEntityQuery(entityName, entityId).run
+  ): ConnectionIO[Int] =
+    deletePredictionsLinkedToEntityQuery(entityName, entityId).run.flatMap {
+      _ =>
+        deleteEntityLink(entityName, entityId).run
+    }
 
   def deletePredictionsLinkedToEntityQuery(
       entityName: String,
       entityId: String
-  ) =
-    sql"""DELETE FROM predictions WHERE entity @> '{"$entityName": "$entityId"}'""".update
+  ): Update0 =
+    sql"""DELETE FROM predictions WHERE id IN (SELECT prediction_id from entity_links WHERE entity_name = $entityName AND entity_id = $entityId)""".update
 
+  def deleteEntityLink(
+      entityName: String,
+      entityId: String
+  ): Update0 =
+    sql"""DELETE FROM entity_links WHERE entity_name = $entityName AND entity_id = $entityId""".update
 
   def updateRegressionExamples(
       predictionId: String,

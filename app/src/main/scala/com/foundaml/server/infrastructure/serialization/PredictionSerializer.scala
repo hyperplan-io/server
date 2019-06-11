@@ -18,6 +18,27 @@ object PredictionSerializer {
 
   import io.circe._
 
+  implicit val entityLinkListEncoder: Encoder[List[EntityLink]] =
+    (entityLinks: List[EntityLink]) =>
+      entityLinks.map(link => link.name -> link.id).toMap.asJson
+
+  def encodeListEntityLinkNoSpaces(entityLinks: List[EntityLink]) =
+    entityLinks.asJson.noSpaces
+
+  implicit val entityLinkEncoder: Encoder[EntityLink] =
+    (entityLink: EntityLink) =>
+      Json.obj(
+        ("name", Json.fromString(entityLink.name)),
+        ("id", Json.fromString(entityLink.id))
+      )
+
+  implicit val entityLinkDecoder: Decoder[EntityLink] =
+    (c: HCursor) =>
+      for {
+        name <- c.downField("name").as[String]
+        id <- c.downField("id").as[String]
+      } yield EntityLink(name, id)
+
   implicit val featuresEncoder: Encoder[Features] =
     FeaturesSerializer.Implicits.encoder
   implicit val featuresDecoder: Decoder[Features] =

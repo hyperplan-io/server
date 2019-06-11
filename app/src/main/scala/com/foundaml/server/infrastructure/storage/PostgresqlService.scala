@@ -20,8 +20,9 @@ object PostgresqlService {
       createAlgorithmsTable,
       createPredictionsTable,
       createFeaturesTable,
-      createLabelsTable
-    ).mapN(_ + _ + _ + _ + _)
+      createLabelsTable,
+      createEntityLinksTable
+    ).mapN(_ + _ + _ + _ + _ + _)
       .transact(xa)
 
   import cats.effect.ContextShift
@@ -76,8 +77,15 @@ object PostgresqlService {
         algorithm_id VARCHAR(36) NOT NULL,
         features VARCHAR NOT NULL,
         labels VARCHAR NOT NULL,
-        examples VARCHAR NOT NULL,
-        entity_link JSONB
+        examples VARCHAR NOT NULL
+      )
+    """.update.run
+
+  val createEntityLinksTable: doobie.ConnectionIO[Int] = sql"""
+      CREATE TABLE IF NOT EXISTS entity_links(
+        prediction_id VARCHAR(36) NOT NULL,
+        entity_name VARCHAR NOT NULL,
+        entity_id VARCHAR NOT NULL
       )
     """.update.run
 

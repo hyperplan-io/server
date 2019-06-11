@@ -97,7 +97,7 @@ object Main extends IOApp with IOLogging {
         algorithmsRepository,
         projectsRepository
       )
-
+      privacyService = new PrivacyService(predictionsRepository)
       port = 8080
       _ <- logger.info("Services have been correctly instantiated")
       _ <- logger.info(s"Starting http server on port $port")
@@ -116,6 +116,7 @@ object Main extends IOApp with IOLogging {
             projectsService,
             algorithmsService,
             domainService,
+            privacyService,
             kafkaService,
             projectsRepository,
             port

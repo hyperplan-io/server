@@ -1,6 +1,6 @@
 package com.foundaml.server.controllers.requests
 
 case class ForgetPredictionRequest(
-  entityName: String,
-  entityId: String
+    entityName: String,
+    entityId: String
 )

@@ -5,6 +5,7 @@ import java.util.UUID
 import cats.effect.{Async, Effect}
 import cats.effect.IO
 import cats.implicits._
+import cats.effect.ContextShift
 
 import com.foundaml.server.domain.{FoundaMLConfig, models}
 import com.foundaml.server.domain.models._
@@ -47,24 +48,33 @@ class PredictionsService(
 
   implicit val predictionEventEncoder = PredictionEventSerializer.encoder
 
-  def persistClassificationPrediction(prediction: ClassificationPrediction) =
-    predictionsRepository
-      .insertClassificationPrediction(prediction)
-      .flatMap(
-        _.fold(
-          err => logger.warn(err.getMessage) *> IO.raiseError(err),
-          _ => IO.pure(prediction)
+  def persistClassificationPrediction(
+      prediction: ClassificationPrediction,
+      entityLinks: List[EntityLink]
+  ): IO[Either[PredictionError, Int]] =
+    predictionsRepository.transact(
+      for {
+        count <- predictionsRepository.insertClassificationPrediction(
+          prediction
         )
-      )
-  def persistRegressionPrediction(prediction: RegressionPrediction) =
-    predictionsRepository
-      .insertRegressionPrediction(prediction)
-      .flatMap(
-        _.fold(
-          err => logger.warn(err.getMessage) *> IO.raiseError(err),
-          _ => IO.pure(prediction)
+        links = entityLinks.map(link => link.name -> link.id)
+        _ <- predictionsRepository.insertEntityLink(prediction.id, links)
+      } yield count
+    )
+
+  def persistRegressionPrediction(
+      prediction: RegressionPrediction,
+      entityLinks: List[EntityLink]
+  ): IO[Either[PredictionError, Int]] =
+    predictionsRepository.transact(
+      for {
+        count <- predictionsRepository.insertRegressionPrediction(
+          prediction
         )
-      )
+        links = entityLinks.map(link => link.name -> link.id)
+        _ <- predictionsRepository.insertEntityLink(prediction.id, links)
+      } yield count
+    )
 
   def publishToStream(prediction: PredictionEvent): IO[Unit] =
     (for {
@@ -100,7 +110,8 @@ class PredictionsService(
 
   def predictRegressionWithProjectPolicy(
       features: Features,
-      project: RegressionProject
+      project: RegressionProject,
+      entityLinks: List[EntityLink]
   ): IO[Prediction] =
     project.policy
       .take()
@@ -123,14 +134,16 @@ class PredictionsService(
               predictRegressionWithAlgorithm(
                 project,
                 algorithm,
-                features
+                features,
+                entityLinks
               )
           )
       }
 
   def predictClassificationWithProjectPolicy(
       features: Features,
-      project: ClassificationProject
+      project: ClassificationProject,
+      entityLinks: List[EntityLink]
   ): IO[Prediction] =
     project.policy
       .take()
@@ -153,7 +166,8 @@ class PredictionsService(
               predictClassificationWithAlgorithm(
                 project,
                 algorithm,
-                features
+                features,
+                entityLinks
               )
           )
       }
@@ -176,11 +190,11 @@ class PredictionsService(
     )
   }
 
-  import cats.effect.ContextShift
   def predictClassificationWithAlgorithm(
       project: ClassificationProject,
       algorithm: Algorithm,
-      features: Features
+      features: Features,
+      entityLinks: List[EntityLink]
   )(implicit cs: ContextShift[IO]): IO[ClassificationPrediction] = {
     val predictionIO = algorithm.backend match {
       case local: LocalClassification =>
@@ -206,14 +220,17 @@ class PredictionsService(
         )
     }
     predictionIO.flatMap { prediction =>
-      persistClassificationPrediction(prediction) *> IO.pure(prediction)
+      persistClassificationPrediction(prediction, entityLinks) *> IO.pure(
+        prediction
+      )
     }
   }
 
   def predictRegressionWithAlgorithm(
       project: RegressionProject,
       algorithm: Algorithm,
-      features: Features
+      features: Features,
+      entityLinks: List[EntityLink]
   ): IO[RegressionPrediction] = {
     val predictionIO = algorithm.backend match {
       case local: LocalClassification =>
@@ -235,7 +252,9 @@ class PredictionsService(
         )
     }
     predictionIO.flatMap { prediction =>
-      persistRegressionPrediction(prediction) *> IO.pure(prediction)
+      persistRegressionPrediction(prediction, entityLinks) *> IO.pure(
+        prediction
+      )
     }
   }
 
@@ -251,21 +270,33 @@ class PredictionsService(
   def predict(
       projectId: String,
       features: Features,
+      entityLinks: List[EntityLink],
       optionalAlgorithmId: Option[String]
   ): IO[Prediction] = projectsService.readProject(projectId).flatMap {
     case project: ClassificationProject =>
-      predictForClassificationProject(project, features, optionalAlgorithmId)
+      predictForClassificationProject(
+        project,
+        features,
+        entityLinks,
+        optionalAlgorithmId
+      )
     case project: RegressionProject =>
-      predictForRegressionProject(project, features, optionalAlgorithmId)
+      predictForRegressionProject(
+        project,
+        features,
+        entityLinks,
+        optionalAlgorithmId
+      )
   }
 
   def predictForClassificationProject(
       project: ClassificationProject,
       features: Features,
+      entityLinks: List[EntityLink],
       optionalAlgorithmId: Option[String]
   ) = {
     optionalAlgorithmId.fold(
-      predictClassificationWithProjectPolicy(features, project)
+      predictClassificationWithProjectPolicy(features, project, entityLinks)
     )(
       algorithmId =>
         project.algorithmsMap
@@ -279,7 +310,8 @@ class PredictionsService(
               predictClassificationWithAlgorithm(
                 project,
                 algorithm,
-                features
+                features,
+                entityLinks
               ).flatMap { prediction =>
                 if (validateClassificationLabels(
                     project.configuration.labels,
@@ -303,10 +335,11 @@ class PredictionsService(
   def predictForRegressionProject(
       project: RegressionProject,
       features: Features,
+      entityLinks: List[EntityLink],
       optionalAlgorithmId: Option[String]
   ) =
     optionalAlgorithmId.fold(
-      predictRegressionWithProjectPolicy(features, project)
+      predictRegressionWithProjectPolicy(features, project, entityLinks)
     )(
       algorithmId =>
         project.algorithmsMap
@@ -317,7 +350,12 @@ class PredictionsService(
             )
           )(
             algorithm =>
-              predictRegressionWithAlgorithm(project, algorithm, features)
+              predictRegressionWithAlgorithm(
+                project,
+                algorithm,
+                features,
+                entityLinks
+              )
           )
     )
 

@@ -57,6 +57,7 @@ class PredictionsController(
           prediction <- predictionsService.predict(
             predictionRequest.projectId,
             features,
+            predictionRequest.entityLinks.getOrElse(Nil),
             predictionRequest.algorithmId
           )
           _ <- logger.debug(
