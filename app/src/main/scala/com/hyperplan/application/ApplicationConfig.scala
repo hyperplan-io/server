@@ -26,8 +26,9 @@ case class PostgreSqlConfig(
 )
 case class DatabaseConfig(postgresql: PostgreSqlConfig)
 case class EncryptionConfig(
-    publicKey: String,
-    privateKey: String
+    publicKey: Option[String],
+    privateKey: Option[String],
+    secret: Option[String]
 )
 case class AdminCredentials(
     username: String,

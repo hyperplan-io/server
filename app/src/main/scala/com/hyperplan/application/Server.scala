@@ -7,6 +7,9 @@ import cats.implicits._
 import doobie._
 
 import org.http4s.server.blaze.{BlazeBuilder, BlazeServerBuilder}
+import org.http4s.HttpRoutes
+import org.http4s.dsl.Http4sDsl
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.{FiniteDuration, NANOSECONDS, TimeUnit}
 import scala.util.Properties.envOrNone
@@ -41,8 +44,9 @@ object Server {
       timer: Timer[IO],
       xa: Transactor[IO],
       config: ApplicationConfig,
-      publicKey: AuthenticationService.PublicKey,
-      privateKey: AuthenticationService.PrivateKey
+      publicKeyOpt: Option[AuthenticationService.PublicKey],
+      privateKeyOpt: Option[AuthenticationService.PrivateKey],
+      secretOpt: Option[String]
   ) = {
     val predictionsController = new PredictionsController(
       projectsService,
@@ -64,11 +68,6 @@ object Server {
     val labelsController = new LabelsController(
       domainService
     )
-    val authControler = new AuthenticationController(
-      config.credentials,
-      publicKey,
-      privateKey
-    )
     val privacyController = new PrivacyController(
       privacyService
     )
@@ -77,67 +76,101 @@ object Server {
       kafkaService
     )
 
-    BlazeServerBuilder[IO]
-      .bindHttp(port, "0.0.0.0")
-      .withHttpApp(
-        Router(
-          "/predictions" -> (
-            AuthenticationMiddleware
-              .jwtAuthenticate(
-                predictionsController.service,
-                AuthenticationService.PredictionScope
-              )
-            ),
-          "/projects" -> (
-            AuthenticationMiddleware
-              .jwtAuthenticate(
-                projectsController.service,
-                AuthenticationService.AdminScope
-              )
-            ),
-          "/algorithms" -> (
-            AuthenticationMiddleware
-              .jwtAuthenticate(
-                algorithmsController.service,
-                AuthenticationService.AdminScope
-              )
-            ),
-          "/examples" -> (
-            AuthenticationMiddleware
-              .jwtAuthenticate(
-                examplesController.service,
-                AuthenticationService.PredictionScope
-              )
-            ),
-          "/features" -> (
-            AuthenticationMiddleware.jwtAuthenticate(
-              featuresController.service,
-              AuthenticationService.AdminScope
-            )
-          ),
-          "/labels" -> (
-            AuthenticationMiddleware
-              .jwtAuthenticate(
-                labelsController.service,
-                AuthenticationService.AdminScope
-              )
-            ),
-          "/privacy" -> (
-            AuthenticationMiddleware
-              .jwtAuthenticate(
-                privacyController.service,
-                AuthenticationService.AdminScope
-              )
-            ),
-          "/authentication" -> (
-            authControler.service
-          ),
-          "/_health" -> (
-            healthController.service
-          )
-        ).orNotFound
+    val eitherAuth: Either[
+      Throwable,
+      (
+          (
+              HttpRoutes[IO],
+              AuthenticationService.AuthenticationScope
+          ) => HttpRoutes[IO],
+          AuthenticationController
       )
-      .serve
+    ] = (publicKeyOpt, privateKeyOpt, secretOpt) match {
+      case (Some(publicKey), Some(privateKey), None) =>
+        Right(
+          AuthenticationMiddleware
+            .jwtAuthenticateWithCertificate(publicKey, privateKey),
+          new CertificateAuthenticationController(
+            publicKey,
+            privateKey,
+            config.credentials
+          )
+        )
+      case (None, None, Some(secret)) =>
+        Right(
+          AuthenticationMiddleware.jwtAuthenticateWithSecret(secret),
+          new SecretAuthenticationController(
+            secret,
+            config.credentials
+          )
+        )
+      case _ =>
+        Left(
+          new Exception(
+            "You need to either set a secret with APP_SECRET environment variable or configure a certificate with PUBLIC_KEY and PRIVATE_KEY environment variables"
+          )
+        )
+    }
+
+    eitherAuth.map {
+      case (authMiddleware, authController) =>
+        BlazeServerBuilder[IO]
+          .bindHttp(port, "0.0.0.0")
+          .withHttpApp(
+            Router(
+              "/predictions" -> (
+                authMiddleware(
+                  predictionsController.service,
+                  AuthenticationService.PredictionScope
+                )
+              ),
+              "/projects" -> (
+                authMiddleware(
+                  projectsController.service,
+                  AuthenticationService.AdminScope
+                )
+              ),
+              "/algorithms" -> (
+                authMiddleware(
+                  algorithmsController.service,
+                  AuthenticationService.AdminScope
+                )
+              ),
+              "/examples" -> (
+                authMiddleware(
+                  examplesController.service,
+                  AuthenticationService.PredictionScope
+                )
+              ),
+              "/features" -> (
+                authMiddleware(
+                  featuresController.service,
+                  AuthenticationService.AdminScope
+                )
+              ),
+              "/labels" -> (
+                authMiddleware(
+                  labelsController.service,
+                  AuthenticationService.AdminScope
+                )
+              ),
+              "/privacy" -> (
+                authMiddleware(
+                  privacyController.service,
+                  AuthenticationService.AdminScope
+                )
+              ),
+              "/authentication" -> (
+                authController.service
+              ),
+              "/_health" -> (
+                healthController.service
+              )
+            ).orNotFound
+          )
+          .serve
+    }
+
   }
 
 }

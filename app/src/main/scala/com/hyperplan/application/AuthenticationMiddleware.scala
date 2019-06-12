@@ -20,18 +20,37 @@ object AuthenticationMiddleware {
   import cats.data.OptionT
   import com.hyperplan.infrastructure.auth.JwtAuthenticationService
 
-  def jwtAuthenticate(
+  def jwtAuthenticateWithCertificate(
+      publicKey: AuthenticationService.PublicKey,
+      privateKey: AuthenticationService.PrivateKey
+  )(
       service: HttpRoutes[IO],
       scope: AuthenticationService.AuthenticationScope
-  )(
-      implicit publicKey: AuthenticationService.PublicKey,
-      privateKey: AuthenticationService.PrivateKey
   ): HttpRoutes[IO] = Kleisli { req: Request[IO] =>
     val validateRequest = getCredentials[IO] andThen getEncodedJwtToken
     validateRequest(req).fold(
       Response[IO](status = Status.Unauthorized).pure[OptionT[IO, ?]]
     ) { jwtToken =>
-      validate(jwtToken, scope)
+      validateWithCertificate(jwtToken, scope, publicKey, privateKey)
+        .flatMap { authenticationData =>
+          service(req)
+        }
+        .handleErrorWith {
+          case err =>
+            Response[IO](status = Status.Unauthorized).pure[OptionT[IO, ?]]
+        }
+    }
+  }
+
+  def jwtAuthenticateWithSecret(secret: String)(
+      service: HttpRoutes[IO],
+      scope: AuthenticationService.AuthenticationScope
+  ): HttpRoutes[IO] = Kleisli { req: Request[IO] =>
+    val validateRequest = getCredentials[IO] andThen getEncodedJwtToken
+    validateRequest(req).fold(
+      Response[IO](status = Status.Unauthorized).pure[OptionT[IO, ?]]
+    ) { jwtToken =>
+      validateWithSecret(jwtToken, scope, secret)
         .flatMap { authenticationData =>
           service(req)
         }
@@ -52,15 +71,23 @@ object AuthenticationMiddleware {
     case _ => none[String]
   }
 
-  def validate(
+  def validateWithCertificate(
       jwtToken: String,
-      scope: AuthenticationService.AuthenticationScope
-  )(
-      implicit publicKey: AuthenticationService.PublicKey,
+      scope: AuthenticationService.AuthenticationScope,
+      publicKey: AuthenticationService.PublicKey,
       privateKey: AuthenticationService.PrivateKey
   ): OptionT[IO, AuthenticationService.AuthenticationData] =
     OptionT.liftF(
       JwtAuthenticationService.validate(jwtToken, scope, publicKey, privateKey)
+    )
+
+  def validateWithSecret(
+      jwtToken: String,
+      scope: AuthenticationService.AuthenticationScope,
+      secret: String
+  ): OptionT[IO, AuthenticationService.AuthenticationData] =
+    OptionT.liftF(
+      JwtAuthenticationService.validate(jwtToken, scope, secret)
     )
 
 }
