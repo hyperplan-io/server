@@ -22,25 +22,24 @@ import com.hyperplan.infrastructure.auth.AuthenticationService._
 import com.hyperplan.infrastructure.serialization._
 import com.hyperplan.infrastructure.serialization.auth._
 
-class AuthenticationController(
-    adminCredentials: AdminCredentials,
-    publicKey: PublicKey,
-    privateKey: PrivateKey
-) extends Http4sDsl[IO]
-    with IOLogging {
+import cats.MonadError
+import com.hyperplan.infrastructure.auth.AuthenticationService
+import com.foundaml.server.controllers.requests.PostAuthenticationRequest
 
-  import cats.MonadError
-  import com.hyperplan.infrastructure.auth.AuthenticationService
-  import com.foundaml.server.controllers.requests.PostAuthenticationRequest
+import com.hyperplan.infrastructure.auth.JwtAuthenticationService
+import java.time.Instant
+import java.time.temporal.ChronoUnit
+import org.http4s.headers.Authorization
+import org.http4s.Status
+import org.http4s.Response
+import org.http4s.Challenge
+import cats.data.NonEmptyList
 
-  import com.hyperplan.infrastructure.auth.JwtAuthenticationService
-  import java.time.Instant
-  import java.time.temporal.ChronoUnit
-  import org.http4s.headers.Authorization
-  import org.http4s.Status
-  import org.http4s.Response
-  import org.http4s.Challenge
-  import cats.data.NonEmptyList
+trait AuthenticationController extends Http4sDsl[IO] with IOLogging {
+
+  def generateToken: IO[AuthenticationService.AuthenticationResponse]
+  def adminCredentials: AdminCredentials
+
   val service: HttpRoutes[IO] = {
     HttpRoutes.of[IO] {
       case req @ POST -> Root =>
@@ -56,15 +55,7 @@ class AuthenticationController(
           )
           authResponse <- correctCredentials match {
             case CorrectCredentials =>
-              JwtAuthenticationService.generateToken(
-                AuthenticationData(
-                  List(AdminScope, PredictionScope),
-                  "foundaml",
-                  Instant.now.plus(1, ChronoUnit.HOURS).some
-                ),
-                publicKey,
-                privateKey
-              )
+              generateToken
             case InCorrectCredentials =>
               IO.raiseError(InvalidCredentials)
           }
@@ -93,5 +84,38 @@ class AuthenticationController(
           }
     }
   }
+}
 
+class CertificateAuthenticationController(
+    publicKey: PublicKey,
+    privateKey: PrivateKey,
+    issuer: String,
+    val adminCredentials: AdminCredentials
+) extends AuthenticationController {
+  def generateToken =
+    JwtAuthenticationService.generateToken(
+      AuthenticationData(
+        List(AdminScope, PredictionScope),
+        issuer,
+        Instant.now.plus(1, ChronoUnit.HOURS).some
+      ),
+      publicKey,
+      privateKey
+    )
+}
+
+class SecretAuthenticationController(
+    secret: String,
+    issuer: String,
+    val adminCredentials: AdminCredentials
+) extends AuthenticationController {
+  def generateToken =
+    JwtAuthenticationService.generateToken(
+      AuthenticationData(
+        List(AdminScope, PredictionScope),
+        issuer,
+        Instant.now.plus(1, ChronoUnit.HOURS).some
+      ),
+      secret
+    )
 }

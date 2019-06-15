@@ -12,6 +12,7 @@ import com.hyperplan.domain.repositories.{
   ProjectsRepository
 }
 import com.hyperplan.domain.services._
+import com.hyperplan.infrastructure.auth.AuthenticationService._
 import com.hyperplan.infrastructure.logging.IOLogging
 import com.hyperplan.infrastructure.metrics.PrometheusService
 import com.hyperplan.infrastructure.storage.PostgresqlService
@@ -97,12 +98,18 @@ object Main extends IOApp with IOLogging {
       _ <- logger.info(s"Starting http server on port $port")
       publicKeyRaw = config.encryption.publicKey
       privateKeyRaw = config.encryption.privateKey
-      publicKey <- JwtAuthenticationService.publicKey(publicKeyRaw)
-      privateKey <- JwtAuthenticationService.privateKey(privateKeyRaw)
+      publicKey <- publicKeyRaw.fold[IO[Option[PublicKey]]](IO.pure(None))(
+        publicKey => JwtAuthenticationService.publicKey(publicKey).map(_.some)
+      )
+      privateKey <- privateKeyRaw.fold[IO[Option[PrivateKey]]](IO.pure(None))(
+        privateKey =>
+          JwtAuthenticationService.privateKey(privateKey).map(_.some)
+      )
       _ <- logger.info("encryption keys initialized")
       _ <- {
         implicit val publicKeyImplicit = publicKey
         implicit val privateKeyImplicit = privateKey
+        implicit val secret = config.encryption.secret
         implicit val configImplicit = config
         Server
           .stream(
@@ -115,8 +122,10 @@ object Main extends IOApp with IOLogging {
             projectsRepository,
             port
           )
-          .compile
-          .drain
+          .fold(
+            err => IO.raiseError(err),
+            _.compile.drain
+          )
       }
     } yield ()
 
@@ -130,7 +139,7 @@ object Main extends IOApp with IOLogging {
 
   def program(config: ApplicationConfig) =
     for {
-      _ <- logger.info("Starting Foundaml server")
+      _ <- logger.info("Starting Hyperplan server")
       _ <- logger.info("Connecting to database")
       transactor = PostgresqlService(
         config.database.postgresql.host,

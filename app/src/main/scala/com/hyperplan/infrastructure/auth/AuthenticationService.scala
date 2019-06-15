@@ -3,6 +3,8 @@ package com.hyperplan.infrastructure.auth
 import java.time.Instant
 
 import com.auth0.jwt.JWT
+import com.auth0.jwt.JWTCreator
+
 import cats.effect.IO
 import cats.implicits._
 import java.{util => ju}
@@ -136,8 +138,40 @@ object JwtAuthenticationService extends AuthenticationService {
   def algorithm(
       jwtPublicKey: AuthenticationService.JwtPublicKey,
       jwtPrivateKey: AuthenticationService.JwtPrivateKey
-  ) =
+  ): Algorithm =
     Algorithm.RSA256(jwtPublicKey.key, jwtPrivateKey.key)
+
+  def algorithm(secret: String): Algorithm = Algorithm.HMAC256(secret)
+
+  def tokenWithData(
+      data: AuthenticationService.AuthenticationData
+  ): IO[JWTCreator.Builder] =
+    IO {
+      JWT
+        .create()
+        .withIssuer(data.issuer)
+        .withClaim(
+          "scope",
+          AuthenticationScopeSerializer.encodeJsonListString(data.scope)
+        )
+    }.map { builder =>
+      data.expiresAt.fold(builder)(
+        expiresAt => builder.withExpiresAt(ju.Date.from(expiresAt))
+      )
+    }
+
+  def generateToken(
+      data: AuthenticationService.AuthenticationData,
+      secret: String
+  ) =
+    tokenWithData(data)
+      .flatMap(builder => IO(builder.sign(algorithm(secret))))
+      .map { token =>
+        AuthenticationService.AuthenticationResponse(
+          token,
+          data.scope
+        )
+      }
 
   def generateToken(
       data: AuthenticationService.AuthenticationData,
@@ -149,19 +183,7 @@ object JwtAuthenticationService extends AuthenticationService {
           jwtPublicKey: AuthenticationService.JwtPublicKey,
           jwtPrivateKey: AuthenticationService.JwtPrivateKey
           ) =>
-        IO {
-          JWT
-            .create()
-            .withIssuer(data.issuer)
-            .withClaim(
-              "scope",
-              AuthenticationScopeSerializer.encodeJsonListString(data.scope)
-            )
-        }.map { builder =>
-            data.expiresAt.fold(builder)(
-              expiresAt => builder.withExpiresAt(ju.Date.from(expiresAt))
-            )
-          }
+        tokenWithData(data)
           .flatMap(
             builder => IO(builder.sign(algorithm(jwtPublicKey, jwtPrivateKey)))
           )
@@ -176,6 +198,60 @@ object JwtAuthenticationService extends AuthenticationService {
         IO.raiseError(AuthenticationService.IncompatibleKey)
     }
 
+  def validateWithAlgorithm(
+      token: String,
+      requiredScope: AuthenticationService.AuthenticationScope,
+      algorithm: Algorithm
+  ): IO[AuthenticationService.AuthenticationData] =
+    IO {
+      JWT
+        .require(algorithm)
+        .build()
+        .verify(token)
+    }.flatMap { decoded =>
+        IO {
+          val issuer = decoded.getIssuer()
+          val expiresAt = Option(decoded.getExpiresAt()).map(_.toInstant())
+          val scope = decoded.getClaim("scope").asString()
+          (scope, issuer, expiresAt)
+        }
+      }
+      .flatMap {
+        case (scopeJson, issuer, expiresAt) =>
+          AuthenticationScopeSerializer
+            .decodeJsonList(scopeJson)
+            .fold[IO[AuthenticationService.AuthenticationData]](
+              err =>
+                IO.raiseError(
+                  new Exception(
+                    s"Token validation failed because ${err.getMessage}"
+                  )
+                ),
+              scope => {
+                if (scope.contains(requiredScope)) {
+                  AuthenticationService
+                    .AuthenticationData(scope, issuer, expiresAt)
+                    .pure[IO]
+                } else {
+                  IO.raiseError(
+                    AuthenticationService.UnauthorizedScope(requiredScope)
+                  )
+                }
+              }
+            )
+      }
+
+  def validate(
+      token: String,
+      requiredScope: AuthenticationService.AuthenticationScope,
+      secret: String
+  ): IO[AuthenticationService.AuthenticationData] =
+    validateWithAlgorithm(
+      token,
+      requiredScope,
+      algorithm(secret)
+    )
+
   def validate(
       token: String,
       requiredScope: AuthenticationService.AuthenticationScope,
@@ -187,38 +263,11 @@ object JwtAuthenticationService extends AuthenticationService {
           jwtPublicKey: AuthenticationService.JwtPublicKey,
           jwtPrivateKey: AuthenticationService.JwtPrivateKey
           ) =>
-        IO {
-          JWT
-            .require(algorithm(jwtPublicKey, jwtPrivateKey))
-            .build()
-            .verify(token)
-        }.flatMap { decoded =>
-            IO {
-              val issuer = decoded.getIssuer()
-              val expiresAt = Option(decoded.getExpiresAt()).map(_.toInstant())
-              val scope = decoded.getClaim("scope").asString()
-              (scope, issuer, expiresAt)
-            }
-          }
-          .flatMap {
-            case (scopeJson, issuer, expiresAt) =>
-              AuthenticationScopeSerializer
-                .decodeJsonList(scopeJson)
-                .fold[IO[AuthenticationService.AuthenticationData]](
-                  err => IO.raiseError(new Exception("")),
-                  scope => {
-                    if (scope.contains(requiredScope)) {
-                      AuthenticationService
-                        .AuthenticationData(scope, issuer, expiresAt)
-                        .pure[IO]
-                    } else {
-                      IO.raiseError(
-                        AuthenticationService.UnauthorizedScope(requiredScope)
-                      )
-                    }
-                  }
-                )
-          }
+        validateWithAlgorithm(
+          token,
+          requiredScope,
+          algorithm(jwtPublicKey, jwtPrivateKey)
+        )
       case _ =>
         IO.raiseError(AuthenticationService.IncompatibleKey)
     }
