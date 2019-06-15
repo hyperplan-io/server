@@ -56,7 +56,8 @@ class PredictionsServiceSpec extends FlatSpec with TestDatabase {
     EncryptionConfig(
       Some(""),
       Some(""),
-      None
+      None,
+      "hyperplan-test"
     ),
     AdminCredentials(
       "username",
