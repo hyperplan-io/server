@@ -221,9 +221,14 @@ class PredictionsService(
         )
     }
     predictionIO.flatMap { prediction =>
-      persistClassificationPrediction(prediction, entityLinks) *> IO.pure(
-        prediction
-      )
+
+      if(config.prediction.storeInPostgresql) {
+        persistClassificationPrediction(prediction, entityLinks) *> IO.pure(
+          prediction
+        )
+      } else {
+        IO.pure(prediction) 
+      }
     }
   }
 
@@ -253,9 +258,11 @@ class PredictionsService(
         )
     }
     predictionIO.flatMap { prediction =>
-      persistRegressionPrediction(prediction, entityLinks) *> IO.pure(
-        prediction
-      )
+      if(config.prediction.storeInPostgresql) {
+        persistRegressionPrediction(prediction, entityLinks) *> IO.pure(prediction)
+      } else {
+        IO.pure(prediction)
+      }
     }
   }
 
