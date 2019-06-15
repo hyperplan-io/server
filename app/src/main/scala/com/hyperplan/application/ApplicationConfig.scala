@@ -40,7 +40,7 @@ case class AdminCredentials(
     password: String
 )
 case class SecurityConfig(
-  protectPredictionRoute: Boolean
+    protectPredictionRoute: Boolean
 )
 case class ApplicationConfig(
     kinesis: KinesisConfig,
