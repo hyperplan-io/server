@@ -89,13 +89,14 @@ trait AuthenticationController extends Http4sDsl[IO] with IOLogging {
 class CertificateAuthenticationController(
     publicKey: PublicKey,
     privateKey: PrivateKey,
+    issuer: String,
     val adminCredentials: AdminCredentials
 ) extends AuthenticationController {
   def generateToken =
     JwtAuthenticationService.generateToken(
       AuthenticationData(
         List(AdminScope, PredictionScope),
-        "hyperplan",
+        issuer,
         Instant.now.plus(1, ChronoUnit.HOURS).some
       ),
       publicKey,
@@ -105,13 +106,14 @@ class CertificateAuthenticationController(
 
 class SecretAuthenticationController(
     secret: String,
+    issuer: String,
     val adminCredentials: AdminCredentials
 ) extends AuthenticationController {
   def generateToken =
     JwtAuthenticationService.generateToken(
       AuthenticationData(
         List(AdminScope, PredictionScope),
-        "hyperplan",
+        issuer,
         Instant.now.plus(1, ChronoUnit.HOURS).some
       ),
       secret

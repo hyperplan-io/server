@@ -93,6 +93,7 @@ object Server {
           new CertificateAuthenticationController(
             publicKey,
             privateKey,
+            config.encryption.issuer,
             config.credentials
           )
         )
@@ -101,6 +102,7 @@ object Server {
           AuthenticationMiddleware.jwtAuthenticateWithSecret(secret),
           new SecretAuthenticationController(
             secret,
+            config.encryption.issuer,
             config.credentials
           )
         )
