@@ -1,7 +1,7 @@
 package com.hyperplan.application
 
 case class PredictionConfig(
-  storeInPostgresql: Boolean
+    storeInPostgresql: Boolean
 )
 
 case class KinesisConfig(
