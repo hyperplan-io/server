@@ -170,20 +170,24 @@ class AlgorithmsService(
               },
               _ => IO.pure(algorithm)
             )
-            _ <- project match {
-              case classificationProject: ClassificationProject =>
-                projectsService.updateProject(
-                  projectId,
-                  None,
-                  Some(DefaultAlgorithm(id))
-                )
-              case regressionProject: RegressionProject =>
-                projectsService.updateProject(
-                  projectId,
-                  None,
-                  Some(DefaultAlgorithm(id))
-                )
+            _ <- if (project.algorithms.isEmpty) {
+              project match {
+                case classificationProject: ClassificationProject =>
+                  projectsService.updateProject(
+                    projectId,
+                    None,
+                    Some(DefaultAlgorithm(id))
+                  )
+                case regressionProject: RegressionProject =>
+                  projectsService.updateProject(
+                    projectId,
+                    None,
+                    Some(DefaultAlgorithm(id))
+                  )
 
+              }
+            } else {
+              IO.unit
             }
           } yield result
         }
