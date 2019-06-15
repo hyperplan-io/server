@@ -1,6 +1,11 @@
 package com.hyperplan.test.domain.services
 
 import cats.effect.{IO, Timer}
+
+import scalacache.Cache
+import com.hyperplan.domain.models.Project
+import scalacache.caffeine.CaffeineCache
+
 import com.hyperplan.application._
 import com.hyperplan.domain.repositories.{
   AlgorithmsRepository,
@@ -86,9 +91,12 @@ class PredictionsServiceSpec extends FlatSpec with TestDatabase {
   val domainService = new DomainService(
     domainRepository
   )
+
+  val projectCache: Cache[Project] = CaffeineCache[Project]
   val projectsService = new ProjectsService(
     projectsRepository,
-    domainService
+    domainService,
+    projectCache
   )
 
   val predictionsService: PredictionsService =
