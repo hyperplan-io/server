@@ -221,7 +221,12 @@ object JwtAuthenticationService extends AuthenticationService {
           AuthenticationScopeSerializer
             .decodeJsonList(scopeJson)
             .fold[IO[AuthenticationService.AuthenticationData]](
-              err => IO.raiseError(new Exception(s"Token validation failed because ${err.getMessage}")),
+              err =>
+                IO.raiseError(
+                  new Exception(
+                    s"Token validation failed because ${err.getMessage}"
+                  )
+                ),
               scope => {
                 if (scope.contains(requiredScope)) {
                   AuthenticationService
