@@ -403,10 +403,10 @@ class PredictionsService(
                 prediction.labels,
                 example
               )
-
-              predictionsRepository
-                .updateClassificationExamples(predictionId, examples)
-                .map(_ => predictionEvent)
+              predictionsRepository.insertClassificationExamples(
+                  predictionId,
+                  example
+              ).map(_ => predictionEvent)
             }
           )
     )
@@ -432,9 +432,10 @@ class PredictionsService(
           prediction.labels,
           example
         )
-        predictionsRepository
-          .updateRegressionExamples(predictionId, examples)
-          .map(_ => predictionEvent)
+        predictionsRepository.insertRegressionExamples(
+          predictionId,
+          example
+       ).map(_ => predictionEvent)
       }
     )
 
@@ -446,24 +447,22 @@ class PredictionsService(
       predictionId: String,
       labelOpt: Option[String],
       valueOpt: Option[Float]
-  ) = {
-    val transaction = for {
-      prediction <- predictionsRepository.read(predictionId)
+  ): IO[PredictionEvent] =
+    for {
+      prediction <- predictionsRepository.transact(predictionsRepository.read(predictionId))
       event: PredictionEvent <- prediction match {
         case prediction: ClassificationPrediction =>
-          addClassificationExample(labelOpt, predictionId, prediction)
-        case prediction: RegressionPrediction =>
-          addRegressionExample(valueOpt, predictionId, prediction)
-      }
-      _ <- AsyncConnectionIO.liftIO(
-        Effect[IO].toIO(
-          publishToStream(
-            event
+          predictionsRepository.transact(
+            addClassificationExample(labelOpt, predictionId, prediction)
           )
+        case prediction: RegressionPrediction =>
+          predictionsRepository.transact(
+            addRegressionExample(valueOpt, predictionId, prediction)
+          )
+      }
+      _ <- publishToStream(
+            event
         )
-      )
     } yield event
-    predictionsRepository.transact(transaction)
-  }
 
 }

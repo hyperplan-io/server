@@ -84,16 +84,14 @@ class PredictionsRepository(implicit xa: Transactor[IO]) extends IOLogging {
       algorithm_id,
       type,
       features,
-      labels,
-      examples
+      labels
     ) VALUES(
       ${prediction.id},
       ${prediction.projectId},
       ${prediction.algorithmId},
       ${prediction.predictionType},
       ${prediction.features},
-      ${prediction.labels},
-      ${prediction.examples}
+      ${prediction.labels}
       )""".update
 
   def insertClassificationPrediction(
@@ -114,16 +112,14 @@ class PredictionsRepository(implicit xa: Transactor[IO]) extends IOLogging {
       algorithm_id,
       type,
       features,
-      labels,
-      examples
+      labels
     ) VALUES(
       ${prediction.id},
       ${prediction.projectId},
       ${prediction.algorithmId},
       ${prediction.predictionType},
       ${prediction.features},
-      ${prediction.labels},
-      ${prediction.examples}
+      ${prediction.labels}
     )""".update
 
   def insertRegressionPrediction(
@@ -134,6 +130,41 @@ class PredictionsRepository(implicit xa: Transactor[IO]) extends IOLogging {
         case sqlstate.class23.UNIQUE_VIOLATION =>
           PredictionAlreadyExist(prediction.id)
       }
+  
+  def insertClassificationExamples(
+    predictionId: String,
+    example: String
+  ): ConnectionIO[Int] =  
+    insertClassificationExamplesQuery(predictionId, example).run
+
+  def insertClassificationExamplesQuery(
+    predictionId: String,
+    example: String
+  ): doobie.Update0 =
+    sql"""INSERT INTO examples(
+      prediction_id,
+      data
+    ) VALUES(
+      ${predictionId},
+      ${example}
+    )""".update
+
+  def insertRegressionExamples(
+    predictionId: String,
+    example: Float 
+  ): ConnectionIO[Int] =  
+    insertRegressionExamplesQuery(predictionId, example).run
+  def insertRegressionExamplesQuery(
+    predictionId: String,
+    example: Float
+  ): doobie.Update0 =
+    sql"""INSERT INTO examples(
+      prediction_id,
+      data
+    ) VALUES(
+      ${predictionId},
+      ${example}
+    )""".update
 
   def insertEntityLink(
       predictionId: String,
