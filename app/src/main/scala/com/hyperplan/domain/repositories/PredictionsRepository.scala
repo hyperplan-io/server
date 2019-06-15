@@ -157,6 +157,7 @@ class PredictionsRepository(implicit xa: Transactor[IO]) extends IOLogging {
       FROM predictions
       LEFT JOIN entity_links ON prediction_id = id
       WHERE id=$predictionId
+      FOR UPDATE
       """
       .query[PredictionData]
 
