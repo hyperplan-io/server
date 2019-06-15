@@ -12,9 +12,13 @@ import doobie.util.invariant.UnexpectedEnd
 import cats.effect.IO
 import cats.implicits._
 
+import scalacache.Cache
+import scalacache.CatsEffect.modes._
+
 class ProjectsService(
     projectsRepository: ProjectsRepository,
-    domainService: DomainService
+    domainService: DomainService,
+    cache: Cache[Project]
 ) extends IOLogging {
 
   val regex = "[0-9a-zA-Z-_]*"
@@ -85,36 +89,49 @@ class ProjectsService(
       } yield result
 
     }
+  }.flatMap { project =>
+    cache.remove[IO](project.id).map(_ => project)
   }
 
   def updateProject(
       projectId: String,
       name: Option[String],
       policy: Option[AlgorithmPolicy]
-  ): IO[Int] = projectsRepository.transact(
+  ): IO[Int] =
     projectsRepository
-      .read(projectId)
-      .map {
-        case project: ClassificationProject =>
-          project.copy(
-            name = name.getOrElse(project.name),
-            policy = policy.getOrElse(project.policy)
-          )
-        case project: RegressionProject =>
-          project.copy(
-            name = name.getOrElse(project.name),
-            policy = policy.getOrElse(project.policy)
-          )
+      .transact(
+        projectsRepository
+          .read(projectId)
+          .map {
+            case project: ClassificationProject =>
+              project.copy(
+                name = name.getOrElse(project.name),
+                policy = policy.getOrElse(project.policy)
+              )
+            case project: RegressionProject =>
+              project.copy(
+                name = name.getOrElse(project.name),
+                policy = policy.getOrElse(project.policy)
+              )
+          }
+          .flatMap { project =>
+            projectsRepository.update(project)
+          }
+      )
+      .flatMap { count =>
+        cache.remove[IO](projectId).map(_ => count)
       }
-      .flatMap { project =>
-        projectsRepository.update(project)
-      }
-  )
 
   def readProjects =
     projectsRepository.transact(projectsRepository.readAll)
 
-  def readProject(id: String) =
-    projectsRepository.transact(projectsRepository.read(id))
+  def readProject(id: String): IO[Project] =
+    cache.get[IO](id).flatMap { cacheElement =>
+      cacheElement.fold(
+        projectsRepository.transact(projectsRepository.read(id))
+      )(
+        project => IO.pure(project)
+      )
+    }
 
 }

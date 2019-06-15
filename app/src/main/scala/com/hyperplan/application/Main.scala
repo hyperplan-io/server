@@ -3,6 +3,9 @@ package com.hyperplan.application
 import cats.effect.{ExitCode, IO, IOApp}
 import cats.implicits._
 
+import scalacache._
+import scalacache.caffeine._
+
 import pureconfig.generic.auto._
 
 import com.hyperplan.domain.repositories.{
@@ -42,6 +45,7 @@ object Main extends IOApp with IOLogging {
     )
 
   import com.hyperplan.infrastructure.auth.JwtAuthenticationService
+  import com.hyperplan.domain.models.Project
   def databaseConnected(
       config: ApplicationConfig
   )(implicit xa: doobie.Transactor[IO]) =
@@ -57,6 +61,7 @@ object Main extends IOApp with IOLogging {
       } else {
         logger.info("prediction route is not protected")
       }
+      projectCache: Cache[Project] = CaffeineCache[Project]
       projectsRepository = new ProjectsRepository
       algorithmsRepository = new AlgorithmsRepository
       predictionsRepository = new PredictionsRepository
@@ -82,7 +87,8 @@ object Main extends IOApp with IOLogging {
       )
       projectsService = new ProjectsService(
         projectsRepository,
-        domainService
+        domainService,
+        projectCache
       )
       predictionsService = new PredictionsService(
         predictionsRepository,
