@@ -1,5 +1,9 @@
 package com.hyperplan.application
 
+case class PredictionConfig(
+    storeInPostgresql: Boolean
+)
+
 case class KinesisConfig(
     enabled: Boolean,
     predictionsStream: String,
@@ -41,5 +45,6 @@ case class ApplicationConfig(
     kafka: KafkaConfig,
     database: DatabaseConfig,
     encryption: EncryptionConfig,
-    credentials: AdminCredentials
+    credentials: AdminCredentials,
+    prediction: PredictionConfig
 )

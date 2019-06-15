@@ -221,9 +221,18 @@ class PredictionsService(
         )
     }
     predictionIO.flatMap { prediction =>
-      persistClassificationPrediction(prediction, entityLinks) *> IO.pure(
-        prediction
-      )
+      if (config.prediction.storeInPostgresql) {
+        logger.debug(
+          s"storing prediction ${prediction.id} in postgresql"
+        ) *> persistClassificationPrediction(prediction, entityLinks) *> IO
+          .pure(
+            prediction
+          )
+      } else {
+        logger.debug(
+          s"storing predictions in postgresql in disabled, ignoring ${prediction.id}"
+        ) *> IO.pure(prediction)
+      }
     }
   }
 
@@ -253,9 +262,17 @@ class PredictionsService(
         )
     }
     predictionIO.flatMap { prediction =>
-      persistRegressionPrediction(prediction, entityLinks) *> IO.pure(
-        prediction
-      )
+      if (config.prediction.storeInPostgresql) {
+        logger.debug(
+          s"storing prediction ${prediction.id} in postgresql"
+        ) *> persistRegressionPrediction(prediction, entityLinks) *> IO.pure(
+          prediction
+        )
+      } else {
+        logger.debug(
+          s"storing predictions in postgresql in disabled, ignoring ${prediction.id}"
+        ) *> IO.pure(prediction)
+      }
     }
   }
 

@@ -62,6 +62,9 @@ class PredictionsServiceSpec extends FlatSpec with TestDatabase {
     AdminCredentials(
       "username",
       "password"
+    ),
+    PredictionConfig(
+      true
     )
   )
 
