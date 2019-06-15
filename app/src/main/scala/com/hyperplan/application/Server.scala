@@ -121,10 +121,14 @@ object Server {
           .withHttpApp(
             Router(
               "/predictions" -> (
-                authMiddleware(
-                  predictionsController.service,
-                  AuthenticationService.PredictionScope
-                )
+                if (config.security.protectPredictionRoute) {
+                  authMiddleware(
+                    predictionsController.service,
+                    AuthenticationService.PredictionScope
+                  )
+                } else {
+                  predictionsController.service
+                }
               ),
               "/projects" -> (
                 authMiddleware(

@@ -39,6 +39,9 @@ case class AdminCredentials(
     username: String,
     password: String
 )
+case class SecurityConfig(
+    protectPredictionRoute: Boolean
+)
 case class ApplicationConfig(
     kinesis: KinesisConfig,
     gcp: GCPConfig,
@@ -46,5 +49,6 @@ case class ApplicationConfig(
     database: DatabaseConfig,
     encryption: EncryptionConfig,
     credentials: AdminCredentials,
-    prediction: PredictionConfig
+    prediction: PredictionConfig,
+    security: SecurityConfig
 )

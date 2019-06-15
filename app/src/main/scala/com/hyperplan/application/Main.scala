@@ -52,6 +52,11 @@ object Main extends IOApp with IOLogging {
       //_ <- KamonSystemMonitorService.start
       _ <- PostgresqlService.initSchema
       _ <- logger.debug("SQL scripts have been runned successfully")
+      _ <- if (config.security.protectPredictionRoute) {
+        logger.info("prediction route is token protected")
+      } else {
+        logger.info("prediction route is not protected")
+      }
       projectsRepository = new ProjectsRepository
       algorithmsRepository = new AlgorithmsRepository
       predictionsRepository = new PredictionsRepository

@@ -65,6 +65,9 @@ class PredictionsServiceSpec extends FlatSpec with TestDatabase {
     ),
     PredictionConfig(
       true
+    ),
+    SecurityConfig(
+      true
     )
   )
 
