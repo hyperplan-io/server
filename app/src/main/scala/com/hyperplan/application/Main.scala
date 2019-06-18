@@ -26,6 +26,8 @@ import com.hyperplan.infrastructure.streaming.{
 }
 
 import scala.util.{Left, Right}
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
 
 object Main extends IOApp with IOLogging {
 
@@ -67,10 +69,11 @@ object Main extends IOApp with IOLogging {
       predictionsRepository = new PredictionsRepository
       domainRepository = new DomainRepository
       _ = logger.info("Starting GCP Pubsub service")
+      implicit0(actorSystem: ActorSystem) <- IO(ActorSystem())
+      implicit0(actorMaterializer: ActorMaterializer) <- IO(ActorMaterializer())
       pubSubService <- if (config.gcp.pubsub.enabled) {
         logger.info("Starting GCP PubSub service") *> PubSubService(
-          config.gcp.projectId,
-          config.gcp.pubsub.predictionsTopicId
+          config.gcp.projectId
         ).map(Some(_))
       } else {
         IO.pure(None)

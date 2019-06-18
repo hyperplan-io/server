@@ -7,5 +7,6 @@ case class PostProjectRequest(
     name: String,
     problem: ProblemType,
     featuresId: String,
-    labelsId: Option[String]
+    labelsId: Option[String],
+    topic: Option[String]
 )

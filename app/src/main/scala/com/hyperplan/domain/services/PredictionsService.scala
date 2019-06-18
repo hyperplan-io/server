@@ -77,9 +77,11 @@ class PredictionsService(
       } yield count
     )
 
-  def publishToStream(prediction: PredictionEvent): IO[Unit] =
+  def publishToStream(prediction: PredictionEvent, streamConfiguration: Option[StreamConfiguration]): IO[Unit] =
     (for {
-      _ <- pubSubService.fold[IO[Unit]](IO.unit)(_.publish(prediction))
+      _ <- pubSubService.fold[IO[Unit]](IO.unit)(
+        _.publish(prediction, streamConfiguration.fold(config.gcp.pubsub.predictionsTopicId)(_.topic))
+      )
       _ <- kafkaService.fold[IO[Unit]](IO.unit)(
         _.publish(prediction, prediction.projectId)
       )
@@ -449,6 +451,11 @@ class PredictionsService(
   ) = {
     val transaction = for {
       prediction <- predictionsRepository.read(predictionId)
+      project <- AsyncConnectionIO.liftIO(
+        Effect[IO].toIO(
+          projectsService.readProject(prediction.projectId) 
+        )
+      )
       event: PredictionEvent <- prediction match {
         case prediction: ClassificationPrediction =>
           addClassificationExample(labelOpt, predictionId, prediction)
@@ -458,7 +465,8 @@ class PredictionsService(
       _ <- AsyncConnectionIO.liftIO(
         Effect[IO].toIO(
           publishToStream(
-            event
+            event,
+            project.configuration.streamConfiguration
           )
         )
       )
