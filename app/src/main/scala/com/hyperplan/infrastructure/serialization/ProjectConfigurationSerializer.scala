@@ -6,14 +6,37 @@ import io.circe.syntax._
 import io.circe.parser._
 import cats.syntax.functor._
 import io.circe.{Decoder, Encoder}
+
 object ProjectConfigurationSerializer {
+
+  implicit val dataStreamEncoder: Encoder[StreamConfiguration] =
+    (dataStream: StreamConfiguration) =>
+      Json.obj(
+        "topic" -> Json.fromString(dataStream.topic)
+      )
+
+  implicit val dataStreamDecoder: Decoder[StreamConfiguration] =
+    (cursor: HCursor) =>
+      for {
+        topic <- cursor.downField("topic").as[String]
+      } yield StreamConfiguration(topic)
 
   implicit val classificationConfigurationEncoder
       : Encoder[ClassificationConfiguration] =
-    (a: ClassificationConfiguration) =>
+    (configuration: ClassificationConfiguration) =>
       Json.obj(
-        ("features", FeaturesConfigurationSerializer.encoder(a.features)),
-        ("labels", LabelsConfigurationSerializer.encodeJson(a.labels))
+        (
+          "features",
+          FeaturesConfigurationSerializer.encoder(configuration.features)
+        ),
+        (
+          "labels",
+          LabelsConfigurationSerializer.encodeJson(configuration.labels)
+        ),
+        (
+          "dataStream",
+          configuration.dataStream.fold(Json.Null)(_.asJson)
+        )
       )
 
   implicit val classificationConfigurationDecoder
@@ -26,15 +49,25 @@ object ProjectConfigurationSerializer {
         labels <- c
           .downField("labels")
           .as[LabelsConfiguration](LabelsConfigurationSerializer.decoder)
+        dataStream <- c
+          .downField("dataStream")
+          .as[Option[StreamConfiguration]]
       } yield {
-        ClassificationConfiguration(featuresConfiguration, labels)
+        ClassificationConfiguration(
+          featuresConfiguration,
+          labels,
+          dataStream
+        )
       }
 
   implicit val regressionConfigurationEncoder
       : Encoder[RegressionConfiguration] =
-    (a: RegressionConfiguration) =>
+    (configuration: RegressionConfiguration) =>
       Json.obj(
-        ("features", FeaturesConfigurationSerializer.encoder(a.features))
+        (
+          "features",
+          FeaturesConfigurationSerializer.encoder(configuration.features)
+        )
       )
 
   implicit val regressionConfigurationDecoder
@@ -44,8 +77,11 @@ object ProjectConfigurationSerializer {
         featuresConfiguration <- c
           .downField("features")
           .as[FeaturesConfiguration](FeaturesConfigurationSerializer.decoder)
+        dataStream <- c
+          .downField("dataStream")
+          .as[Option[StreamConfiguration]]
       } yield {
-        RegressionConfiguration(featuresConfiguration)
+        RegressionConfiguration(featuresConfiguration, dataStream)
       }
 
   implicit val encoder: Encoder[ProjectConfiguration] = Encoder.instance {

@@ -38,6 +38,8 @@ class ProjectsService(
       projectRequest: PostProjectRequest
   ): IO[Project] = {
 
+    val streamConfiguration =
+      projectRequest.topic.map(topic => StreamConfiguration(topic))
     val featuresIO = domainService.readFeatures(projectRequest.featuresId)
     ((projectRequest.problem, projectRequest.labelsId) match {
       case (Classification, Some(labelsId)) =>
@@ -48,7 +50,8 @@ class ProjectsService(
             projectRequest.name,
             ClassificationConfiguration(
               features,
-              labels
+              labels,
+              streamConfiguration
             ),
             Nil,
             NoAlgorithm()
@@ -60,7 +63,8 @@ class ProjectsService(
             projectRequest.id,
             projectRequest.name,
             RegressionConfiguration(
-              features
+              features,
+              streamConfiguration
             ),
             Nil,
             NoAlgorithm()

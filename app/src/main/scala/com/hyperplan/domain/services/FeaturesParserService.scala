@@ -17,12 +17,12 @@ object FeaturesParserService {
   def parseFeatures(configuration: ProjectConfiguration, hcursor: Json)(
       implicit domainService: DomainService
   ): IO[Features] = configuration match {
-    case ClassificationConfiguration(featuresConfiguration, _) =>
+    case ClassificationConfiguration(featuresConfiguration, _, _) =>
       parseFeatures(
         featuresConfiguration,
         hcursor.hcursor.downField("features")
       )
-    case RegressionConfiguration(featuresConfiguration) =>
+    case RegressionConfiguration(featuresConfiguration, _) =>
       parseFeatures(
         featuresConfiguration,
         hcursor.hcursor.downField("features")

@@ -7,10 +7,13 @@ case class PredictionConfig(
 case class KinesisConfig(
     enabled: Boolean,
     predictionsStream: String,
-    examplesStream: String
+    examplesStream: String,
+    region: String
 )
 case class GCPConfig(
     projectId: String,
+    privateKey: String,
+    clientEmail: String,
     pubsub: PubSubConfig
 )
 case class KafkaConfig(

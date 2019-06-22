@@ -2,6 +2,7 @@ val Http4sVersion = "0.20.0"
 val Specs2Version = "4.1.0"
 val circeVersion = "0.11.1"
 val DoobieVersion = "0.6.0"
+val akkaStreamVersion = "1.0.2"
 
 lazy val root = (project in file("."))
   .settings(
@@ -28,6 +29,9 @@ lazy val root = (project in file("."))
         "-feature",
         "-Xfatal-warnings"
       ),
+      fork in run := true,
+      autoCompilerPlugins := true,
+      addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.0"),
       libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-blaze-server" % Http4sVersion,
       "org.http4s" %% "http4s-blaze-client" % Http4sVersion,
@@ -48,14 +52,16 @@ lazy val root = (project in file("."))
       "org.tpolecat" %% "doobie-postgres" % DoobieVersion,
       "org.tpolecat" %% "doobie-h2" % DoobieVersion % "test",
       "org.tpolecat" %% "doobie-scalatest" % DoobieVersion % "test",
+
+      "com.lightbend.akka" %% "akka-stream-alpakka-google-cloud-pub-sub" % akkaStreamVersion,
+      "com.lightbend.akka" %% "akka-stream-alpakka-kinesis" % akkaStreamVersion,
+      "com.typesafe.akka" %% "akka-testkit" % "2.5.23" % Test,
+
       "com.github.pureconfig" %% "pureconfig" % "0.10.2",
       "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
+
       "ch.qos.logback" % "logback-classic" % "1.2.3",
-      "com.google.cloud" % "google-cloud-pubsub" % "1.66.0" excludeAll (
-        ExclusionRule(organization = "com.fasterxml.jackson.core"),
-        ExclusionRule(organization = "com.fasterxml.jackson.dataformat"),
-        ExclusionRule(organization = "org.jboss.logging")
-      ),
+
       "co.fs2" %% "fs2-core" % "1.0.4",
       "co.fs2" %% "fs2-io" % "1.0.4",
       "com.ovoenergy" %% "fs2-kafka" % "0.19.9",

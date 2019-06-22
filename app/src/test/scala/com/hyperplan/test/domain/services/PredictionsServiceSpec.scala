@@ -27,16 +27,40 @@ import com.hyperplan.test.TestDatabase
 import com.hyperplan.test.TestDatabase
 import org.scalatest._
 
+import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
+
 import scala.concurrent.ExecutionContext
+import akka.testkit.TestKit
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
+import akka.testkit.ImplicitSender
 
-class PredictionsServiceSpec extends FlatSpec with TestDatabase {
+class PredictionsServiceSpec()
+    extends TestKit(ActorSystem("test"))
+    with ImplicitSender
+    with WordSpecLike
+    with Matchers
+    with TestDatabase
+    with BeforeAndAfterAll {
 
+  override def afterAll: Unit = {
+    TestKit.shutdownActorSystem(system)
+  }
+
+  implicit val mat = ActorMaterializer()
   implicit val timer: Timer[IO] = IO.timer(ExecutionContext.global)
 
   val config = ApplicationConfig(
-    KinesisConfig(enabled = false, "predictionsStream", "examplesStream"),
+    KinesisConfig(
+      enabled = false,
+      "predictionsStream",
+      "examplesStream",
+      "test-region"
+    ),
     GCPConfig(
       "myProjectId",
+      "privateKey",
+      "clientEmail",
       PubSubConfig(
         enabled = false,
         "myTopic"
@@ -84,7 +108,7 @@ class PredictionsServiceSpec extends FlatSpec with TestDatabase {
   val kinesisService: KinesisService =
     KinesisService("fake-region").unsafeRunSync()
   val pubSubService: PubSubService =
-    PubSubService("myProjectId", "myTopic").unsafeRunSync()
+    PubSubService("myProjectId", "privateKey", "clientEmail").unsafeRunSync()
   val kafkaService: KafkaService =
     KafkaService(config.kafka.topic, config.kafka.bootstrapServers)
       .unsafeRunSync()
@@ -103,7 +127,7 @@ class PredictionsServiceSpec extends FlatSpec with TestDatabase {
     new PredictionsService(
       predictionsRepository,
       projectsService,
-      kinesisService,
+      Some(kinesisService),
       Some(pubSubService),
       Some(kafkaService),
       config

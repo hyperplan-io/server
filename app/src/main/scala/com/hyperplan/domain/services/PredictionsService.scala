@@ -39,7 +39,7 @@ import cats.effect.Timer
 class PredictionsService(
     predictionsRepository: PredictionsRepository,
     projectsService: ProjectsService,
-    kinesisService: KinesisService,
+    kinesisService: Option[KinesisService],
     pubSubService: Option[PubSubService],
     kafkaService: Option[KafkaService],
     config: ApplicationConfig
@@ -77,28 +77,36 @@ class PredictionsService(
       } yield count
     )
 
-  def publishToStream(prediction: PredictionEvent): IO[Unit] =
+  def publishToStream(
+      prediction: PredictionEvent,
+      streamConfiguration: Option[StreamConfiguration]
+  ): IO[Unit] =
     (for {
-      _ <- pubSubService.fold[IO[Unit]](IO.unit)(_.publish(prediction))
+      _ <- pubSubService.fold[IO[Seq[String]]](IO.pure(Seq.empty))(
+        _.publish(
+          prediction,
+          streamConfiguration
+            .fold(config.gcp.pubsub.predictionsTopicId)(_.topic)
+        )
+      )
       _ <- kafkaService.fold[IO[Unit]](IO.unit)(
         _.publish(prediction, prediction.projectId)
       )
-      _ <- publishPredictionEventToKinesis(prediction)
+      _ <- kinesisService.fold[IO[Unit]](IO.unit)(
+        _.put(
+          prediction,
+          streamConfiguration.fold(
+            config.kinesis.predictionsStream
+          )(_.topic),
+          prediction.projectId
+        )
+      )
     } yield ()).handleErrorWith {
       case err =>
         logger.warn(
           s"An occurred occurred when publishing data, ${err.getMessage}"
         ) *> IO.unit
     }
-
-  def publishPredictionEventToKinesis(prediction: PredictionEvent) =
-    if (config.kinesis.enabled) {
-      kinesisService.put(
-        prediction,
-        config.kinesis.predictionsStream,
-        prediction.projectId
-      )(PredictionEventSerializer.encoder)
-    } else IO.unit
 
   def noAlgorithm(): IO[Prediction] = {
     val message = "No algorithms are setup"
@@ -449,6 +457,11 @@ class PredictionsService(
   ) = {
     val transaction = for {
       prediction <- predictionsRepository.read(predictionId)
+      project <- AsyncConnectionIO.liftIO(
+        Effect[IO].toIO(
+          projectsService.readProject(prediction.projectId)
+        )
+      )
       event: PredictionEvent <- prediction match {
         case prediction: ClassificationPrediction =>
           addClassificationExample(labelOpt, predictionId, prediction)
@@ -458,7 +471,8 @@ class PredictionsService(
       _ <- AsyncConnectionIO.liftIO(
         Effect[IO].toIO(
           publishToStream(
-            event
+            event,
+            project.configuration.dataStream
           )
         )
       )
