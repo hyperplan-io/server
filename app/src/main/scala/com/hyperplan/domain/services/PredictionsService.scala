@@ -39,7 +39,7 @@ import cats.effect.Timer
 class PredictionsService(
     predictionsRepository: PredictionsRepository,
     projectsService: ProjectsService,
-    kinesisService: KinesisService,
+    kinesisService: Option[KinesisService],
     pubSubService: Option[PubSubService],
     kafkaService: Option[KafkaService],
     config: ApplicationConfig
@@ -92,22 +92,21 @@ class PredictionsService(
       _ <- kafkaService.fold[IO[Unit]](IO.unit)(
         _.publish(prediction, prediction.projectId)
       )
-      _ <- publishPredictionEventToKinesis(prediction)
+      _ <- kinesisService.fold[IO[Unit]](IO.unit)(
+        _.put(
+          prediction,
+          streamConfiguration.fold(
+            config.kinesis.predictionsStream
+          )(_.topic),
+          prediction.projectId
+        )
+      )
     } yield ()).handleErrorWith {
       case err =>
         logger.warn(
           s"An occurred occurred when publishing data, ${err.getMessage}"
         ) *> IO.unit
     }
-
-  def publishPredictionEventToKinesis(prediction: PredictionEvent) =
-    if (config.kinesis.enabled) {
-      kinesisService.put(
-        prediction,
-        config.kinesis.predictionsStream,
-        prediction.projectId
-      )(PredictionEventSerializer.encoder)
-    } else IO.unit
 
   def noAlgorithm(): IO[Prediction] = {
     val message = "No algorithms are setup"

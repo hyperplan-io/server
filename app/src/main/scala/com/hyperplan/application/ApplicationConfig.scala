@@ -7,7 +7,8 @@ case class PredictionConfig(
 case class KinesisConfig(
     enabled: Boolean,
     predictionsStream: String,
-    examplesStream: String
+    examplesStream: String,
+    region: String
 )
 case class GCPConfig(
     projectId: String,

@@ -79,7 +79,9 @@ object Main extends IOApp with IOLogging {
       } else {
         IO.pure(None)
       }
-      kinesisService <- KinesisService("us-east-2")
+      kinesisService <- if (config.kinesis.enabled) {
+        KinesisService(config.kinesis.region).map(_.some)
+      } else IO.pure(None)
       kafkaService <- if (config.kafka.enabled) {
         KafkaService(config.kafka.topic, config.kafka.bootstrapServers)
           .map(Some(_))
