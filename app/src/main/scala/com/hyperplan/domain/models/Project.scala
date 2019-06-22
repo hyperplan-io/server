@@ -1,18 +1,18 @@
 package com.hyperplan.domain.models
 
 sealed trait ProjectConfiguration {
-  val streamConfiguration: Option[StreamConfiguration]
+  val dataStream: Option[StreamConfiguration]
 }
 
 case class ClassificationConfiguration(
     features: FeaturesConfiguration,
     labels: LabelsConfiguration,
-    streamConfiguration: Option[StreamConfiguration]
+    dataStream: Option[StreamConfiguration]
 ) extends ProjectConfiguration
 
 case class RegressionConfiguration(
     features: FeaturesConfiguration,
-    streamConfiguration: Option[StreamConfiguration]
+    dataStream: Option[StreamConfiguration]
 ) extends ProjectConfiguration
 
 case class StreamConfiguration(

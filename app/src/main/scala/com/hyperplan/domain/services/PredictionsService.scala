@@ -472,7 +472,7 @@ class PredictionsService(
         Effect[IO].toIO(
           publishToStream(
             event,
-            project.configuration.streamConfiguration
+            project.configuration.dataStream
           )
         )
       )

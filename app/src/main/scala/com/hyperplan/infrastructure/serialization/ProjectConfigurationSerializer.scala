@@ -35,7 +35,7 @@ object ProjectConfigurationSerializer {
         ),
         (
           "streamConfiguration",
-          configuration.streamConfiguration.fold(Json.Null)(_.asJson)
+          configuration.dataStream.fold(Json.Null)(_.asJson)
         )
       )
 
