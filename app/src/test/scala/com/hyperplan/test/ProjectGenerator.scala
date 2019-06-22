@@ -62,7 +62,8 @@ object ProjectGenerator {
             ),
             "Either class1, class2 or class3"
           )
-        )
+        ),
+        None
       ),
       algorithms.getOrElse(List(AlgorithmGenerator.withLocalBackend())),
       DefaultAlgorithm(defaultAlgorithmId)

@@ -39,7 +39,8 @@ class ProjectSerializerSpec
           Set(""),
           ""
         )
-      )
+      ),
+      None
     )
     val project = ClassificationProject(
       projectId,
