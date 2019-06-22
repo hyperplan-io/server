@@ -1,0 +1,21 @@
+<configuration>
+				<conversionRule conversionWord="traceID" converterClass="kamon.logback.LogbackTraceIDConverter" />
+    <appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} | %-5level | %c{0} -> %m%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="file" class="ch.qos.logback.core.FileAppender">
+        <file>${log-file:-scala-logging.log}</file>
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} | %-5level | %c{0} -> %m%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="${LOG_LEVEL:-INFO}">
+        <appender-ref ref="console"/>
+        <appender-ref ref="file"/>
+    </root>
+
+  </configuration>
