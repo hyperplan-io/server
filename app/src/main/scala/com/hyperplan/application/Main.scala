@@ -68,12 +68,13 @@ object Main extends IOApp with IOLogging {
       algorithmsRepository = new AlgorithmsRepository
       predictionsRepository = new PredictionsRepository
       domainRepository = new DomainRepository
-      _ = logger.info("Starting GCP Pubsub service")
       implicit0(actorSystem: ActorSystem) <- IO(ActorSystem())
       implicit0(actorMaterializer: ActorMaterializer) <- IO(ActorMaterializer())
       pubSubService <- if (config.gcp.pubsub.enabled) {
         logger.info("Starting GCP PubSub service") *> PubSubService(
-          config.gcp.projectId
+          config.gcp.projectId,
+          config.gcp.privateKey,
+          config.gcp.clientEmail
         ).map(Some(_))
       } else {
         IO.pure(None)

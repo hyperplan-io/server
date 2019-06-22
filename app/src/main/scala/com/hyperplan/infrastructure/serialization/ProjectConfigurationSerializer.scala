@@ -25,9 +25,18 @@ object ProjectConfigurationSerializer {
       : Encoder[ClassificationConfiguration] =
     (configuration: ClassificationConfiguration) =>
       Json.obj(
-        ("features", FeaturesConfigurationSerializer.encoder(configuration.features)),
-        ("labels", LabelsConfigurationSerializer.encodeJson(configuration.labels)),
-        ("streamConfiguration", configuration.streamConfiguration.fold(Json.Null)(_.asJson))
+        (
+          "features",
+          FeaturesConfigurationSerializer.encoder(configuration.features)
+        ),
+        (
+          "labels",
+          LabelsConfigurationSerializer.encodeJson(configuration.labels)
+        ),
+        (
+          "streamConfiguration",
+          configuration.streamConfiguration.fold(Json.Null)(_.asJson)
+        )
       )
 
   implicit val classificationConfigurationDecoder
@@ -40,16 +49,25 @@ object ProjectConfigurationSerializer {
         labels <- c
           .downField("labels")
           .as[LabelsConfiguration](LabelsConfigurationSerializer.decoder)
-        streamConfiguration <- c.downField("streamConfiguration").as[Option[StreamConfiguration]]
+        streamConfiguration <- c
+          .downField("streamConfiguration")
+          .as[Option[StreamConfiguration]]
       } yield {
-        ClassificationConfiguration(featuresConfiguration, labels, streamConfiguration)
+        ClassificationConfiguration(
+          featuresConfiguration,
+          labels,
+          streamConfiguration
+        )
       }
 
   implicit val regressionConfigurationEncoder
       : Encoder[RegressionConfiguration] =
     (configuration: RegressionConfiguration) =>
       Json.obj(
-        ("features", FeaturesConfigurationSerializer.encoder(configuration.features))
+        (
+          "features",
+          FeaturesConfigurationSerializer.encoder(configuration.features)
+        )
       )
 
   implicit val regressionConfigurationDecoder
@@ -59,7 +77,9 @@ object ProjectConfigurationSerializer {
         featuresConfiguration <- c
           .downField("features")
           .as[FeaturesConfiguration](FeaturesConfigurationSerializer.decoder)
-        streamConfiguration <- c.downField("streamConfiguration").as[Option[StreamConfiguration]]
+        streamConfiguration <- c
+          .downField("streamConfiguration")
+          .as[Option[StreamConfiguration]]
       } yield {
         RegressionConfiguration(featuresConfiguration, streamConfiguration)
       }

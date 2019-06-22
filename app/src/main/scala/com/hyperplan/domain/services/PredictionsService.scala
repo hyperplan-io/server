@@ -77,10 +77,17 @@ class PredictionsService(
       } yield count
     )
 
-  def publishToStream(prediction: PredictionEvent, streamConfiguration: Option[StreamConfiguration]): IO[Unit] =
+  def publishToStream(
+      prediction: PredictionEvent,
+      streamConfiguration: Option[StreamConfiguration]
+  ): IO[Unit] =
     (for {
-      _ <- pubSubService.fold[IO[Unit]](IO.unit)(
-        _.publish(prediction, streamConfiguration.fold(config.gcp.pubsub.predictionsTopicId)(_.topic))
+      _ <- pubSubService.fold[IO[Seq[String]]](IO.pure(Seq.empty))(
+        _.publish(
+          prediction,
+          streamConfiguration
+            .fold(config.gcp.pubsub.predictionsTopicId)(_.topic)
+        )
       )
       _ <- kafkaService.fold[IO[Unit]](IO.unit)(
         _.publish(prediction, prediction.projectId)
@@ -453,7 +460,7 @@ class PredictionsService(
       prediction <- predictionsRepository.read(predictionId)
       project <- AsyncConnectionIO.liftIO(
         Effect[IO].toIO(
-          projectsService.readProject(prediction.projectId) 
+          projectsService.readProject(prediction.projectId)
         )
       )
       event: PredictionEvent <- prediction match {

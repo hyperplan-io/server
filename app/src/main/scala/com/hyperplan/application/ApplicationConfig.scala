@@ -11,6 +11,8 @@ case class KinesisConfig(
 )
 case class GCPConfig(
     projectId: String,
+    privateKey: String,
+    clientEmail: String,
     pubsub: PubSubConfig
 )
 case class KafkaConfig(

@@ -16,7 +16,7 @@ case class RegressionConfiguration(
 ) extends ProjectConfiguration
 
 case class StreamConfiguration(
-  topic: String
+    topic: String
 )
 
 sealed trait Project {

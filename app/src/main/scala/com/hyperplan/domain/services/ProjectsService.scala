@@ -38,7 +38,8 @@ class ProjectsService(
       projectRequest: PostProjectRequest
   ): IO[Project] = {
 
-    val streamConfiguration = projectRequest.topic.map(topic => StreamConfiguration(topic))
+    val streamConfiguration =
+      projectRequest.topic.map(topic => StreamConfiguration(topic))
     val featuresIO = domainService.readFeatures(projectRequest.featuresId)
     ((projectRequest.problem, projectRequest.labelsId) match {
       case (Classification, Some(labelsId)) =>
