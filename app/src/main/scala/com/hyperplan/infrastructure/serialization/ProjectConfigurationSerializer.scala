@@ -9,13 +9,13 @@ import io.circe.{Decoder, Encoder}
 
 object ProjectConfigurationSerializer {
 
-  implicit val streamConfigurationEncoder: Encoder[StreamConfiguration] =
-    (streamConfiguration: StreamConfiguration) =>
+  implicit val dataStreamEncoder: Encoder[StreamConfiguration] =
+    (dataStream: StreamConfiguration) =>
       Json.obj(
-        "topic" -> Json.fromString(streamConfiguration.topic)
+        "topic" -> Json.fromString(dataStream.topic)
       )
 
-  implicit val streamConfigurationDecoder: Decoder[StreamConfiguration] =
+  implicit val dataStreamDecoder: Decoder[StreamConfiguration] =
     (cursor: HCursor) =>
       for {
         topic <- cursor.downField("topic").as[String]
@@ -34,7 +34,7 @@ object ProjectConfigurationSerializer {
           LabelsConfigurationSerializer.encodeJson(configuration.labels)
         ),
         (
-          "streamConfiguration",
+          "dataStream",
           configuration.dataStream.fold(Json.Null)(_.asJson)
         )
       )
@@ -49,14 +49,14 @@ object ProjectConfigurationSerializer {
         labels <- c
           .downField("labels")
           .as[LabelsConfiguration](LabelsConfigurationSerializer.decoder)
-        streamConfiguration <- c
-          .downField("streamConfiguration")
+        dataStream <- c
+          .downField("dataStream")
           .as[Option[StreamConfiguration]]
       } yield {
         ClassificationConfiguration(
           featuresConfiguration,
           labels,
-          streamConfiguration
+          dataStream
         )
       }
 
@@ -77,11 +77,11 @@ object ProjectConfigurationSerializer {
         featuresConfiguration <- c
           .downField("features")
           .as[FeaturesConfiguration](FeaturesConfigurationSerializer.decoder)
-        streamConfiguration <- c
-          .downField("streamConfiguration")
+        dataStream <- c
+          .downField("dataStream")
           .as[Option[StreamConfiguration]]
       } yield {
-        RegressionConfiguration(featuresConfiguration, streamConfiguration)
+        RegressionConfiguration(featuresConfiguration, dataStream)
       }
 
   implicit val encoder: Encoder[ProjectConfiguration] = Encoder.instance {

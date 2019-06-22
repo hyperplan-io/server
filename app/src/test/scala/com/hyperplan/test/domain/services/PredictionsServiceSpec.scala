@@ -27,16 +27,36 @@ import com.hyperplan.test.TestDatabase
 import com.hyperplan.test.TestDatabase
 import org.scalatest._
 
-import org.scalatest.{ BeforeAndAfterAll, Matchers, WordSpecLike }
+import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.concurrent.ExecutionContext
+import akka.testkit.TestKit
+import akka.actor.ActorSystem
+import akka.stream.ActorMaterializer
+import akka.testkit.ImplicitSender
 
-class PredictionsServiceSpec() extends FlatSpec with TestDatabase with BeforeAndAfterAll {
+class PredictionsServiceSpec()
+    extends TestKit(ActorSystem("test"))
+    with ImplicitSender
+    with WordSpecLike
+    with Matchers
+    with TestDatabase
+    with BeforeAndAfterAll {
 
+  override def afterAll: Unit = {
+    TestKit.shutdownActorSystem(system)
+  }
+
+  implicit val mat = ActorMaterializer()
   implicit val timer: Timer[IO] = IO.timer(ExecutionContext.global)
 
   val config = ApplicationConfig(
-    KinesisConfig(enabled = false, "predictionsStream", "examplesStream", "test-region"),
+    KinesisConfig(
+      enabled = false,
+      "predictionsStream",
+      "examplesStream",
+      "test-region"
+    ),
     GCPConfig(
       "myProjectId",
       "privateKey",

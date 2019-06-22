@@ -52,7 +52,7 @@ class ProjectSerializerSpec
 
     testEncoder(project: Project) { json =>
       val expectedJson =
-        """{"id":"test-project-encode","name":"test project","problem":"classification","algorithms":[],"policy":{"class":"NoAlgorithm"},"configuration":{"features":{"id":"id","data":[{"name":"","type":"String","dimension":"One","description":""}]},"labels":{"id":"id","data":{"type":"oneOf","oneOf":[""],"description":""}}}}"""
+        """{"id":"test-project-encode","name":"test project","problem":"classification","algorithms":[],"policy":{"class":"NoAlgorithm"},"configuration":{"features":{"id":"id","data":[{"name":"","type":"String","dimension":"One","description":""}]},"labels":{"id":"id","data":{"type":"oneOf","oneOf":[""],"description":""}},"dataStream":null}}"""
       json.noSpaces should be(expectedJson)
     }(encoder)
   }
@@ -62,7 +62,7 @@ class ProjectSerializerSpec
     val projectName = "test project"
 
     val projectJson =
-      s"""{"id":"$projectId","name":"$projectName","problem":"classification","algorithms":[],"policy":{"class":"NoAlgorithm"},"configuration":{"features":{"id":"id","data":[{"name":"","type":"","dimension":"One","description":""}]},"labels":{"id":"id","data":{"type":"oneOf","oneOf":[""],"description":""}}}}"""
+      s"""{"id":"$projectId","name":"$projectName","problem":"classification","algorithms":[],"policy":{"class":"NoAlgorithm"},"configuration":{"features":{"id":"id","data":[{"name":"","type":"","dimension":"One","description":""}]},"labels":{"id":"id","data":{"type":"oneOf","oneOf":[""],"description":""}},"dataStream":null}}"""
 
     testDecoder[Project](projectJson) {
       case project: ClassificationProject =>
