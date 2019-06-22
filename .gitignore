@@ -4,7 +4,6 @@ project/target
 target
 .metals
 *.class
-*.xml
 .idea
 scala-logging.log
 *.html
