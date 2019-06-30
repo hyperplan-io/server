@@ -1,13 +1,30 @@
-version: '3'
-services:
-  foundaml-server:
-    image:  foundaml/server:0.0.1
-    ports:
-     - "8080:8080"
-    restart: always
-    env_file:
-      - .env
-  postgres:
-    image: "postgres:latest"
+version: '3'    
+services:    
+  hyperplan-server:    
+    image:  hyperplan/server:0.0.1    
+    ports:    
+     - "8080:8080"    
+    restart: always    
     environment:
+      APP_SECRET=replacewithrandomsecret
+      ADMIN_USERNAME=admin
+      ADMIN_PASSWORD=admin
+      POSTGRESQL_HOST=postgres
+      POSTGRESQL_PORT=5432
+      POSTGRESQL_DATABASE=postgres
+      POSTGRESQL_USERNAME=postgres
+      POSTGRESQL_PASSWORD=postgres
+  proxy:    
+    image: shakyshane/nginx-cors-plus    
+    ports:    
+      - 8090:80    
+    environment:    
+      - TARGET=http://hyperplan-server:8080    
+  hyperplan-ui:    
+    image: hyperplan/ui:0.0.1    
+    ports:    
+     - 9000:80   
+  postgres:    
+    image: "postgres:latest"    
+    environment:    
      - POSTGRES_PASSWORD=postgres
