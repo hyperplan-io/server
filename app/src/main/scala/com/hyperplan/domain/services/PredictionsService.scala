@@ -132,7 +132,9 @@ class PredictionsService(
         (project.policy.take)
       )(algorithmId => algorithmId.some)
       maybeAlgorithmId
-        .fold[IO[Prediction]](IO.raiseError(NoAlgorithmAvailable(""))) {
+        .fold[IO[Prediction]](
+          logger.warn("There is no algorithm in project $projectId, prediction failed") *> IO.raiseError(NoAlgorithmAvailable(s"There is no algorithm in the project $projectId"))
+        ) {
           algorithmId =>
             for {
               algorithm <- project.algorithmsMap
