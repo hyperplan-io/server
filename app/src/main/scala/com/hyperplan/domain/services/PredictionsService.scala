@@ -55,7 +55,12 @@ class PredictionsService(
   implicit val predictionEventEncoder = PredictionEventSerializer.encoder
 
   def persistPrediction(
-      prediction: Prediction,
+    prediction: Prediction,
+    entityLinks: List[EntityLink]
+  ): IO[Either[PredictionError, Int]] = ???
+
+  def persistClassificationPrediction(
+      prediction: ClassificationPrediction,
       entityLinks: List[EntityLink]
   ): IO[Either[PredictionError, Int]] = predictionsRepository.transact(
     for {
@@ -112,176 +117,6 @@ class PredictionsService(
     }
   }
 
-  def predictRegressionWithProjectPolicy(
-      features: Features,
-      project: RegressionProject,
-      entityLinks: List[EntityLink]
-  ): IO[Prediction] =
-    project.policy
-      .take()
-      .fold[IO[Prediction]] {
-        val message = s"There is no algorithm in the project ${project.id}"
-        logger.warn(message) *> IO.raiseError(
-          NoAlgorithmAvailable(message)
-        )
-      } { algorithmId =>
-        project.algorithmsMap
-          .get(algorithmId)
-          .fold[IO[Prediction]] {
-            val message =
-              s"The algorithm $algorithmId does not exist in the project ${project.id}"
-            logger.debug(message) *> IO.raiseError(
-              AlgorithmDoesNotExist(algorithmId)
-            )
-          }(
-            algorithm =>
-              predictRegressionWithAlgorithm(
-                project,
-                algorithm,
-                features,
-                entityLinks
-              )
-          )
-      }
-
-  def predictClassificationWithProjectPolicy(
-      features: Features,
-      project: ClassificationProject,
-      entityLinks: List[EntityLink]
-  ): IO[Prediction] =
-    project.policy
-      .take()
-      .fold[IO[Prediction]] {
-        val message = s"There is no algorithm in the project ${project.id}"
-        logger.warn(message) *> IO.raiseError(
-          NoAlgorithmAvailable(message)
-        )
-      } { algorithmId =>
-        project.algorithmsMap
-          .get(algorithmId)
-          .fold[IO[Prediction]] {
-            val message =
-              s"The algorithm $algorithmId does not exist in the project ${project.id}"
-            logger.debug(message) *> IO.raiseError(
-              AlgorithmDoesNotExist(algorithmId)
-            )
-          }(
-            algorithm =>
-              predictClassificationWithAlgorithm(
-                project,
-                algorithm,
-                features,
-                entityLinks
-              )
-          )
-      }
-
-  def predictWithLocalClassificationBackend(
-      projectId: String,
-      algorithm: Algorithm,
-      features: Features,
-      local: LocalClassification
-  ) = {
-    IO.pure(
-      ClassificationPrediction(
-        UUID.randomUUID().toString,
-        projectId,
-        algorithm.id,
-        features,
-        List.empty,
-        local.computed
-      )
-    )
-  }
-
-  def predictClassificationWithAlgorithm(
-      project: ClassificationProject,
-      algorithm: Algorithm,
-      features: Features,
-      entityLinks: List[EntityLink]
-  )(implicit cs: ContextShift[IO]): IO[ClassificationPrediction] = {
-    val predictionIO = algorithm.backend match {
-      case local: LocalClassification =>
-        predictWithLocalClassificationBackend(
-          project.id,
-          algorithm,
-          features,
-          local
-        )
-      case tfBackend: TensorFlowClassificationBackend =>
-        predictWithTensorFlowClassificationBackend(
-          project.id,
-          algorithm,
-          features,
-          tfBackend,
-          project.configuration.labels
-        )
-      case tfBackend: TensorFlowRegressionBackend =>
-        IO.raiseError(
-          IncompatibleBackend(
-            "TensorFlowRegressionBackend can not do classification, use TensorFlowClassificationBackend instead"
-          )
-        )
-      case rasaBackend: RasaNluClassificationBackend =>
-        ???
-    }
-    predictionIO.flatMap { prediction =>
-      if (config.prediction.storeInPostgresql) {
-        logger.debug(
-          s"storing prediction ${prediction.id} in postgresql"
-        ) *> persistClassificationPrediction(prediction, entityLinks) *> IO
-          .pure(
-            prediction
-          )
-      } else {
-        logger.debug(
-          s"storing predictions in postgresql in disabled, ignoring ${prediction.id}"
-        ) *> IO.pure(prediction)
-      }
-    }
-  }
-
-  def predictRegressionWithAlgorithm(
-      project: RegressionProject,
-      algorithm: Algorithm,
-      features: Features,
-      entityLinks: List[EntityLink]
-  ): IO[RegressionPrediction] = {
-    val predictionIO = algorithm.backend match {
-      case local: LocalClassification =>
-        IO.raiseError(
-          IncompatibleBackend("LocalClassification can not do regression")
-        )
-      case tfBackend: TensorFlowRegressionBackend =>
-        predictWithTensorFlowRegressionBackend(
-          project.id,
-          algorithm,
-          features,
-          tfBackend
-        )
-      case tfBackend: TensorFlowClassificationBackend =>
-        IO.raiseError(
-          IncompatibleBackend(
-            "TensorFlowRegressionBackend can not do regression, use TensorFlowClassificationBackend instead"
-          )
-        )
-      case rasaBackend: RasaNluClassificationBackend => ???
-    }
-    predictionIO.flatMap { prediction =>
-      if (config.prediction.storeInPostgresql) {
-        logger.debug(
-          s"storing prediction ${prediction.id} in postgresql"
-        ) *> persistRegressionPrediction(prediction, entityLinks) *> IO.pure(
-          prediction
-        )
-      } else {
-        logger.debug(
-          s"storing predictions in postgresql in disabled, ignoring ${prediction.id}"
-        ) *> IO.pure(prediction)
-      }
-    }
-  }
-
   def validateClassificationLabels(
       labelsConfiguration: LabelsConfiguration,
       labels: Set[ClassificationLabel]
@@ -291,53 +126,41 @@ class PredictionsService(
     case DynamicLabelsConfiguration(description) => true
   }
 
+     
+
   def predict(
       projectId: String,
       features: Features,
       entityLinks: List[EntityLink],
       optionalAlgorithmId: Option[String]
-  ): IO[Prediction] = projectsService.readProject(projectId).flatMap {
-    project =>
+    ): IO[Prediction] = projectsService.readProject(projectId).flatMap { project =>
       val maybeAlgorithmId = optionalAlgorithmId.fold(
         (project.policy.take)
       )(algorithmId => algorithmId.some)
-      maybeAlgorithmId
-        .fold[IO[Prediction]] {
-          val errorMessage =
-            s"There is no algorithm in project $projectId, prediction failed"
-          logger.warn(errorMessage) *> IO
-            .raiseError(NoAlgorithmAvailable(errorMessage))
-        } { algorithmId =>
-          for {
-            algorithm <- project.algorithmsMap
-              .get(algorithmId)
-              .fold[IO[Algorithm]] {
-                val errorMessage = s"The algorithm $algorithmId does not exist"
-                logger.warn(errorMessage) >> IO
-                  .raiseError(AlgorithmDoesNotExist(errorMessage))
-              }(
-                algorithm => IO.pure(algorithm)
+      maybeAlgorithmId.fold(IO.raiseError(NoAlgorithmAvailable(""))){ algorithmId =>
+        for {
+          algorithm <- project.algorithmsMap.get(algorithmId).fold[IO[Algorithm]](IO.raiseError(AlgorithmDoesNotExist("")))(algorithm => IO.pure(algorithm))
+          prediction <- predictWithBackend(
+            project,
+            algorithm,
+            features
+          )
+          _ <- if (config.prediction.storeInPostgresql) {
+            logger.debug(
+              s"storing prediction ${prediction.id} in postgresql"
+            ) *> persistPrediction(prediction, entityLinks) *> IO
+              .pure(
+                prediction
               )
-            prediction <- predictWithBackend(
-              project,
-              algorithm,
-              features
-            )
-            _ <- if (config.prediction.storeInPostgresql) {
-              logger.debug(
-                s"storing prediction ${prediction.id} in postgresql"
-              ) *> persistPrediction(prediction, entityLinks) *> IO
-                .pure(
-                  prediction
-                )
-            } else {
-              logger.debug(
-                s"storing predictions in postgresql in disabled, ignoring ${prediction.id}"
-              ) *> IO.pure(prediction)
-            }
-          } yield prediction
-        }
-
+          } else {
+            logger.debug(
+              s"storing predictions in postgresql in disabled, ignoring ${prediction.id}"
+            ) *> IO.pure(prediction)
+          }
+        } yield ???
+      }
+      
+      
   }
 
   def addClassificationExample(
