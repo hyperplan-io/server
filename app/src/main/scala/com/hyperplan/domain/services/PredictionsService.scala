@@ -36,12 +36,16 @@ import doobie.free.connection.{AsyncConnectionIO, ConnectionIO}
 import cats.effect.ContextShift
 
 import cats.effect.Timer
+import cats.effect.Resource
+import org.http4s.client.Client
+
 class PredictionsService(
     predictionsRepository: PredictionsRepository,
     projectsService: ProjectsService,
     kinesisService: Option[KinesisService],
     pubSubService: Option[PubSubService],
     kafkaService: Option[KafkaService],
+    val blazeClient: Resource[IO, Client[IO]],
     config: ApplicationConfig
 )(implicit cs: ContextShift[IO], timer: Timer[IO])
     extends IOLogging

@@ -28,6 +28,10 @@ import com.hyperplan.infrastructure.streaming.{
 import scala.util.{Left, Right}
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
+import org.http4s.client.blaze.BlazeClientBuilder
+import scala.concurrent.ExecutionContext
+import cats.effect.Resource
+import org.http4s.client.Client
 
 object Main extends IOApp with IOLogging {
 
@@ -68,6 +72,7 @@ object Main extends IOApp with IOLogging {
       algorithmsRepository = new AlgorithmsRepository
       predictionsRepository = new PredictionsRepository
       domainRepository = new DomainRepository
+      blazeClient: Resource[IO, Client[IO]] = BlazeClientBuilder[IO](ExecutionContext.global).resource
       implicit0(actorSystem: ActorSystem) <- IO(ActorSystem())
       implicit0(actorMaterializer: ActorMaterializer) <- IO(ActorMaterializer())
       pubSubService <- if (config.gcp.pubsub.enabled) {
@@ -102,6 +107,7 @@ object Main extends IOApp with IOLogging {
         kinesisService,
         pubSubService,
         kafkaService,
+        blazeClient,
         config
       )
       algorithmsService = new AlgorithmsService(

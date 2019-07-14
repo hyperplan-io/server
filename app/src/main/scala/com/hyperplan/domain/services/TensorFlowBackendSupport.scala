@@ -32,8 +32,13 @@ import cats.effect.IO
 import cats.implicits._
 
 import scala.concurrent.ExecutionContext
+import org.http4s.client.blaze.BlazeClient
+import cats.effect.Resource
+import org.http4s.client.Client
 
 trait TensorFlowBackendSupport extends IOLogging {
+
+  val blazeClient: Resource[IO, Client[IO]]
 
   import cats.effect.ContextShift
   def predictWithTensorFlowClassificationBackend(
@@ -75,7 +80,7 @@ trait TensorFlowBackendSupport extends IOLogging {
                       case (key, value) => Header(key, value)
                     }))
                     .withEntity(tfFeatures)
-                BlazeClientBuilder[IO](ExecutionContext.global).resource
+                blazeClient
                   .use(
                     _.expect[TensorFlowClassificationLabels](request)(
                       TensorFlowClassificationLabelsSerializer.entityDecoder
