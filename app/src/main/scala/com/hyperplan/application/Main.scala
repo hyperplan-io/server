@@ -72,9 +72,7 @@ object Main extends IOApp with IOLogging {
       algorithmsRepository = new AlgorithmsRepository
       predictionsRepository = new PredictionsRepository
       domainRepository = new DomainRepository
-      blazeClient: Resource[IO, Client[IO]] = BlazeClientBuilder[IO](
-        ExecutionContext.global
-      ).resource
+      blazeClient: Resource[IO, Client[IO]] = BlazeClientBuilder[IO](ExecutionContext.global).resource
       implicit0(actorSystem: ActorSystem) <- IO(ActorSystem())
       implicit0(actorMaterializer: ActorMaterializer) <- IO(ActorMaterializer())
       pubSubService <- if (config.gcp.pubsub.enabled) {
