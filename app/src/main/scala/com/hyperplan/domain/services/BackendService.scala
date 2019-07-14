@@ -3,57 +3,56 @@ package com.hyperplan.domain.services
 import cats.effect.Resource
 import org.http4s.client.Client
 import cats.effect.IO
-import cats.implicits._
 import cats.effect.ContextShift
 
 import org.http4s.{Header, Headers}
+
+import com.hyperplan.infrastructure.logging.IOLogging
+import com.hyperplan.domain.models.Algorithm
+import com.hyperplan.domain.models.features._
+import com.hyperplan.domain.models.backends._
+import com.hyperplan.domain.models.LabelsConfiguration
+import com.hyperplan.domain.models.Prediction
 import org.http4s.Request
 import org.http4s.EntityDecoder
 import org.http4s.Method
 import org.http4s.Uri
 import org.http4s.EntityEncoder
+import com.hyperplan.infrastructure.serialization.tensorflow.TensorFlowFeaturesSerializer
+import com.hyperplan.domain.models.labels.TensorFlowClassificationLabels
+import com.hyperplan.infrastructure.serialization.tensorflow.TensorFlowClassificationLabelsSerializer
+import com.hyperplan.domain.models.labels.Labels
 import java.{util => ju}
-
-import com.hyperplan.domain.models.features._
-import com.hyperplan.domain.models.backends._
-import com.hyperplan.domain.models._
-import com.hyperplan.domain.models.labels._
-import com.hyperplan.domain.models.errors._
-
-import com.hyperplan.infrastructure.serialization.tensorflow._
-import com.hyperplan.infrastructure.serialization.rasa._
-import com.hyperplan.infrastructure.logging.IOLogging
+import com.hyperplan.domain.models.errors.LabelsTransformerError
+import com.hyperplan.domain.models.labels.Label
+import com.hyperplan.domain.models.labels.ClassificationLabel
+import com.hyperplan.domain.models.labels.TensorFlowRegressionLabels
+import com.hyperplan.domain.models.labels.RegressionLabel
+import com.hyperplan.infrastructure.serialization.tensorflow.TensorFlowRegressionLabelsSerializer
+import com.hyperplan.domain.models.RegressionPrediction
+import com.hyperplan.domain.models.ClassificationPrediction
+import com.hyperplan.domain.models.Project
+import com.hyperplan.domain.models.ClassificationProject
+import com.hyperplan.domain.models.RegressionProject
 
 trait BackendService extends IOLogging {
 
   val blazeClient: Resource[IO, Client[IO]]
 
   def predictWithBackend(
-      project: Project,
+      project: Project, 
       algorithm: Algorithm,
       features: Features.Features
   )(implicit cs: ContextShift[IO]): IO[Prediction] =
     (algorithm.backend, project) match {
-      case (LocalClassification(preComputedLabels), _: ClassificationProject) =>
-        IO.pure(
-          ClassificationPrediction(
-            ju.UUID.randomUUID().toString,
-            project.id,
-            algorithm.id,
-            features,
-            Nil,
-            preComputedLabels
-          )
-        )
-      case (
-          TensorFlowClassificationBackend(
-            host,
-            port,
-            featuresTransformer,
-            labelsTransformer
-          ),
-          classificationProject: ClassificationProject
-          ) =>
+      case (LocalClassification(computed), _: ClassificationProject) =>
+        ???
+      case (TensorFlowClassificationBackend(
+          host,
+          port,
+          featuresTransformer,
+          labelsTransformer
+          ), classificationProject: ClassificationProject) =>
         featuresTransformer
           .transform(features)
           .fold(
@@ -94,107 +93,13 @@ trait BackendService extends IOLogging {
               )
             }
           )
-      case (
-          RasaNluClassificationBackend(
-            host,
-            port,
-            featuresTransformer,
-            labelsTransformer
-          ),
-          classificationProject: ClassificationProject
-          ) =>
-        featuresTransformer
-          .transform(features)
-          .fold(
-            err => IO.raiseError(err),
-            transformedFeatures => {
-              val uriString = s"http://${host}:${port}/parse"
-              buildRequestWithFeatures(
-                uriString,
-                algorithm.security.headers,
-                transformedFeatures
-              )(RasaNluFeaturesSerializer.entityEncoder).fold(
-                err => IO.raiseError(err),
-                request =>
-                  callHttpBackend(
-                    request,
-                    labelsTransformer.transform(
-                      classificationProject.configuration.labels,
-                      ju.UUID.randomUUID().toString,
-                      _: RasaNluClassificationLabels
-                    )
-                  )(RasaNluLabelsSerializer.entityDecoder).flatMap {
-                    case Right(labels) =>
-                      val predictionId = ju.UUID.randomUUID.toString
-                      IO.pure(
-                        ClassificationPrediction(
-                          predictionId,
-                          project.id,
-                          algorithm.id,
-                          features,
-                          Nil,
-                          labels
-                        )
-                      )
-                    case Left(err) =>
-                      IO.raiseError(err)
-                  }
-              )
-            }
-          )
-      case (
-          backend @ TensorFlowRegressionBackend(
-            host,
-            port,
-            featuresTransformer
-          ),
-          regressionProject: RegressionProject
-          ) =>
-        featuresTransformer
-          .transform(features)
-          .fold(
-            err => IO.raiseError(err),
-            transformedFeatures => {
-              val uriString = s"http://${host}:${port}"
-              val predictionId = ju.UUID.randomUUID.toString
-              buildRequestWithFeatures(
-                uriString,
-                algorithm.security.headers,
-                transformedFeatures
-              )(TensorFlowFeaturesSerializer.entityEncoder).fold(
-                err => IO.raiseError(err),
-                request =>
-                  callHttpBackend(
-                    request,
-                    backend.labelsTransformer(
-                      _: TensorFlowRegressionLabels,
-                      predictionId
-                    )
-                  )(TensorFlowRegressionLabelsSerializer.entityDecoder)
-                    .flatMap {
-                      case Right(labels) =>
-                        IO.pure(
-                          RegressionPrediction(
-                            predictionId,
-                            project.id,
-                            algorithm.id,
-                            features,
-                            Nil,
-                            labels
-                          )
-                        )
-                      case Left(err) =>
-                        logger.warn("An error occurred with the backend") >> IO
-                          .raiseError(err)
-                    }
-              )
-            }
-          )
-      case (backend, project) =>
-        val errorMessage =
-          s"Backend ${backend.getClass.getSimpleName} is not compatible with project ${project.getClass.getSimpleName}"
-        logger.warn(errorMessage) >> IO.raiseError(new Exception(errorMessage))
+      case (RasaNluClassificationBackend(_, _, _, _), _: ClassificationProject) =>
+        ???
+      case (_: TensorFlowRegressionBackend, _: RegressionProject) =>
+        IO.raiseError(new Exception(""))
+      case _ => ???
     }
+
 
   def buildRequestWithFeatures[F, L](
       uriString: String,
