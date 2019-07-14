@@ -36,7 +36,7 @@ case class RasaNluClassificationBackend(
 ) extends Backend
 
 object RasaNluClassifcationBackend {
-  val backendClass = "RasaNluClassifcationBackend"
+  val backendClass = "RasaNluClassificationBackend"
 }
 
 case class TensorFlowRegressionBackend(
