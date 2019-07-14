@@ -204,7 +204,6 @@ trait BackendService extends IOLogging {
         logger.warn(errorMessage) >> IO.raiseError(new Exception(errorMessage))
     }
 
-
   def buildRequestWithFeatures[F, L](
       uriString: String,
       headers: List[(String, String)],

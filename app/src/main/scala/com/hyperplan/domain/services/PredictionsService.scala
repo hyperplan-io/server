@@ -55,12 +55,7 @@ class PredictionsService(
   implicit val predictionEventEncoder = PredictionEventSerializer.encoder
 
   def persistPrediction(
-    prediction: Prediction,
-    entityLinks: List[EntityLink]
-  ): IO[Either[PredictionError, Int]] = ???
-
-  def persistClassificationPrediction(
-      prediction: ClassificationPrediction,
+      prediction: Prediction,
       entityLinks: List[EntityLink]
   ): IO[Either[PredictionError, Int]] = predictionsRepository.transact(
     for {
@@ -126,31 +121,29 @@ class PredictionsService(
     case DynamicLabelsConfiguration(description) => true
   }
 
-     
-
   def predict(
       projectId: String,
       features: Features,
       entityLinks: List[EntityLink],
       optionalAlgorithmId: Option[String]
-    ): IO[Prediction] = projectsService.readProject(projectId).flatMap { project =>
+  ): IO[Prediction] = projectsService.readProject(projectId).flatMap {
+    project =>
       val maybeAlgorithmId = optionalAlgorithmId.fold(
         (project.policy.take)
       )(algorithmId => algorithmId.some)
-      maybeAlgorithmId.fold(IO.raiseError(NoAlgorithmAvailable(""))){ algorithmId =>
-        for {
-          algorithm <- project.algorithmsMap.get(algorithmId).fold[IO[Algorithm]](IO.raiseError(AlgorithmDoesNotExist("")))(algorithm => IO.pure(algorithm))
-          prediction <- predictWithBackend(
-            project,
-            algorithm,
-            features
-          )
-          _ <- if (config.prediction.storeInPostgresql) {
-            logger.debug(
-              s"storing prediction ${prediction.id} in postgresql"
-            ) *> persistPrediction(prediction, entityLinks) *> IO
-              .pure(
-                prediction
+      maybeAlgorithmId
+        .fold[IO[Prediction]](IO.raiseError(NoAlgorithmAvailable(""))) {
+          algorithmId =>
+            for {
+              algorithm <- project.algorithmsMap
+                .get(algorithmId)
+                .fold[IO[Algorithm]](IO.raiseError(AlgorithmDoesNotExist("")))(
+                  algorithm => IO.pure(algorithm)
+                )
+              prediction <- predictWithBackend(
+                project,
+                algorithm,
+                features
               )
             predictionId <- IO(UUID.randomUUID.toString)
             prediction <- predictWithBackend(
