@@ -132,19 +132,17 @@ class PredictionsService(
         (project.policy.take)
       )(algorithmId => algorithmId.some)
       maybeAlgorithmId
-        .fold[IO[Prediction]](
-          logger.warn(
-            "There is no algorithm in project $projectId, prediction failed"
-          ) *> IO.raiseError(
-            NoAlgorithmAvailable(
-              s"There is no algorithm in the project $projectId"
-            )
-          )
-        ) { algorithmId =>
+        .fold[IO[Prediction]]{
+          val errorMessage = s"There is no algorithm in project $projectId, prediction failed"
+          logger.warn(errorMessage) *> IO.raiseError(NoAlgorithmAvailable(errorMessage))
+        } { algorithmId =>
           for {
             algorithm <- project.algorithmsMap
               .get(algorithmId)
-              .fold[IO[Algorithm]](IO.raiseError(AlgorithmDoesNotExist("")))(
+              .fold[IO[Algorithm]]{
+                val errorMessage = s"The algorithm $algorithmId does not exist"
+                logger.warn(errorMessage) >> IO.raiseError(AlgorithmDoesNotExist(errorMessage))
+              }(
                 algorithm => IO.pure(algorithm)
               )
             predictionId <- IO(UUID.randomUUID.toString)
