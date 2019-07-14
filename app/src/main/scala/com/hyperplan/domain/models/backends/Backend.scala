@@ -6,7 +6,6 @@ import com.hyperplan.domain.models.labels._
 import com.hyperplan.domain.models.features.transformers._
 import com.hyperplan.domain.models.labels.transformers._
 import com.hyperplan.domain.models.errors.LabelsTransformerError
-import com.hyperplan.domain.services.ExampleUrlService
 
 sealed trait Backend
 
@@ -37,7 +36,7 @@ case class RasaNluClassificationBackend(
 ) extends Backend
 
 object RasaNluClassifcationBackend {
-  val backendClass = "RasaNluClassificationBackend"
+  val backendClass = "RasaNluClassifcationBackend"
 }
 
 case class TensorFlowRegressionBackend(
@@ -45,24 +44,23 @@ case class TensorFlowRegressionBackend(
     port: Int,
     featuresTransformer: TensorFlowFeaturesTransformer
 ) extends Backend {
-  val labelsTransformer =
-    (tensorFlowLabels: TensorFlowRegressionLabels, predictionId: String) => {
-      tensorFlowLabels.result.headOption
-        .fold[Either[LabelsTransformerError, Set[RegressionLabel]]](
-          Left(LabelsTransformerError(""))
-        )(
-          labels =>
-            labels
-              .map { label =>
-                RegressionLabel(
-                  label,
-                  ExampleUrlService.correctRegressionExampleUrl(predictionId)
-                )
-              }
-              .toSet
-              .asRight
-        )
-    }
+  val labelsTransformer = (tensorFlowLabels: TensorFlowRegressionLabels) => {
+    tensorFlowLabels.result.headOption
+      .fold[Either[LabelsTransformerError, Set[RegressionLabel]]](
+        Left(LabelsTransformerError(""))
+      )(
+        labels =>
+          labels
+            .map { label =>
+              RegressionLabel(
+                label,
+                ""
+              )
+            }
+            .toSet
+            .asRight
+      )
+  }
 }
 
 object TensorFlowRegressionBackend {
