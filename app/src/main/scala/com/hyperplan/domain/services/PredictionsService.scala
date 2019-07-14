@@ -132,32 +132,39 @@ class PredictionsService(
         (project.policy.take)
       )(algorithmId => algorithmId.some)
       maybeAlgorithmId
-        .fold[IO[Prediction]](IO.raiseError(NoAlgorithmAvailable(""))) {
-          algorithmId =>
-            for {
-              algorithm <- project.algorithmsMap
-                .get(algorithmId)
-                .fold[IO[Algorithm]](IO.raiseError(AlgorithmDoesNotExist("")))(
-                  algorithm => IO.pure(algorithm)
-                )
-              prediction <- predictWithBackend(
-                project,
-                algorithm,
-                features
+        .fold[IO[Prediction]](
+          logger.warn(
+            "There is no algorithm in project $projectId, prediction failed"
+          ) *> IO.raiseError(
+            NoAlgorithmAvailable(
+              s"There is no algorithm in the project $projectId"
+            )
+          )
+        ) { algorithmId =>
+          for {
+            algorithm <- project.algorithmsMap
+              .get(algorithmId)
+              .fold[IO[Algorithm]](IO.raiseError(AlgorithmDoesNotExist("")))(
+                algorithm => IO.pure(algorithm)
               )
-              _ <- if (config.prediction.storeInPostgresql) {
-                logger.debug(
-                  s"storing prediction ${prediction.id} in postgresql"
-                ) *> persistPrediction(prediction, entityLinks) *> IO
-                  .pure(
-                    prediction
-                  )
-              } else {
-                logger.debug(
-                  s"storing predictions in postgresql in disabled, ignoring ${prediction.id}"
-                ) *> IO.pure(prediction)
-              }
-            } yield prediction
+            prediction <- predictWithBackend(
+              project,
+              algorithm,
+              features
+            )
+            _ <- if (config.prediction.storeInPostgresql) {
+              logger.debug(
+                s"storing prediction ${prediction.id} in postgresql"
+              ) *> persistPrediction(prediction, entityLinks) *> IO
+                .pure(
+                  prediction
+                )
+            } else {
+              logger.debug(
+                s"storing predictions in postgresql in disabled, ignoring ${prediction.id}"
+              ) *> IO.pure(prediction)
+            }
+          } yield prediction
         }
 
   }
