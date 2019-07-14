@@ -21,6 +21,7 @@ import com.hyperplan.domain.models.labels._
 import com.hyperplan.domain.models.errors._
 
 import com.hyperplan.infrastructure.serialization.tensorflow._
+import com.hyperplan.infrastructure.serialization.rasa._
 import com.hyperplan.infrastructure.logging.IOLogging
 
 trait BackendService extends IOLogging {
@@ -94,10 +95,53 @@ trait BackendService extends IOLogging {
             }
           )
       case (
-          RasaNluClassificationBackend(_, _, _, _),
-          _: ClassificationProject
+          RasaNluClassificationBackend(
+            host,
+            port,
+            featuresTransformer,
+            labelsTransformer
+          ),
+          classificationProject: ClassificationProject
           ) =>
-        ???
+        featuresTransformer
+          .transform(features)
+          .fold(
+            err => IO.raiseError(err),
+            transformedFeatures => {
+              val uriString = s"http://${host}:${port}/parse"
+              buildRequestWithFeatures(
+                uriString,
+                algorithm.security.headers,
+                transformedFeatures
+              )(RasaNluFeaturesSerializer.entityEncoder).fold(
+                err => IO.raiseError(err),
+                request =>
+                  callHttpBackend(
+                    request,
+                    labelsTransformer.transform(
+                      classificationProject.configuration.labels,
+                      ju.UUID.randomUUID().toString,
+                      _: RasaNluClassificationLabels
+                    )
+                  )(RasaNluLabelsSerializer.entityDecoder).flatMap {
+                    case Right(labels) =>
+                      val predictionId = ju.UUID.randomUUID.toString
+                      IO.pure(
+                        ClassificationPrediction(
+                          predictionId,
+                          project.id,
+                          algorithm.id,
+                          features,
+                          Nil,
+                          labels
+                        )
+                      )
+                    case Left(err) =>
+                      IO.raiseError(err)
+                  }
+              )
+            }
+          )
       case (
           backend @ TensorFlowRegressionBackend(
             host,
@@ -173,12 +217,12 @@ trait BackendService extends IOLogging {
           )
       )
 
-  def callHttpBackend[L, T](
+  def callHttpBackend[L, T, E](
       request: Request[IO],
-      labelToPrediction: L => Either[LabelsTransformerError, Set[T]]
+      labelToPrediction: L => Either[E, Set[T]]
   )(
       implicit entityDecoder: EntityDecoder[IO, L]
-  ): IO[Either[LabelsTransformerError, Set[T]]] =
+  ): IO[Either[E, Set[T]]] =
     blazeClient.use(
       _.expect[L](request)(entityDecoder).map(labelToPrediction)
     )

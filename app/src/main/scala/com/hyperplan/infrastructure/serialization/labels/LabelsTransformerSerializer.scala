@@ -14,7 +14,7 @@ object LabelsTransformerSerializer {
         }))
       )
 
-  val labelsTransformerDecoder: Decoder[TensorFlowLabelsTransformer] =
+  val tfLabelsTransformerDecoder: Decoder[TensorFlowLabelsTransformer] =
     (c: HCursor) =>
       for {
         fields <- c.downField("fields").as[Map[String, String]]
