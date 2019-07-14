@@ -3,15 +3,25 @@ package com.hyperplan.domain.services
 import cats.effect.Resource
 import org.http4s.client.Client
 import cats.effect.IO
-import cats.implicits._
 import cats.effect.ContextShift
 
 import org.http4s.{Header, Headers}
+
+import com.hyperplan.infrastructure.logging.IOLogging
+import com.hyperplan.domain.models.Algorithm
+import com.hyperplan.domain.models.features._
+import com.hyperplan.domain.models.backends._
+import com.hyperplan.domain.models.LabelsConfiguration
+import com.hyperplan.domain.models.Prediction
 import org.http4s.Request
 import org.http4s.EntityDecoder
 import org.http4s.Method
 import org.http4s.Uri
 import org.http4s.EntityEncoder
+import com.hyperplan.infrastructure.serialization.tensorflow.TensorFlowFeaturesSerializer
+import com.hyperplan.domain.models.labels.TensorFlowClassificationLabels
+import com.hyperplan.infrastructure.serialization.tensorflow.TensorFlowClassificationLabelsSerializer
+import com.hyperplan.domain.models.labels.Labels
 import java.{util => ju}
 
 import com.hyperplan.domain.models.features._
@@ -193,6 +203,7 @@ trait BackendService extends IOLogging {
           s"Backend ${backend.getClass.getSimpleName} is not compatible with project ${project.getClass.getSimpleName}"
         logger.warn(errorMessage) >> IO.raiseError(new Exception(errorMessage))
     }
+
 
   def buildRequestWithFeatures[F, L](
       uriString: String,
