@@ -6,6 +6,7 @@ import cats.effect.{Async, Effect}
 import cats.effect.IO
 import cats.implicits._
 import cats.effect.ContextShift
+import doobie.free.connection._
 
 import com.hyperplan.application.ApplicationConfig
 
@@ -54,37 +55,22 @@ class PredictionsService(
   implicit val predictionEventEncoder = PredictionEventSerializer.encoder
 
   def persistPrediction(
-    prediction: Prediction,
-    entityLinks: List[EntityLink]
-  ): IO[Either[PredictionError, Int]] = ???
-
-  def persistClassificationPrediction(
-      prediction: ClassificationPrediction,
+      prediction: Prediction,
       entityLinks: List[EntityLink]
-  ): IO[Either[PredictionError, Int]] =
-    predictionsRepository.transact(
-      for {
-        count <- predictionsRepository.insertClassificationPrediction(
-          prediction
-        )
-        links = entityLinks.map(link => link.name -> link.id)
-        _ <- predictionsRepository.insertEntityLink(prediction.id, links)
-      } yield count
-    )
-
-  def persistRegressionPrediction(
-      prediction: RegressionPrediction,
-      entityLinks: List[EntityLink]
-  ): IO[Either[PredictionError, Int]] =
-    predictionsRepository.transact(
-      for {
-        count <- predictionsRepository.insertRegressionPrediction(
-          prediction
-        )
-        links = entityLinks.map(link => link.name -> link.id)
-        _ <- predictionsRepository.insertEntityLink(prediction.id, links)
-      } yield count
-    )
+  ): IO[Either[PredictionError, Int]] = predictionsRepository.transact(
+    for {
+      count <- prediction match {
+        case classificationPrediction: ClassificationPrediction =>
+          predictionsRepository.insertClassificationPrediction(
+            classificationPrediction
+          )
+        case regressionPrediction: RegressionPrediction =>
+          predictionsRepository.insertRegressionPrediction(regressionPrediction)
+      }
+      links = entityLinks.map(link => link.name -> link.id)
+      _ <- predictionsRepository.insertEntityLink(prediction.id, links)
+    } yield count
+  )
 
   def publishToStream(
       prediction: PredictionEvent,
@@ -135,41 +121,45 @@ class PredictionsService(
     case DynamicLabelsConfiguration(description) => true
   }
 
-     
-
   def predict(
       projectId: String,
       features: Features,
       entityLinks: List[EntityLink],
       optionalAlgorithmId: Option[String]
-    ): IO[Prediction] = projectsService.readProject(projectId).flatMap { project =>
+  ): IO[Prediction] = projectsService.readProject(projectId).flatMap {
+    project =>
       val maybeAlgorithmId = optionalAlgorithmId.fold(
         (project.policy.take)
       )(algorithmId => algorithmId.some)
-      maybeAlgorithmId.fold(IO.raiseError(NoAlgorithmAvailable(""))){ algorithmId =>
-        for {
-          algorithm <- project.algorithmsMap.get(algorithmId).fold[IO[Algorithm]](IO.raiseError(AlgorithmDoesNotExist("")))(algorithm => IO.pure(algorithm))
-          prediction <- predictWithBackend(
-            project,
-            algorithm,
-            features
-          )
-          _ <- if (config.prediction.storeInPostgresql) {
-            logger.debug(
-              s"storing prediction ${prediction.id} in postgresql"
-            ) *> persistPrediction(prediction, entityLinks) *> IO
-              .pure(
-                prediction
+      maybeAlgorithmId
+        .fold[IO[Prediction]](IO.raiseError(NoAlgorithmAvailable(""))) {
+          algorithmId =>
+            for {
+              algorithm <- project.algorithmsMap
+                .get(algorithmId)
+                .fold[IO[Algorithm]](IO.raiseError(AlgorithmDoesNotExist("")))(
+                  algorithm => IO.pure(algorithm)
+                )
+              prediction <- predictWithBackend(
+                project,
+                algorithm,
+                features
               )
-          } else {
-            logger.debug(
-              s"storing predictions in postgresql in disabled, ignoring ${prediction.id}"
-            ) *> IO.pure(prediction)
-          }
-        } yield ???
-      }
-      
-      
+              _ <- if (config.prediction.storeInPostgresql) {
+                logger.debug(
+                  s"storing prediction ${prediction.id} in postgresql"
+                ) *> persistPrediction(prediction, entityLinks) *> IO
+                  .pure(
+                    prediction
+                  )
+              } else {
+                logger.debug(
+                  s"storing predictions in postgresql in disabled, ignoring ${prediction.id}"
+                ) *> IO.pure(prediction)
+              }
+            } yield prediction
+        }
+
   }
 
   def addClassificationExample(
@@ -232,10 +222,6 @@ class PredictionsService(
           .map(_ => predictionEvent)
       }
     )
-
-  import cats.implicits._
-  import doobie.free.connection._
-  import cats.effect.implicits._
 
   def addExample(
       predictionId: String,

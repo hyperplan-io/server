@@ -40,19 +40,22 @@ trait BackendService extends IOLogging {
   val blazeClient: Resource[IO, Client[IO]]
 
   def predictWithBackend(
-      project: Project, 
+      project: Project,
       algorithm: Algorithm,
       features: Features.Features
   )(implicit cs: ContextShift[IO]): IO[Prediction] =
     (algorithm.backend, project) match {
       case (LocalClassification(computed), _: ClassificationProject) =>
         ???
-      case (TensorFlowClassificationBackend(
-          host,
-          port,
-          featuresTransformer,
-          labelsTransformer
-          ), classificationProject: ClassificationProject) =>
+      case (
+          TensorFlowClassificationBackend(
+            host,
+            port,
+            featuresTransformer,
+            labelsTransformer
+          ),
+          classificationProject: ClassificationProject
+          ) =>
         featuresTransformer
           .transform(features)
           .fold(
@@ -93,13 +96,15 @@ trait BackendService extends IOLogging {
               )
             }
           )
-      case (RasaNluClassificationBackend(_, _, _, _), _: ClassificationProject) =>
+      case (
+          RasaNluClassificationBackend(_, _, _, _),
+          _: ClassificationProject
+          ) =>
         ???
       case (_: TensorFlowRegressionBackend, _: RegressionProject) =>
         IO.raiseError(new Exception(""))
       case _ => ???
     }
-
 
   def buildRequestWithFeatures[F, L](
       uriString: String,
