@@ -4,17 +4,13 @@ import io.circe._
 import io.circe.parser.decode
 import io.circe.syntax._
 import io.circe.{Decoder, Encoder}
-import com.hyperplan.domain.models.backends.{
-  Backend,
-  LocalClassification,
-  TensorFlowClassificationBackend,
-  TensorFlowRegressionBackend
-}
+
 import com.hyperplan.domain.models.features.transformers.TensorFlowFeaturesTransformer
 import com.hyperplan.domain.models.labels.Labels
 import com.hyperplan.domain.models.labels.transformers.TensorFlowLabelsTransformer
 import com.hyperplan.infrastructure.serialization.features.FeaturesTransformerSerializer
 import com.hyperplan.infrastructure.serialization.labels.LabelsTransformerSerializer
+import com.hyperplan.domain.models.backends._
 
 object BackendSerializer {
 
@@ -110,6 +106,7 @@ object BackendSerializer {
         case TensorFlowRegressionBackend.backendClass =>
           tensorFlowRegressionBackendDecoder(c)
         case LocalClassification.backendClass => ???
+        case RasaNluClassifcationBackend.backendClass => ???
 
       }
 
@@ -119,6 +116,7 @@ object BackendSerializer {
     case backend: TensorFlowRegressionBackend =>
       tensorFlowRegressionBackendEncoder(backend)
     case backend: LocalClassification => ???
+    case backend: RasaNluClassificationBackend => ???
   }
 
   def encodeJsonNoSpaces(backend: Backend): String = {

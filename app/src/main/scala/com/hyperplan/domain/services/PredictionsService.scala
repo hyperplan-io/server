@@ -231,6 +231,8 @@ class PredictionsService(
             "TensorFlowRegressionBackend can not do classification, use TensorFlowClassificationBackend instead"
           )
         )
+      case rasaBackend: RasaNluClassificationBackend =>
+        ???
     }
     predictionIO.flatMap { prediction =>
       if (config.prediction.storeInPostgresql) {
@@ -272,6 +274,7 @@ class PredictionsService(
             "TensorFlowRegressionBackend can not do regression, use TensorFlowClassificationBackend instead"
           )
         )
+      case rasaBackend: RasaNluClassificationBackend => ???
     }
     predictionIO.flatMap { prediction =>
       if (config.prediction.storeInPostgresql) {
