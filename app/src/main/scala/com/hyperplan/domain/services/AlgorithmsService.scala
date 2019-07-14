@@ -22,6 +22,7 @@ import com.hyperplan.domain.repositories.{
   ProjectsRepository
 }
 import com.hyperplan.infrastructure.logging.IOLogging
+import com.hyperplan.domain.models.backends.RasaNluClassificationBackend
 
 class AlgorithmsService(
     projectsService: ProjectsService,
@@ -94,6 +95,8 @@ class AlgorithmsService(
         ).flatten
       case TensorFlowRegressionBackend(_, _, _) =>
         List(IncompatibleAlgorithm(algorithm.id))
+      case RasaNluClassificationBackend(_, _, _, _) =>
+        ???
     }
 
   }
@@ -125,6 +128,8 @@ class AlgorithmsService(
         ).flatten
       case TensorFlowClassificationBackend(_, _, _, _) =>
         List(IncompatibleAlgorithm(algorithm.id))
+      case RasaNluClassificationBackend(_, _, _, _) =>
+        ???
     }
   }
 

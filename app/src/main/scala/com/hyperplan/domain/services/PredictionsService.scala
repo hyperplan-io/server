@@ -6,6 +6,7 @@ import cats.effect.{Async, Effect}
 import cats.effect.IO
 import cats.implicits._
 import cats.effect.ContextShift
+import doobie.free.connection._
 
 import com.hyperplan.application.ApplicationConfig
 
@@ -36,46 +37,40 @@ import doobie.free.connection.{AsyncConnectionIO, ConnectionIO}
 import cats.effect.ContextShift
 
 import cats.effect.Timer
+import cats.effect.Resource
+import org.http4s.client.Client
+
 class PredictionsService(
     predictionsRepository: PredictionsRepository,
     projectsService: ProjectsService,
     kinesisService: Option[KinesisService],
     pubSubService: Option[PubSubService],
     kafkaService: Option[KafkaService],
+    val blazeClient: Resource[IO, Client[IO]],
     config: ApplicationConfig
 )(implicit cs: ContextShift[IO], timer: Timer[IO])
     extends IOLogging
-    with TensorFlowBackendSupport {
+    with BackendService {
 
   implicit val predictionEventEncoder = PredictionEventSerializer.encoder
 
-  def persistClassificationPrediction(
-      prediction: ClassificationPrediction,
+  def persistPrediction(
+      prediction: Prediction,
       entityLinks: List[EntityLink]
-  ): IO[Either[PredictionError, Int]] =
-    predictionsRepository.transact(
-      for {
-        count <- predictionsRepository.insertClassificationPrediction(
-          prediction
-        )
-        links = entityLinks.map(link => link.name -> link.id)
-        _ <- predictionsRepository.insertEntityLink(prediction.id, links)
-      } yield count
-    )
-
-  def persistRegressionPrediction(
-      prediction: RegressionPrediction,
-      entityLinks: List[EntityLink]
-  ): IO[Either[PredictionError, Int]] =
-    predictionsRepository.transact(
-      for {
-        count <- predictionsRepository.insertRegressionPrediction(
-          prediction
-        )
-        links = entityLinks.map(link => link.name -> link.id)
-        _ <- predictionsRepository.insertEntityLink(prediction.id, links)
-      } yield count
-    )
+  ): IO[Either[PredictionError, Int]] = predictionsRepository.transact(
+    for {
+      count <- prediction match {
+        case classificationPrediction: ClassificationPrediction =>
+          predictionsRepository.insertClassificationPrediction(
+            classificationPrediction
+          )
+        case regressionPrediction: RegressionPrediction =>
+          predictionsRepository.insertRegressionPrediction(regressionPrediction)
+      }
+      links = entityLinks.map(link => link.name -> link.id)
+      _ <- predictionsRepository.insertEntityLink(prediction.id, links)
+    } yield count
+  )
 
   def publishToStream(
       prediction: PredictionEvent,
@@ -117,173 +112,6 @@ class PredictionsService(
     }
   }
 
-  def predictRegressionWithProjectPolicy(
-      features: Features,
-      project: RegressionProject,
-      entityLinks: List[EntityLink]
-  ): IO[Prediction] =
-    project.policy
-      .take()
-      .fold[IO[Prediction]] {
-        val message = s"There is no algorithm in the project ${project.id}"
-        logger.warn(message) *> IO.raiseError(
-          NoAlgorithmAvailable(message)
-        )
-      } { algorithmId =>
-        project.algorithmsMap
-          .get(algorithmId)
-          .fold[IO[Prediction]] {
-            val message =
-              s"The algorithm $algorithmId does not exist in the project ${project.id}"
-            logger.debug(message) *> IO.raiseError(
-              AlgorithmDoesNotExist(algorithmId)
-            )
-          }(
-            algorithm =>
-              predictRegressionWithAlgorithm(
-                project,
-                algorithm,
-                features,
-                entityLinks
-              )
-          )
-      }
-
-  def predictClassificationWithProjectPolicy(
-      features: Features,
-      project: ClassificationProject,
-      entityLinks: List[EntityLink]
-  ): IO[Prediction] =
-    project.policy
-      .take()
-      .fold[IO[Prediction]] {
-        val message = s"There is no algorithm in the project ${project.id}"
-        logger.warn(message) *> IO.raiseError(
-          NoAlgorithmAvailable(message)
-        )
-      } { algorithmId =>
-        project.algorithmsMap
-          .get(algorithmId)
-          .fold[IO[Prediction]] {
-            val message =
-              s"The algorithm $algorithmId does not exist in the project ${project.id}"
-            logger.debug(message) *> IO.raiseError(
-              AlgorithmDoesNotExist(algorithmId)
-            )
-          }(
-            algorithm =>
-              predictClassificationWithAlgorithm(
-                project,
-                algorithm,
-                features,
-                entityLinks
-              )
-          )
-      }
-
-  def predictWithLocalClassificationBackend(
-      projectId: String,
-      algorithm: Algorithm,
-      features: Features,
-      local: LocalClassification
-  ) = {
-    IO.pure(
-      ClassificationPrediction(
-        UUID.randomUUID().toString,
-        projectId,
-        algorithm.id,
-        features,
-        List.empty,
-        local.computed
-      )
-    )
-  }
-
-  def predictClassificationWithAlgorithm(
-      project: ClassificationProject,
-      algorithm: Algorithm,
-      features: Features,
-      entityLinks: List[EntityLink]
-  )(implicit cs: ContextShift[IO]): IO[ClassificationPrediction] = {
-    val predictionIO = algorithm.backend match {
-      case local: LocalClassification =>
-        predictWithLocalClassificationBackend(
-          project.id,
-          algorithm,
-          features,
-          local
-        )
-      case tfBackend: TensorFlowClassificationBackend =>
-        predictWithTensorFlowClassificationBackend(
-          project.id,
-          algorithm,
-          features,
-          tfBackend,
-          project.configuration.labels
-        )
-      case tfBackend: TensorFlowRegressionBackend =>
-        IO.raiseError(
-          IncompatibleBackend(
-            "TensorFlowRegressionBackend can not do classification, use TensorFlowClassificationBackend instead"
-          )
-        )
-    }
-    predictionIO.flatMap { prediction =>
-      if (config.prediction.storeInPostgresql) {
-        logger.debug(
-          s"storing prediction ${prediction.id} in postgresql"
-        ) *> persistClassificationPrediction(prediction, entityLinks) *> IO
-          .pure(
-            prediction
-          )
-      } else {
-        logger.debug(
-          s"storing predictions in postgresql in disabled, ignoring ${prediction.id}"
-        ) *> IO.pure(prediction)
-      }
-    }
-  }
-
-  def predictRegressionWithAlgorithm(
-      project: RegressionProject,
-      algorithm: Algorithm,
-      features: Features,
-      entityLinks: List[EntityLink]
-  ): IO[RegressionPrediction] = {
-    val predictionIO = algorithm.backend match {
-      case local: LocalClassification =>
-        IO.raiseError(
-          IncompatibleBackend("LocalClassification can not do regression")
-        )
-      case tfBackend: TensorFlowRegressionBackend =>
-        predictWithTensorFlowRegressionBackend(
-          project.id,
-          algorithm,
-          features,
-          tfBackend
-        )
-      case tfBackend: TensorFlowClassificationBackend =>
-        IO.raiseError(
-          IncompatibleBackend(
-            "TensorFlowRegressionBackend can not do regression, use TensorFlowClassificationBackend instead"
-          )
-        )
-    }
-    predictionIO.flatMap { prediction =>
-      if (config.prediction.storeInPostgresql) {
-        logger.debug(
-          s"storing prediction ${prediction.id} in postgresql"
-        ) *> persistRegressionPrediction(prediction, entityLinks) *> IO.pure(
-          prediction
-        )
-      } else {
-        logger.debug(
-          s"storing predictions in postgresql in disabled, ignoring ${prediction.id}"
-        ) *> IO.pure(prediction)
-      }
-    }
-  }
-
   def validateClassificationLabels(
       labelsConfiguration: LabelsConfiguration,
       labels: Set[ClassificationLabel]
@@ -299,91 +127,48 @@ class PredictionsService(
       entityLinks: List[EntityLink],
       optionalAlgorithmId: Option[String]
   ): IO[Prediction] = projectsService.readProject(projectId).flatMap {
-    case project: ClassificationProject =>
-      predictForClassificationProject(
-        project,
-        features,
-        entityLinks,
-        optionalAlgorithmId
-      )
-    case project: RegressionProject =>
-      predictForRegressionProject(
-        project,
-        features,
-        entityLinks,
-        optionalAlgorithmId
-      )
-  }
-
-  def predictForClassificationProject(
-      project: ClassificationProject,
-      features: Features,
-      entityLinks: List[EntityLink],
-      optionalAlgorithmId: Option[String]
-  ) = {
-    optionalAlgorithmId.fold(
-      predictClassificationWithProjectPolicy(features, project, entityLinks)
-    )(
-      algorithmId =>
-        project.algorithmsMap
-          .get(algorithmId)
-          .fold[IO[Prediction]](
-            IO.raiseError(
-              AlgorithmDoesNotExist(algorithmId)
-            )
-          )(
-            algorithm =>
-              predictClassificationWithAlgorithm(
-                project,
-                algorithm,
-                features,
-                entityLinks
-              ).flatMap { prediction =>
-                if (validateClassificationLabels(
-                    project.configuration.labels,
-                    prediction.labels
-                  )) {
-                  IO.pure(prediction)
-                } else {
-                  val message =
-                    s"The labels do not match the configuration of project ${project.id}"
-                  logger.warn(message) *> IO.raiseError(
-                    LabelsValidationFailed(
-                      message
-                    )
-                  )
-                }
-              }
-          )
-    )
-  }
-
-  def predictForRegressionProject(
-      project: RegressionProject,
-      features: Features,
-      entityLinks: List[EntityLink],
-      optionalAlgorithmId: Option[String]
-  ) =
-    optionalAlgorithmId.fold(
-      predictRegressionWithProjectPolicy(features, project, entityLinks)
-    )(
-      algorithmId =>
-        project.algorithmsMap
-          .get(algorithmId)
-          .fold[IO[Prediction]](
-            IO.raiseError(
-              AlgorithmDoesNotExist(algorithmId)
-            )
-          )(
-            algorithm =>
-              predictRegressionWithAlgorithm(
-                project,
-                algorithm,
-                features,
-                entityLinks
+    project =>
+      val maybeAlgorithmId = optionalAlgorithmId.fold(
+        (project.policy.take)
+      )(algorithmId => algorithmId.some)
+      maybeAlgorithmId
+        .fold[IO[Prediction]] {
+          val errorMessage =
+            s"There is no algorithm in project $projectId, prediction failed"
+          logger.warn(errorMessage) *> IO
+            .raiseError(NoAlgorithmAvailable(errorMessage))
+        } { algorithmId =>
+          for {
+            algorithm <- project.algorithmsMap
+              .get(algorithmId)
+              .fold[IO[Algorithm]] {
+                val errorMessage = s"The algorithm $algorithmId does not exist"
+                logger.warn(errorMessage) >> IO
+                  .raiseError(AlgorithmDoesNotExist(errorMessage))
+              }(
+                algorithm => IO.pure(algorithm)
               )
-          )
-    )
+            prediction <- predictWithBackend(
+              project,
+              algorithm,
+              features
+            )
+            _ <- if (config.prediction.storeInPostgresql) {
+              logger.debug(
+                s"storing prediction ${prediction.id} in postgresql"
+              ) *> persistPrediction(prediction, entityLinks) *> IO
+                .pure(
+                  prediction
+                )
+            } else {
+              logger.debug(
+                s"storing predictions in postgresql in disabled, ignoring ${prediction.id}"
+              ) *> IO.pure(prediction)
+            }
+          } yield prediction
+        }
+
+  }
 
   def addClassificationExample(
       labels: Option[String],
@@ -445,10 +230,6 @@ class PredictionsService(
           .map(_ => predictionEvent)
       }
     )
-
-  import cats.implicits._
-  import doobie.free.connection._
-  import cats.effect.implicits._
 
   def addExample(
       predictionId: String,
