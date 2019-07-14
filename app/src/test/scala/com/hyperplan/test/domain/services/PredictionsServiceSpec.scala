@@ -34,6 +34,7 @@ import akka.testkit.TestKit
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import akka.testkit.ImplicitSender
+import org.http4s.client.blaze.BlazeClientBuilder
 
 class PredictionsServiceSpec()
     extends TestKit(ActorSystem("test"))
@@ -123,6 +124,10 @@ class PredictionsServiceSpec()
     projectCache
   )
 
+  val blazeClient = BlazeClientBuilder[IO](
+    ExecutionContext.global
+  ).resource
+
   val predictionsService: PredictionsService =
     new PredictionsService(
       predictionsRepository,
@@ -130,6 +135,7 @@ class PredictionsServiceSpec()
       Some(kinesisService),
       Some(pubSubService),
       Some(kafkaService),
+      blazeClient,
       config
     )
 }
