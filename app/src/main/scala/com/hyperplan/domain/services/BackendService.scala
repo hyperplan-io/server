@@ -31,27 +31,28 @@ import com.hyperplan.domain.models.labels.RegressionLabel
 import com.hyperplan.infrastructure.serialization.tensorflow.TensorFlowRegressionLabelsSerializer
 import com.hyperplan.domain.models.RegressionPrediction
 import com.hyperplan.domain.models.ClassificationPrediction
+import com.hyperplan.domain.models.Project
+import com.hyperplan.domain.models.ClassificationProject
+import com.hyperplan.domain.models.RegressionProject
 
-trait RasaNluBackendSupport extends IOLogging {
+trait BackendService extends IOLogging {
 
   val blazeClient: Resource[IO, Client[IO]]
 
   def predictWithBackend(
-      projectId: String,
+      project: Project, 
       algorithm: Algorithm,
-      features: Features.Features,
-      backend: Backend,
-      labelsConfiguration: LabelsConfiguration
+      features: Features.Features
   )(implicit cs: ContextShift[IO]): IO[Prediction] =
-    backend match {
-      case LocalClassification(computed) =>
+    (algorithm.backend, project) match {
+      case (LocalClassification(computed), _: ClassificationProject) =>
         ???
-      case TensorFlowClassificationBackend(
+      case (TensorFlowClassificationBackend(
           host,
           port,
           featuresTransformer,
           labelsTransformer
-          ) =>
+          ), classificationProject: ClassificationProject) =>
         featuresTransformer
           .transform(features)
           .fold(
@@ -68,7 +69,7 @@ trait RasaNluBackendSupport extends IOLogging {
                   callHttpBackend(
                     request,
                     labelsTransformer.transform(
-                      labelsConfiguration,
+                      classificationProject.configuration.labels,
                       ju.UUID.randomUUID().toString,
                       _: TensorFlowClassificationLabels
                     )
@@ -79,7 +80,7 @@ trait RasaNluBackendSupport extends IOLogging {
                         IO.pure(
                           ClassificationPrediction(
                             predictionId,
-                            projectId,
+                            project.id,
                             algorithm.id,
                             features,
                             Nil,
@@ -92,51 +93,13 @@ trait RasaNluBackendSupport extends IOLogging {
               )
             }
           )
-      case backend @ TensorFlowRegressionBackend(
-            host,
-            port,
-            featuresTransformer
-          ) =>
-        featuresTransformer
-          .transform(features)
-          .fold(
-            err => IO.raiseError(err),
-            transformedFeatures => {
-              val uriString = s"http://${host}:${port}"
-              buildRequestWithFeatures(
-                uriString,
-                algorithm.security.headers,
-                transformedFeatures
-              )(TensorFlowFeaturesSerializer.entityEncoder).fold(
-                err => IO.raiseError(err),
-                request =>
-                  callHttpBackend(
-                    request,
-                    backend.labelsTransformer
-                  )(TensorFlowRegressionLabelsSerializer.entityDecoder)
-                    .flatMap {
-                      case Right(labels) =>
-                        val predictionId = ju.UUID.randomUUID.toString
-                        IO.pure(
-                          RegressionPrediction(
-                            predictionId,
-                            projectId,
-                            algorithm.id,
-                            features,
-                            Nil,
-                            labels
-                          )
-                        )
-                      case Left(err) =>
-                        IO.raiseError(err)
-                    }
-              )
-
-            }
-          )
-      case RasaNluClassificationBackend(_, _, _, _) =>
+      case (RasaNluClassificationBackend(_, _, _, _), _: ClassificationProject) =>
         ???
+      case (_: TensorFlowRegressionBackend, _: RegressionProject) =>
+        IO.raiseError(new Exception(""))
+      case _ => ???
     }
+
 
   def buildRequestWithFeatures[F, L](
       uriString: String,
