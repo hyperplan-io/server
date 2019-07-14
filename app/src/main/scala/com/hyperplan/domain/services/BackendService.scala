@@ -41,7 +41,7 @@ trait BackendService extends IOLogging {
             algorithm.id,
             features,
             Nil,
-            preComputedLabels 
+            preComputedLabels
           )
         )
       case (
@@ -98,10 +98,57 @@ trait BackendService extends IOLogging {
           _: ClassificationProject
           ) =>
         ???
-      case (_: TensorFlowRegressionBackend, _: RegressionProject) =>
-        IO.raiseError(new Exception(""))
-      case (backend, project) => 
-        val errorMessage = s"Backend ${backend.getClass.getSimpleName} is not compatible with project ${project.getClass.getSimpleName}"
+      case (
+          backend @ TensorFlowRegressionBackend(
+            host,
+            port,
+            featuresTransformer
+          ),
+          regressionProject: RegressionProject
+          ) =>
+        featuresTransformer
+          .transform(features)
+          .fold(
+            err => IO.raiseError(err),
+            transformedFeatures => {
+              val uriString = s"http://${host}:${port}"
+              val predictionId = ju.UUID.randomUUID.toString
+              buildRequestWithFeatures(
+                uriString,
+                algorithm.security.headers,
+                transformedFeatures
+              )(TensorFlowFeaturesSerializer.entityEncoder).fold(
+                err => IO.raiseError(err),
+                request =>
+                  callHttpBackend(
+                    request,
+                    backend.labelsTransformer(
+                      _: TensorFlowRegressionLabels,
+                      predictionId
+                    )
+                  )(TensorFlowRegressionLabelsSerializer.entityDecoder)
+                    .flatMap {
+                      case Right(labels) =>
+                        IO.pure(
+                          RegressionPrediction(
+                            predictionId,
+                            project.id,
+                            algorithm.id,
+                            features,
+                            Nil,
+                            labels
+                          )
+                        )
+                      case Left(err) =>
+                        logger.warn("An error occurred with the backend") >> IO
+                          .raiseError(err)
+                    }
+              )
+            }
+          )
+      case (backend, project) =>
+        val errorMessage =
+          s"Backend ${backend.getClass.getSimpleName} is not compatible with project ${project.getClass.getSimpleName}"
         logger.warn(errorMessage) >> IO.raiseError(new Exception(errorMessage))
     }
 
