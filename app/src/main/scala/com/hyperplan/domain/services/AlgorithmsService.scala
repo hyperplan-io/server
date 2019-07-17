@@ -23,6 +23,7 @@ import com.hyperplan.domain.repositories.{
 }
 import com.hyperplan.infrastructure.logging.IOLogging
 import com.hyperplan.domain.models.backends.RasaNluClassificationBackend
+import com.hyperplan.domain.models.errors.AlgorithmError
 
 class AlgorithmsService(
     projectsService: ProjectsService,
@@ -66,7 +67,7 @@ class AlgorithmsService(
   def validateClassificationAlgorithm(
       algorithm: Algorithm,
       project: ClassificationProject
-  ) = {
+  ): List[AlgorithmError] = {
     algorithm.backend match {
       case LocalClassification(computed) => Nil
       case TensorFlowClassificationBackend(
@@ -96,7 +97,7 @@ class AlgorithmsService(
       case TensorFlowRegressionBackend(_, _, _) =>
         List(IncompatibleAlgorithm(algorithm.id))
       case RasaNluClassificationBackend(_, _, _, _) =>
-        ???
+        Nil
     }
 
   }
