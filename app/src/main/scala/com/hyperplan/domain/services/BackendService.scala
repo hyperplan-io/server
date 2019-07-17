@@ -29,6 +29,7 @@ trait BackendService extends IOLogging {
   val blazeClient: Resource[IO, Client[IO]]
 
   def predictWithBackend(
+      predictionId: String,
       project: Project,
       algorithm: Algorithm,
       features: Features.Features
@@ -37,7 +38,7 @@ trait BackendService extends IOLogging {
       case (LocalClassification(preComputedLabels), _: ClassificationProject) =>
         IO.pure(
           ClassificationPrediction(
-            ju.UUID.randomUUID().toString,
+            predictionId,
             project.id,
             algorithm.id,
             features,
@@ -71,13 +72,12 @@ trait BackendService extends IOLogging {
                     request,
                     labelsTransformer.transform(
                       classificationProject.configuration.labels,
-                      ju.UUID.randomUUID().toString,
+                      predictionId,
                       _: TensorFlowClassificationLabels
                     )
                   )(TensorFlowClassificationLabelsSerializer.entityDecoder)
                     .flatMap {
                       case Right(labels) =>
-                        val predictionId = ju.UUID.randomUUID.toString
                         IO.pure(
                           ClassificationPrediction(
                             predictionId,
@@ -120,12 +120,11 @@ trait BackendService extends IOLogging {
                     request,
                     labelsTransformer.transform(
                       classificationProject.configuration.labels,
-                      ju.UUID.randomUUID().toString,
+                      predictionId,
                       _: RasaNluClassificationLabels
                     )
                   )(RasaNluLabelsSerializer.entityDecoder).flatMap {
                     case Right(labels) =>
-                      val predictionId = ju.UUID.randomUUID.toString
                       IO.pure(
                         ClassificationPrediction(
                           predictionId,
@@ -156,7 +155,6 @@ trait BackendService extends IOLogging {
             err => IO.raiseError(err),
             transformedFeatures => {
               val uriString = s"http://${host}:${port}"
-              val predictionId = ju.UUID.randomUUID.toString
               buildRequestWithFeatures(
                 uriString,
                 algorithm.security.headers,

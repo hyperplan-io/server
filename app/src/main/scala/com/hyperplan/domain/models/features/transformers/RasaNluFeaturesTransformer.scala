@@ -45,8 +45,6 @@ case class RasaNluFeaturesTransformer(
       case head :: tail =>
         transformRecursively(NonEmptyList(head, classes.tail), features)
       case Nil =>
-        println(classes)
-        println(field)
         Left(EmptyFieldNotAllowed(field))
 
     }
