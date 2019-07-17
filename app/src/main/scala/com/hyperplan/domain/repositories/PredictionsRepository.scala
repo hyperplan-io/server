@@ -155,7 +155,6 @@ class PredictionsRepository(implicit xa: Transactor[IO]) extends IOLogging {
     sql"""
       SELECT id, project_id, algorithm_id, type, features, labels, examples
       FROM predictions
-      LEFT JOIN entity_links ON prediction_id = id
       WHERE id=$predictionId
       """
       .query[PredictionData]
