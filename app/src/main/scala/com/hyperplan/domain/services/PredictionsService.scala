@@ -148,7 +148,9 @@ class PredictionsService(
               }(
                 algorithm => IO.pure(algorithm)
               )
+            predictionId <- IO(UUID.randomUUID.toString)
             prediction <- predictWithBackend(
+              predictionId,
               project,
               algorithm,
               features
