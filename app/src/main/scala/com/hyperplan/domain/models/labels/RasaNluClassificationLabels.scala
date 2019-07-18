@@ -1,6 +1,9 @@
 package com.hyperplan.domain.models.labels
 
-case class RasaNluIntent(confidence: Float, name: String) {
+case class RasaNluIntent(
+    name: String,
+    confidence: Float
+) {
   override def equals(o: Any): Boolean = o match {
     case that: RasaNluIntent =>
       that.name.equalsIgnoreCase(this.name)

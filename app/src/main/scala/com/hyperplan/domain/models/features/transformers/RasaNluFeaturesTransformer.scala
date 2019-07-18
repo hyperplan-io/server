@@ -16,20 +16,31 @@ case class RasaNluFeaturesTransformer(
 
   private def transformRecursively(
       classes: NonEmptyList[String],
-      features: Features
+      features: Features,
+      project: String,
+      model: String
   ): Either[RasaFeaturesTransformerError, RasaNluFeatures] =
     features
       .collectFirst {
         case StringFeature(key, value) if key == classes.head =>
-          RasaNluFeatures(value).asRight
+          RasaNluFeatures(value, project, model).asRight
         case StringVectorFeature(key, values) if key == classes.head =>
-          RasaNluFeatures(values.mkString(joinCharacter)).asRight
+          RasaNluFeatures(values.mkString(joinCharacter), project, model).asRight
         case StringVector2dFeature(key, values) if key == classes.head =>
-          RasaNluFeatures(values.flatten.mkString(joinCharacter)).asRight
+          RasaNluFeatures(
+            values.flatten.mkString(joinCharacter),
+            project,
+            model
+          ).asRight
         case ReferenceFeature(key, reference, value) =>
           classes.tail match {
             case head :: tail =>
-              transformRecursively(NonEmptyList(head, tail), value)
+              transformRecursively(
+                NonEmptyList(head, tail),
+                value,
+                project,
+                model
+              )
             case Nil =>
               Left(DidNotFindField(field))
           }
@@ -39,11 +50,18 @@ case class RasaNluFeaturesTransformer(
       .getOrElse(Left(DidNotFindField(field)))
 
   def transform(
-      features: Features
+      features: Features,
+      project: String,
+      model: String
   ): Either[RasaFeaturesTransformerError, RasaNluFeatures] =
     classes match {
       case head :: tail =>
-        transformRecursively(NonEmptyList(head, classes.tail), features)
+        transformRecursively(
+          NonEmptyList(head, classes.tail),
+          features,
+          project,
+          model
+        )
       case Nil =>
         Left(EmptyFieldNotAllowed(field))
 

@@ -112,8 +112,9 @@ object BackendSerializer {
             "class",
             Json.fromString(RasaNluClassifcationBackend.backendClass)
           ),
-          ("host", Json.fromString(backend.host)),
-          ("port", Json.fromInt(backend.port)),
+          ("rootPath", Json.fromString(backend.rootPath)),
+          ("project", Json.fromString(backend.project)),
+          ("model", Json.fromString(backend.model)),
           (
             "featuresTransformer",
             rasaNluFeaturesTransformerEncoder.apply(backend.featuresTransformer)
@@ -124,15 +125,17 @@ object BackendSerializer {
         : Decoder[RasaNluClassificationBackend] =
       (c: HCursor) =>
         for {
-          host <- c.downField("host").as[String]
-          port <- c.downField("port").as[Int]
+          rootPath <- c.downField("rootPath").as[String]
+          project <- c.downField("project").as[String]
+          model <- c.downField("model").as[String]
           featuresTransformer <- c
             .downField("featuresTransformer")
             .as[RasaNluFeaturesTransformer]
         } yield
           RasaNluClassificationBackend(
-            host,
-            port,
+            rootPath,
+            project,
+            model,
             featuresTransformer,
             RasaNluLabelsTransformer()
           )
