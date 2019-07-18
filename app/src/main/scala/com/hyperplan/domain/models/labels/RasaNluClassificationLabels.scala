@@ -1,23 +1,15 @@
 package com.hyperplan.domain.models.labels
 
-case class RasaNluPrediction(
-    intent: String,
-    predicted: String,
-    text: String,
-    confidence: Float
-) {
+case class RasaNluIntent(confidence: Float, name: String) {
   override def equals(o: Any): Boolean = o match {
-    case that: RasaNluPrediction =>
-      that.intent.equalsIgnoreCase(this.intent)
+    case that: RasaNluIntent =>
+      that.name.equalsIgnoreCase(this.name)
     case _ => false
   }
-  override def hashCode: Int = intent.toUpperCase.hashCode
+  override def hashCode: Int = name.toUpperCase.hashCode
 }
 
 case class RasaNluClassificationLabels(
-    report: String,
-    accuracy: Float,
-    f1Score: Float,
-    precision: Float,
-    predictions: List[RasaNluPrediction]
+    intent: RasaNluIntent,
+    intent_ranking: List[RasaNluIntent]
 )

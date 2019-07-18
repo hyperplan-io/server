@@ -18,18 +18,18 @@ case class RasaNluLabelsTransformer() {
   ): Either[RasaNluLabelsTransformerError, Set[ClassificationLabel]] =
     labelsConfiguration.data match {
       case OneOfLabelsConfiguration(oneOf, description) =>
-        val classificationLabels = labels.predictions.collect {
-          case prediction if oneOf.contains(prediction.intent) =>
+        val classificationLabels = labels.intent_ranking.collect {
+          case prediction if oneOf.contains(prediction.name) =>
             ClassificationLabel(
-              prediction.intent,
+              prediction.name,
               prediction.confidence,
               ExampleUrlService.correctClassificationExampleUrl(
                 predictionId,
-                prediction.intent
+                prediction.name
               ),
               ExampleUrlService.incorrectClassificationExampleUrl(
                 predictionId,
-                prediction.intent
+                prediction.name
               )
             )
         }.toSet
@@ -41,18 +41,18 @@ case class RasaNluLabelsTransformer() {
         }
 
       case DynamicLabelsConfiguration(_) =>
-        labels.predictions
+        labels.intent_ranking
           .map { prediction =>
             ClassificationLabel(
-              prediction.intent,
+              prediction.name,
               prediction.confidence,
               ExampleUrlService.correctClassificationExampleUrl(
                 predictionId,
-                prediction.intent
+                prediction.name
               ),
               ExampleUrlService.incorrectClassificationExampleUrl(
                 predictionId,
-                prediction.intent
+                prediction.name
               )
             )
           }
