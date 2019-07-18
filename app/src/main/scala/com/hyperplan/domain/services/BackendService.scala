@@ -96,19 +96,20 @@ trait BackendService extends IOLogging {
           )
       case (
           RasaNluClassificationBackend(
-            host,
-            port,
+            rootPath,
+            rasaProject,
+            rasaModel,
             featuresTransformer,
             labelsTransformer
           ),
           classificationProject: ClassificationProject
           ) =>
         featuresTransformer
-          .transform(features)
+          .transform(features, rasaProject, rasaModel)
           .fold(
             err => IO.raiseError(err),
             transformedFeatures => {
-              val uriString = s"http://${host}:${port}/parse"
+              val uriString = s"${rootPath.replaceAll("/$", "")}/parse"
               buildRequestWithFeatures(
                 uriString,
                 algorithm.security.headers,

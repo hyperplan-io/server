@@ -30,8 +30,9 @@ object TensorFlowClassificationBackend {
 }
 
 case class RasaNluClassificationBackend(
-    host: String,
-    port: Int,
+    rootPath: String,
+    project: String,
+    model: String,
     featuresTransformer: RasaNluFeaturesTransformer,
     labelsTransformer: RasaNluLabelsTransformer
 ) extends Backend

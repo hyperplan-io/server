@@ -96,7 +96,7 @@ class AlgorithmsService(
         ).flatten
       case TensorFlowRegressionBackend(_, _, _) =>
         List(IncompatibleAlgorithm(algorithm.id))
-      case RasaNluClassificationBackend(_, _, _, _) =>
+      case RasaNluClassificationBackend(_, _, _, _, _) =>
         Nil
     }
 
@@ -129,7 +129,7 @@ class AlgorithmsService(
         ).flatten
       case TensorFlowClassificationBackend(_, _, _, _) =>
         List(IncompatibleAlgorithm(algorithm.id))
-      case RasaNluClassificationBackend(_, _, _, _) =>
+      case RasaNluClassificationBackend(_, _, _, _, _) =>
         ???
     }
   }
