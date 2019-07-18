@@ -9,15 +9,15 @@ import io.circe.syntax._
 import cats.effect.IO
 import cats.implicits._
 import com.hyperplan.domain.models.labels.RasaNluClassificationLabels
-import com.hyperplan.domain.models.labels.RasaNluPrediction
+import com.hyperplan.domain.models.labels.RasaNluIntent
 
 object RasaNluLabelsSerializer {
 
   import io.circe._
   import io.circe.generic.semiauto._
 
-  implicit val predictionEncoder: Encoder[RasaNluPrediction] = deriveEncoder
-  implicit val predictionDecoder: Decoder[RasaNluPrediction] = deriveDecoder
+  implicit val predictionEncoder: Encoder[RasaNluIntent] = deriveEncoder
+  implicit val predictionDecoder: Decoder[RasaNluIntent] = deriveDecoder
 
   implicit val encoder: Encoder[RasaNluClassificationLabels] = deriveEncoder
   implicit val decoder: Decoder[RasaNluClassificationLabels] = deriveDecoder
