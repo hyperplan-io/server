@@ -12,7 +12,7 @@ import com.hyperplan.application.ApplicationConfig
 
 import com.hyperplan.domain.models._
 import com.hyperplan.domain.models.backends._
-import com.hyperplan.domain.models.errors._
+import com.hyperplan.domain.errors._
 import com.hyperplan.domain.models.events.{
   ClassificationPredictionEvent,
   PredictionEvent,

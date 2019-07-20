@@ -8,18 +8,12 @@ import cats.effect.IO
 import cats.implicits._
 import cats.MonadError
 import com.hyperplan.application.controllers.requests._
-import com.hyperplan.domain.models.errors.{
-  AlgorithmAlreadyExists,
-  IncompatibleFeatures,
-  IncompatibleLabels
-}
 import com.hyperplan.domain.models._
 import com.hyperplan.domain.services.AlgorithmsService
 import com.hyperplan.infrastructure.serialization._
 import com.hyperplan.infrastructure.logging.IOLogging
 import com.hyperplan.domain.services.DomainService
-import com.hyperplan.domain.models.errors.FeaturesClassDoesNotExist
-import com.hyperplan.domain.models.errors.DomainClassAlreadyExists
+import com.hyperplan.domain.errors._
 
 class FeaturesController(domainService: DomainService)
     extends Http4sDsl[IO]

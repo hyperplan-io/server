@@ -9,10 +9,7 @@ import cats.effect.IO
 import com.hyperplan.domain.models.Algorithm
 import com.hyperplan.domain.models.SecurityConfiguration
 import com.hyperplan.domain.models.backends._
-import com.hyperplan.domain.models.errors.{
-  AlgorithmAlreadyExists,
-  AlgorithmDataIncorrect
-}
+import com.hyperplan.domain.errors._
 import com.hyperplan.domain.repositories.AlgorithmsRepository.AlgorithmData
 import com.hyperplan.infrastructure.logging.IOLogging
 import com.hyperplan.infrastructure.serialization._

@@ -9,7 +9,7 @@ import cats.effect.Timer
 import cats.effect.ContextShift
 import cats.effect.concurrent.Ref
 
-import com.hyperplan.domain.models.errors._
+import com.hyperplan.domain.errors._
 
 import scala.concurrent.duration.Duration
 import java.util.concurrent.TimeUnit

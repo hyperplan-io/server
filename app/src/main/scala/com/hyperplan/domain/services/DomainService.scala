@@ -5,7 +5,7 @@ import cats.implicits._
 import com.hyperplan.infrastructure.logging.IOLogging
 import com.hyperplan.domain.repositories.DomainRepository
 import com.hyperplan.domain.models._
-import com.hyperplan.domain.models.errors._
+import com.hyperplan.domain.errors._
 
 import doobie.util.invariant.UnexpectedEnd
 

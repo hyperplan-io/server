@@ -4,7 +4,7 @@ import com.hyperplan.domain.models.Examples.{
   ClassificationExamples,
   RegressionExamples
 }
-import com.hyperplan.domain.models.errors._
+import com.hyperplan.domain.errors._
 import com.hyperplan.domain.models.features.Features.Features
 import com.hyperplan.domain.models._
 import com.hyperplan.domain.models.labels.{

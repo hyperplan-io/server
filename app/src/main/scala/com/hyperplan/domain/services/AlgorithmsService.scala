@@ -9,12 +9,7 @@ import com.hyperplan.domain.models.backends.{
   TensorFlowClassificationBackend,
   TensorFlowRegressionBackend
 }
-import com.hyperplan.domain.models.errors.{
-  IncompatibleAlgorithm,
-  IncompatibleFeatures,
-  IncompatibleLabels,
-  InvalidArgument
-}
+import com.hyperplan.domain.errors._
 import com.hyperplan.domain.models.features.transformers.TensorFlowFeaturesTransformer
 import com.hyperplan.domain.models.labels.transformers.TensorFlowLabelsTransformer
 import com.hyperplan.domain.repositories.{
@@ -23,7 +18,6 @@ import com.hyperplan.domain.repositories.{
 }
 import com.hyperplan.infrastructure.logging.IOLogging
 import com.hyperplan.domain.models.backends.RasaNluClassificationBackend
-import com.hyperplan.domain.models.errors.AlgorithmError
 
 class AlgorithmsService(
     projectsService: ProjectsService,

@@ -5,7 +5,7 @@ import cats.implicits._
 import com.hyperplan.domain.models.labels._
 import com.hyperplan.domain.models.features.transformers._
 import com.hyperplan.domain.models.labels.transformers._
-import com.hyperplan.domain.models.errors.LabelsTransformerError
+import com.hyperplan.domain.errors._
 import com.hyperplan.domain.services.ExampleUrlService
 
 sealed trait Backend

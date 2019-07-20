@@ -5,7 +5,7 @@ import cats.implicits._
 import com.hyperplan.domain.models.labels.RasaNluClassificationLabels
 import com.hyperplan.domain.models.LabelsConfiguration
 import com.hyperplan.domain.models.labels.ClassificationLabel
-import com.hyperplan.domain.models.errors._
+import com.hyperplan.domain.errors._
 import com.hyperplan.domain.services.ExampleUrlService
 import com.hyperplan.domain.models._
 

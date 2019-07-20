@@ -1,4 +1,4 @@
-package com.hyperplan.domain.models.errors
+package com.hyperplan.domain.errors
 
 class TensorFlowBackendError(message: String) extends Throwable(message)
 

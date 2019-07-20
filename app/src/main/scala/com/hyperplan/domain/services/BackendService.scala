@@ -18,7 +18,7 @@ import com.hyperplan.domain.models.features._
 import com.hyperplan.domain.models.backends._
 import com.hyperplan.domain.models._
 import com.hyperplan.domain.models.labels._
-import com.hyperplan.domain.models.errors._
+import com.hyperplan.domain.errors._
 
 import com.hyperplan.infrastructure.serialization.tensorflow._
 import com.hyperplan.infrastructure.serialization.rasa._

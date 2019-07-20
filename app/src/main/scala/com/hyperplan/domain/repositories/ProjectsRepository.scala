@@ -5,11 +5,10 @@ import doobie.implicits._
 import cats.effect.IO
 import cats.implicits._
 import com.hyperplan.domain.models._
-import com.hyperplan.domain.models.errors.ProjectAlreadyExists
 import com.hyperplan.infrastructure.serialization._
 import com.hyperplan.domain.models.backends.Backend
 import doobie.postgres.sqlstate
-import com.hyperplan.domain.models.errors.AlgorithmDataIncorrect
+import com.hyperplan.domain.errors._
 
 import com.hyperplan.domain.models._
 
@@ -191,7 +190,6 @@ object ProjectsRepository {
       Either[io.circe.Error, SecurityConfiguration]
   )
 
-  import com.hyperplan.domain.models.errors.ProjectDataInconsistent
   def dataToProject(data: ProjectData): ConnectionIO[Project] = data match {
     case (
         id,
