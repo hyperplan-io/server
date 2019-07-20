@@ -18,8 +18,20 @@ object RasaNluFeaturesSerializer {
   import io.circe._
   import io.circe.generic.semiauto._
 
-  implicit val encoder: Encoder[RasaNluFeatures] = deriveEncoder
-  implicit val decoder: Decoder[RasaNluFeatures] = deriveDecoder
+  implicit val encoder: Encoder[RasaNluFeatures] =
+    (features: RasaNluFeatures) =>
+      Json.obj(
+        ("q", Json.fromString(features.q)),
+        ("project", Json.fromString(features.project)),
+        ("model", Json.fromString(features.model))
+      )
+  implicit val decoder: Decoder[RasaNluFeatures] =
+    (c: HCursor) =>
+      for {
+        q <- c.downField("q").as[String]
+        project <- c.downField("project").as[String]
+        model <- c.downField("model").as[String]
+      } yield RasaNluFeatures(q, project, model)
 
   implicit val entityDecoder: EntityDecoder[IO, RasaNluFeatures] =
     jsonOf[IO, RasaNluFeatures]

@@ -110,35 +110,42 @@ trait BackendService extends IOLogging {
             err => IO.raiseError(err),
             transformedFeatures => {
               val uriString = s"${rootPath.replaceAll("/$", "")}/parse"
-              buildRequestWithFeatures(
+              logger
+                .debug(s"Calling Rasa Nlu backend with url $uriString") *> buildRequestWithFeatures(
                 uriString,
                 algorithm.security.headers,
                 transformedFeatures
               )(RasaNluFeaturesSerializer.entityEncoder).fold(
                 err => IO.raiseError(err),
                 request =>
-                  callHttpBackend(
-                    request,
-                    labelsTransformer.transform(
-                      classificationProject.configuration.labels,
-                      predictionId,
-                      _: RasaNluClassificationLabels
-                    )
-                  )(RasaNluLabelsSerializer.entityDecoder).flatMap {
-                    case Right(labels) =>
-                      IO.pure(
-                        ClassificationPrediction(
-                          predictionId,
-                          project.id,
-                          algorithm.id,
-                          features,
-                          Nil,
-                          labels
-                        )
+                  logger.debug(
+                    RasaNluFeaturesSerializer
+                      .encodeJson(transformedFeatures)
+                      .noSpaces
+                  ) *>
+
+                    callHttpBackend(
+                      request,
+                      labelsTransformer.transform(
+                        classificationProject.configuration.labels,
+                        predictionId,
+                        _: RasaNluClassificationLabels
                       )
-                    case Left(err) =>
-                      IO.raiseError(err)
-                  }
+                    )(RasaNluLabelsSerializer.entityDecoder).flatMap {
+                      case Right(labels) =>
+                        IO.pure(
+                          ClassificationPrediction(
+                            predictionId,
+                            project.id,
+                            algorithm.id,
+                            features,
+                            Nil,
+                            labels
+                          )
+                        )
+                      case Left(err) =>
+                        IO.raiseError(err)
+                    }
               )
             }
           )
