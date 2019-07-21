@@ -84,17 +84,28 @@ class DomainService(domainRepository: DomainRepository) extends IOLogging {
     }
   }
 
+  def validateUniqueness(names: List[String]): ValidationResult[Unit] =
+    Either
+      .cond[FeaturesError, Unit](
+        names.distinct.length == names.length,
+        Unit,
+        DuplicateFeatureIds()
+      )
+      .toValidatedNec
+
   def validate(
       featuresConfiguration: FeaturesConfiguration,
       existingFeatures: Option[FeaturesConfiguration],
-      references: List[(String, Option[FeaturesConfiguration])]
+      references: List[(String, Option[FeaturesConfiguration])],
+      names: List[String]
   ): ValidationResult[Unit] =
     (
       validateFeaturesDoesNotAlreadyExist(existingFeatures),
       validateReferenceFeaturesExist(references),
-      validateReferenceFeaturesDimension(featuresConfiguration)
+      validateReferenceFeaturesDimension(featuresConfiguration),
+      validateUniqueness(names)
     ).mapN {
-      case (features, references, _) => Unit
+      case (features, references, _, _) => Unit
     }
 
   def createFeatures(
@@ -102,6 +113,7 @@ class DomainService(domainRepository: DomainRepository) extends IOLogging {
   ): EitherT[IO, NonEmptyChain[FeaturesError], FeaturesConfiguration] =
     for {
       existingFeatures <- EitherT.liftF(readFeatures(features.id))
+      featuresNames = features.data.map(_.name)
       referenceFeaturesIO = features.data.collect {
         case FeatureConfiguration(
             name,
@@ -115,7 +127,7 @@ class DomainService(domainRepository: DomainRepository) extends IOLogging {
       }
       referenceFeatures <- EitherT.liftF(referenceFeaturesIO.sequence)
       validated <- EitherT.fromEither[IO](
-        validate(features, existingFeatures, referenceFeatures).toEither
+        validate(features, existingFeatures, referenceFeatures, featuresNames).toEither
       )
       _ <- EitherT.liftF(
         domainRepository.insertFeatures(features)
