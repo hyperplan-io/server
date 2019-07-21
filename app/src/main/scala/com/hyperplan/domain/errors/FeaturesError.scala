@@ -5,6 +5,10 @@ sealed trait FeaturesError {
   def message: String
 }
 
+case class DuplicateFeatureIds() extends FeaturesError {
+  val message =
+    "The feature names that you provided are not unique in the scope of the object"
+}
 case class FeaturesDoesNotExistError(featuresId: String) extends FeaturesError {
   val message = s"The features $featuresId does not exist"
 }

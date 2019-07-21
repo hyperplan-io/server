@@ -129,6 +129,54 @@ class FeaturesControllerSpec()
     )
   }
 
+  it should "not create a feature that contains duplicate ids" in {
+
+    val entityBody = FeaturesConfiguration(
+      id = "test",
+      data = List(
+        FeatureConfiguration(
+          name = "feature-1",
+          featuresType = StringFeatureType,
+          dimension = One,
+          description = "my description"
+        ),
+        FeatureConfiguration(
+          name = "feature-1",
+          featuresType = IntFeatureType,
+          dimension = One,
+          description = "my description"
+        ),
+        FeatureConfiguration(
+          name = "feature-3",
+          featuresType = FloatFeatureType,
+          dimension = Vector,
+          description = "my description"
+        )
+      )
+    )
+
+    val response = featuresController.service
+      .run(
+        Request[IO](
+          method = Method.POST,
+          uri = uri"/"
+        ).withEntity(entityBody)
+      )
+      .value
+      .map(_.get)
+    assert(
+      ControllerTestUtils.check[List[FeaturesError]](
+        response,
+        Status.BadRequest,
+        Some(
+          List(
+            DuplicateFeatureIds()
+          )
+        )
+      )
+    )
+  }
+
   it should "fail to create a feature that already exists" in {
 
     val entityBody = FeaturesConfiguration(
