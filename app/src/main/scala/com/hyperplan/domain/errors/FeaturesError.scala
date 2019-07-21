@@ -9,7 +9,9 @@ case class FeaturesDoesNotExistError(featuresId: String) extends FeaturesError {
   val message = s"The features $featuresId does not exist"
 }
 
-case class FeaturesAlreadyExistError(message: String) extends FeaturesError
+case class FeaturesAlreadyExistError(featuresId: String) extends FeaturesError {
+  val message = s"The feature $featuresId already exists"
+}
 case class ReferenceFeatureDoesNotExistError(reference: String)
     extends FeaturesError {
   val message =

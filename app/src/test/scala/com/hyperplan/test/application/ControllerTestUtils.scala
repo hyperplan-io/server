@@ -30,7 +30,9 @@ object ControllerTestUtils {
       println(s"Expected status $expectedStatus but got $actualResp.status")
     }
     if (!bodyCheck) {
-      println("Body is not as expected")
+      println(
+        s"Body is not as expected: ${actualResp.as[A].unsafeRunSync().toString}"
+      )
     }
     statusCheck && bodyCheck
   }

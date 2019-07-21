@@ -33,12 +33,12 @@ class FeaturesController(domainService: DomainService)
           )
           features <- domainService.createFeatures(domainClass).value
           _ <- logger.info(
-            s"Domain class created with id ${domainClass.id}"
+            s"Features class created with id ${domainClass.id}"
           )
         } yield features)
           .flatMap {
             case Right(domainClass) =>
-              Ok(FeaturesConfigurationSerializer.encodeJson(domainClass))
+              Created(FeaturesConfigurationSerializer.encodeJson(domainClass))
             case Left(errors) =>
               BadRequest(
                 ErrorsSerializer.encodeJson(errors.toList: _*)
