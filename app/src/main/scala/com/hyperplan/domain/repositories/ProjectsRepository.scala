@@ -8,9 +8,10 @@ import com.hyperplan.domain.models._
 import com.hyperplan.infrastructure.serialization._
 import com.hyperplan.domain.models.backends.Backend
 import doobie.postgres.sqlstate
-import com.hyperplan.domain.errors._
+import com.hyperplan.domain.errors.ProjectError
 
 import com.hyperplan.domain.models._
+import com.hyperplan.domain.errors.AlgorithmDataIncorrect
 
 class ProjectsRepository(implicit xa: Transactor[IO]) {
 
@@ -80,7 +81,7 @@ class ProjectsRepository(implicit xa: Transactor[IO]) {
     insertQuery(project: Project).run
       .attemptSomeSqlState {
         case sqlstate.class23.UNIQUE_VIOLATION =>
-          ProjectAlreadyExists(project.id)
+          ProjectError.ProjectAlreadyExists(project.id)
       }
       .transact(xa)
 
@@ -220,7 +221,7 @@ object ProjectsRepository {
         policy
       ): Project).pure[ConnectionIO]
     case projectData =>
-      AsyncConnectionIO.raiseError(ProjectDataInconsistent(data._1))
+      AsyncConnectionIO.raiseError(ProjectError.ProjectDataInconsistent(data._1))
   }
 
   def dataListToProject(dataList: List[ProjectData]) =
