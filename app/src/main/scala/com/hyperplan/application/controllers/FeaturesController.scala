@@ -38,7 +38,7 @@ class FeaturesController(domainService: DomainService)
         } yield features)
           .flatMap {
             case Right(domainClass) =>
-              Ok(FeaturesConfigurationSerializer.encodeJson(domainClass))
+              Created(FeaturesConfigurationSerializer.encodeJson(domainClass))
             case Left(errors) =>
               BadRequest(
                 ErrorsSerializer.encodeJson(errors.toList: _*)

@@ -13,6 +13,7 @@ import cats.data.Validated._
 import com.hyperplan.domain.models.features.ReferenceFeature
 import com.hyperplan.domain.models.features.One
 import scala.collection.immutable.Nil
+import com.hyperplan.domain.models.features.ReferenceFeatureType
 
 class DomainService(domainRepository: DomainRepository) extends IOLogging {
 
@@ -36,10 +37,11 @@ class DomainService(domainRepository: DomainRepository) extends IOLogging {
 
   def validateFeaturesDoesNotAlreadyExist(
       existingFeatures: Option[FeaturesConfiguration]
-  ): ValidationResult[String] =
-    Either
-      .cond(existingFeatures.isEmpty, "", FeaturesAlreadyExistError(""))
-      .toValidatedNec
+  ): ValidationResult[Unit] =
+    (existingFeatures match {
+      case None => Validated.valid(())
+      case Some(value) => Validated.invalid(FeaturesAlreadyExistError(value.id))
+    }).toValidatedNec
 
   def validateReferenceFeaturesExist(
       references: List[(String, Option[FeaturesConfiguration])]
@@ -101,9 +103,14 @@ class DomainService(domainRepository: DomainRepository) extends IOLogging {
     for {
       existingFeatures <- EitherT.liftF(readFeatures(features.id))
       referenceFeaturesIO = features.data.collect {
-        case featuresConfiguration if featuresConfiguration.isReference =>
-          readFeatures(featuresConfiguration.name).map { config =>
-            featuresConfiguration.name -> config
+        case FeatureConfiguration(
+            name,
+            ReferenceFeatureType(reference),
+            _,
+            _
+            ) =>
+          readFeatures(reference).map { config =>
+            name -> config
           }
       }
       referenceFeatures <- EitherT.liftF(referenceFeaturesIO.sequence)
