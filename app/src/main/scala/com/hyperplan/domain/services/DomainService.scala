@@ -17,7 +17,8 @@ import com.hyperplan.domain.models.features.ReferenceFeatureType
 
 class DomainService(domainRepository: DomainRepository) extends IOLogging {
 
-  type ValidationResult[A] = ValidatedNec[FeaturesError, A]
+  type FeaturesValidationResult[A] = ValidatedNec[FeaturesError, A]
+  type LabelsValidationResult[A] = ValidatedNec[LabelsError, A]
 
   def readAllFeatures =
     domainRepository.readAllFeatures
@@ -29,15 +30,33 @@ class DomainService(domainRepository: DomainRepository) extends IOLogging {
     }
 
   def readAllLabels = domainRepository.readAllLabels
-  def readLabels(id: String) =
-    domainRepository.readLabels(id).handleErrorWith {
+
+  def readLabels(id: String): IO[Option[LabelsConfiguration]] =
+    domainRepository.readLabels(id).map(_.some).handleErrorWith {
       case UnexpectedEnd =>
-        IO.raiseError(LabelsClassDoesNotExist(id))
+        IO.pure(none[LabelsConfiguration])
+    }
+
+  def validateLabelsDoesNotAlreadyExist(
+      existingLabels: Option[LabelsConfiguration]
+  ): LabelsValidationResult[Unit] =
+    (existingLabels match {
+      case None => Validated.valid(())
+      case Some(value) => Validated.invalid(LabelsAlreadyExist(value.id))
+    }).toValidatedNec
+
+  def validateLabelsNotEmpty(labelsConfiguration: LabelsConfiguration) =
+    labelsConfiguration.data match {
+      case DynamicLabelsConfiguration(description) => Validated.valid(Unit)
+      case OneOfLabelsConfiguration(oneOf, description) =>
+        Either
+          .cond(oneOf.nonEmpty, Unit, OneOfLabelsCannotBeEmpty())
+          .toValidatedNec
     }
 
   def validateFeaturesDoesNotAlreadyExist(
       existingFeatures: Option[FeaturesConfiguration]
-  ): ValidationResult[Unit] =
+  ): FeaturesValidationResult[Unit] =
     (existingFeatures match {
       case None => Validated.valid(())
       case Some(value) => Validated.invalid(FeaturesAlreadyExistError(value.id))
@@ -84,7 +103,7 @@ class DomainService(domainRepository: DomainRepository) extends IOLogging {
     }
   }
 
-  def validateUniqueness(names: List[String]): ValidationResult[Unit] =
+  def validateUniqueness(names: List[String]): FeaturesValidationResult[Unit] =
     Either
       .cond[FeaturesError, Unit](
         names.distinct.length == names.length,
@@ -93,12 +112,12 @@ class DomainService(domainRepository: DomainRepository) extends IOLogging {
       )
       .toValidatedNec
 
-  def validate(
+  def validateFeatures(
       featuresConfiguration: FeaturesConfiguration,
       existingFeatures: Option[FeaturesConfiguration],
       references: List[(String, Option[FeaturesConfiguration])],
       names: List[String]
-  ): ValidationResult[Unit] =
+  ): FeaturesValidationResult[Unit] =
     (
       validateFeaturesDoesNotAlreadyExist(existingFeatures),
       validateReferenceFeaturesExist(references),
@@ -127,16 +146,41 @@ class DomainService(domainRepository: DomainRepository) extends IOLogging {
       }
       referenceFeatures <- EitherT.liftF(referenceFeaturesIO.sequence)
       validated <- EitherT.fromEither[IO](
-        validate(features, existingFeatures, referenceFeatures, featuresNames).toEither
+        validateFeatures(
+          features,
+          existingFeatures,
+          referenceFeatures,
+          featuresNames
+        ).toEither
       )
       _ <- EitherT.liftF(
         domainRepository.insertFeatures(features)
       )
     } yield features
 
-  def createLabels(labels: LabelsConfiguration) =
-    domainRepository
-      .insertLabels(labels)
-      .flatMap(_.fold(err => IO.raiseError(err), result => IO.pure(result)))
+  def validateLabels(
+      existingLabels: Option[LabelsConfiguration],
+      labelsConfiguration: LabelsConfiguration
+  ): LabelsValidationResult[Unit] =
+    (
+      validateLabelsDoesNotAlreadyExist(existingLabels),
+      validateLabelsNotEmpty(labelsConfiguration)
+    ).mapN {
+      case (_, _) => Unit
+    }
+
+  def createLabels(
+      labelsConfiguration: LabelsConfiguration
+  ): EitherT[IO, NonEmptyChain[LabelsError], LabelsConfiguration] =
+    for {
+      existingLabels <- EitherT.liftF(readLabels(labelsConfiguration.id))
+      _ <- EitherT.fromEither[IO](
+        validateLabels(existingLabels, labelsConfiguration).toEither
+      )
+      _ <- EitherT.liftF(
+        domainRepository
+          .insertLabels(labelsConfiguration)
+      )
+    } yield labelsConfiguration
 
 }

@@ -45,7 +45,26 @@ object ErrorsSerializer {
     case _ => DecodingFailure("Unknown error class", Nil).asLeft
   }
 
-  implicit val encoder: Encoder[NonEmptyChain[FeaturesError]] =
+  def labelErrorToClass(error: LabelsError): String = error match {
+    case OneOfLabelsCannotBeEmpty() => "OneOfLabelsCannotBeEmpty"
+    case LabelsAlreadyExist(_) => "LabelsAlreadyExist"
+    case LabelsDoesNotExist(_) =>
+      "LabelsDoesNotExist"
+  }
+
+  def classToLabelError(
+      errorClass: String,
+      message: String
+  ): Decoder.Result[LabelsError] = errorClass match {
+    case "OneOfLabelsCannotBeEmpty" =>
+      OneOfLabelsCannotBeEmpty().asRight
+    case "LabelsAlreadyExist" =>
+      LabelsAlreadyExist(message).asRight
+    case "LabelsDoesNotExist" =>
+      LabelsDoesNotExist(message).asRight
+  }
+
+  implicit val featuresEncoder: Encoder[NonEmptyChain[FeaturesError]] =
     (errors: NonEmptyChain[FeaturesError]) =>
       Json.obj(
         (
@@ -65,6 +84,34 @@ object ErrorsSerializer {
         "message" -> Json.fromString(error.message)
       )
 
+  implicit val labelsEncoder: Encoder[NonEmptyChain[LabelsError]] =
+    (errors: NonEmptyChain[LabelsError]) =>
+      Json.obj(
+        (
+          "errors",
+          Json.fromValues(
+            errors.toNonEmptyList.map { error =>
+              error.asJson
+            }.toList
+          )
+        )
+      )
+
+  implicit val labelEncoder: Encoder[LabelsError] =
+    (error: LabelsError) =>
+      Json.obj(
+        "class" -> Json.fromString(labelErrorToClass(error)),
+        "message" -> Json.fromString(error.message)
+      )
+
+  implicit val labelDecoder: Decoder[LabelsError] =
+    (cursor: HCursor) =>
+      for {
+        errorClass <- cursor.downField("class").as[String]
+        message <- cursor.downField("message").as[String]
+        error <- classToLabelError(errorClass, message)
+      } yield error
+
   implicit val featureDecoder: Decoder[FeaturesError] =
     (cursor: HCursor) =>
       for {
@@ -77,7 +124,14 @@ object ErrorsSerializer {
     errors.asJson
   }
 
+  def encodeJsonLabels[E](errors: LabelsError*): Json = {
+    errors.asJson
+  }
+
   implicit val featureErrorEntityDecoder
       : EntityDecoder[IO, List[FeaturesError]] =
     jsonOf[IO, List[FeaturesError]]
+
+  implicit val labelErrorEntityDecoder: EntityDecoder[IO, List[LabelsError]] =
+    jsonOf[IO, List[LabelsError]]
 }
