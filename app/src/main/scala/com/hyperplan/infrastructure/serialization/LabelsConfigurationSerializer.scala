@@ -5,8 +5,8 @@ import io.circe.parser._
 import io.circe.{HCursor, Json}
 
 import cats.effect.IO
-import org.http4s.circe.jsonOf
-import org.http4s.EntityDecoder
+import org.http4s.circe.{jsonOf, jsonEncoderOf}
+import org.http4s.{EntityDecoder, EntityEncoder}
 
 /**
   * Created by Antoine Sauray on 20/03/2019.
@@ -126,5 +126,11 @@ object LabelsConfigurationSerializer {
 
   implicit val entityDecoder: EntityDecoder[IO, LabelsConfiguration] =
     jsonOf[IO, LabelsConfiguration]
+
+  implicit val entityEncoder: EntityEncoder[IO, LabelsConfiguration] =
+    jsonEncoderOf[IO, LabelsConfiguration]
+
+  implicit val entityDecoderList: EntityDecoder[IO, List[LabelsConfiguration]] =
+    jsonOf[IO, List[LabelsConfiguration]]
 
 }

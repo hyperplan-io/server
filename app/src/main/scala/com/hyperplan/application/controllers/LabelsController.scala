@@ -14,10 +14,14 @@ import com.hyperplan.domain.services.AlgorithmsService
 import com.hyperplan.infrastructure.serialization._
 import com.hyperplan.infrastructure.logging.IOLogging
 import com.hyperplan.domain.services.DomainService
+import com.hyperplan.infrastructure.serialization.errors._
 
 class LabelsController(domainService: DomainService)
     extends Http4sDsl[IO]
     with IOLogging {
+
+  val unhandledErrorMessage =
+    s"""Unhandled server error, please check the logs or contact support"""
 
   val service: HttpRoutes[IO] = {
     HttpRoutes.of[IO] {
@@ -27,34 +31,55 @@ class LabelsController(domainService: DomainService)
             MonadError[IO, Throwable],
             LabelsConfigurationSerializer.entityDecoder
           )
-          _ <- domainService.createLabels(domainClass)
+          labels <- domainService.createLabels(domainClass).value
           _ <- logger.info(
             s"Domain class created with id ${domainClass.id}"
           )
 
-        } yield domainClass)
-          .flatMap { domainClass =>
-            Ok(LabelsConfigurationSerializer.encodeJson(domainClass))
-          }
-          .handleErrorWith {
-            case err: DomainClassAlreadyExists =>
-              Conflict(
-                s"""The labels class ${err.domainClassId} already exists"""
+        } yield labels)
+          .flatMap {
+            case Right(labels) =>
+              Created(LabelsConfigurationSerializer.encodeJson(labels))
+            case Left(errors) =>
+              BadRequest(
+                ErrorsSerializer.encodeJsonLabels(errors.toList: _*)
               )
           }
+          .handleErrorWith {
+            case err =>
+              logger.warn("Unhandled error in LabelsController", err) >> InternalServerError(
+                unhandledErrorMessage
+              )
+          }
+
       case req @ GET -> Root =>
-        domainService.readAllLabels.flatMap { labels =>
-          Ok(LabelsConfigurationSerializer.encodeJsonList(labels))
-        }
+        domainService.readAllLabels
+          .flatTap(labels => logger.debug(s"Read all labels $labels"))
+          .flatMap { labels =>
+            Ok(LabelsConfigurationSerializer.encodeJsonList(labels))
+          }
+          .handleErrorWith {
+            case err =>
+              logger.warn("Unhandled error in LabelsController", err) >> InternalServerError(
+                unhandledErrorMessage
+              )
+          }
       case req @ GET -> Root / labelsId =>
         domainService
           .readLabels(labelsId)
-          .flatMap { labels =>
-            Ok(LabelsConfigurationSerializer.encodeJson(labels))
+          .flatMap {
+            case Some(labels) =>
+              Ok(LabelsConfigurationSerializer.encodeJson(labels))
+            case None =>
+              NotFound(
+                ErrorsSerializer.encodeJsonLabels(LabelsDoesNotExist(labelsId))
+              )
           }
           .handleErrorWith {
-            case err: LabelsClassDoesNotExist =>
-              NotFound(s"""The labels class "$labelsId" does not exist""")
+            case err =>
+              logger.warn("Unhandled error in LabelsController", err) >> InternalServerError(
+                unhandledErrorMessage
+              )
           }
     }
   }

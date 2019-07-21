@@ -45,7 +45,7 @@ class ProjectsService(
       case (Classification, Some(labelsId)) =>
         val labelsIO = domainService.readLabels(labelsId)
         (featuresIO, labelsIO).mapN {
-          case (Some(features), labels) =>
+          case (Some(features), Some(labels)) =>
             ClassificationProject(
               projectRequest.id,
               projectRequest.name,
@@ -57,7 +57,11 @@ class ProjectsService(
               Nil,
               NoAlgorithm()
             )
-          case (None, labels) =>
+          case (None, None) =>
+            ???
+          case (None, Some(_)) =>
+            ???
+          case (Some(_), None) =>
             ???
         }
       case (Regression, None) =>
