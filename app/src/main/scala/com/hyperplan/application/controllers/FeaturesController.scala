@@ -35,14 +35,13 @@ class FeaturesController(domainService: DomainService)
           _ <- logger.info(
             s"Features class created with id ${domainClass.id}"
           )
+
         } yield features)
           .flatMap {
             case Right(domainClass) =>
-              Created(FeaturesConfigurationSerializer.encodeJson(domainClass))
-            case Left(errors) =>
-              BadRequest(
-                ErrorsSerializer.encodeJson(errors.toList: _*)
-              )
+              Ok(FeaturesConfigurationSerializer.encodeJson(domainClass))
+            case Left(err) =>
+              ???
           }
           .handleErrorWith {
             case err =>
@@ -69,10 +68,7 @@ class FeaturesController(domainService: DomainService)
             case Some(features) =>
               Ok(FeaturesConfigurationSerializer.encodeJson(features))
             case None =>
-              NotFound(
-                ErrorsSerializer
-                  .encodeJson(FeaturesDoesNotExistError(featuresId))
-              )
+              NotFound("")
           }
           .handleErrorWith {
             case err =>
