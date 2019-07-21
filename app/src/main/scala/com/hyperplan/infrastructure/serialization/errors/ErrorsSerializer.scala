@@ -23,7 +23,6 @@ object ErrorsSerializer {
       "ReferenceFeatureDoesNotExist"
     case RecursiveFeatureError(message) => "RecursivityError"
     case FeaturesAlreadyExistError(message) => "IdentifierAlreadyExist"
-    case DuplicateFeatureIds() => "DuplicateFeatureIds"
   }
 
   def classToFeatureError(
@@ -38,8 +37,6 @@ object ErrorsSerializer {
       ReferenceFeatureDoesNotExistError(message).asRight
     case "RecursivityError" =>
       RecursiveFeatureError(message).asRight
-    case "DuplicateFeatureIds" =>
-      DuplicateFeatureIds().asRight
     case "IdentifierAlreadyExist" =>
       FeaturesAlreadyExistError(message).asRight
     case _ => DecodingFailure("Unknown error class", Nil).asLeft

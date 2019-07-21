@@ -12,6 +12,7 @@ import cats.data._
 import cats.data.Validated._
 import com.hyperplan.domain.models.features.ReferenceFeature
 import com.hyperplan.domain.models.features.One
+import scala.collection.immutable.Nil
 
 class DomainService(domainRepository: DomainRepository) extends IOLogging {
 
@@ -41,19 +42,23 @@ class DomainService(domainRepository: DomainRepository) extends IOLogging {
       .toValidatedNec
 
   def validateReferenceFeaturesExist(
-      references: List[Option[FeaturesConfiguration]]
-  ): ValidationResult[List[FeaturesConfiguration]] = {
-    val nonEmptyReferences = references.collect {
-      case Some(featuresConfiguration) =>
-        featuresConfiguration
+      references: List[(String, Option[FeaturesConfiguration])]
+  ): Validated[NonEmptyChain[FeaturesError], Unit] = {
+    val emptyReferences = references.collect {
+      case (featureId, None) =>
+        featureId
     }
-    Either
-      .cond(
-        nonEmptyReferences.length == references.length,
-        nonEmptyReferences,
-        ReferenceFeatureDoesNotExistError()
-      )
-      .toValidatedNec
+    emptyReferences match {
+      case head :: tl =>
+        Validated.invalid[NonEmptyChain[FeaturesError], Unit](
+          NonEmptyChain(
+            ReferenceFeatureDoesNotExistError(head),
+            tl.map(id => ReferenceFeatureDoesNotExistError(id)): _*
+          )
+        )
+      case Nil =>
+        Validated.valid[NonEmptyChain[FeaturesError], Unit](())
+    }
   }
   def validateReferenceFeaturesDimension(
       featuresConfiguration: FeaturesConfiguration
@@ -80,14 +85,14 @@ class DomainService(domainRepository: DomainRepository) extends IOLogging {
   def validate(
       featuresConfiguration: FeaturesConfiguration,
       existingFeatures: Option[FeaturesConfiguration],
-      references: List[Option[FeaturesConfiguration]]
-  ): ValidationResult[List[FeaturesConfiguration]] =
+      references: List[(String, Option[FeaturesConfiguration])]
+  ): ValidationResult[Unit] =
     (
       validateFeaturesDoesNotAlreadyExist(existingFeatures),
       validateReferenceFeaturesExist(references),
       validateReferenceFeaturesDimension(featuresConfiguration)
     ).mapN {
-      case (features, references, _) => references
+      case (features, references, _) => Unit
     }
 
   def createFeatures(
@@ -97,7 +102,9 @@ class DomainService(domainRepository: DomainRepository) extends IOLogging {
       existingFeatures <- EitherT.liftF(readFeatures(features.id))
       referenceFeaturesIO = features.data.collect {
         case featuresConfiguration if featuresConfiguration.isReference =>
-          readFeatures(featuresConfiguration.name)
+          readFeatures(featuresConfiguration.name).map { config =>
+            featuresConfiguration.name -> config
+          }
       }
       referenceFeatures <- EitherT.liftF(referenceFeaturesIO.sequence)
       validated <- EitherT.fromEither[IO](
