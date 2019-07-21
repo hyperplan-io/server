@@ -77,11 +77,13 @@ class DomainRepository(implicit xa: Transactor[IO]) extends IOLogging {
       ${features.data}
     )""".update
 
-  def insertFeatures(features: FeaturesConfiguration) =
+  def insertFeatures(
+      features: FeaturesConfiguration
+  ): IO[Either[FeaturesError, Int]] =
     insertFeaturesQuery(features).run
       .attemptSomeSqlState {
         case sqlstate.class23.UNIQUE_VIOLATION =>
-          DomainClassAlreadyExists(features.id)
+          FeaturesAlreadyExistError(features.id)
       }
       .transact(xa)
 

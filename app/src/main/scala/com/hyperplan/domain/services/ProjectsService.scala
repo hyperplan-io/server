@@ -44,31 +44,37 @@ class ProjectsService(
     ((projectRequest.problem, projectRequest.labelsId) match {
       case (Classification, Some(labelsId)) =>
         val labelsIO = domainService.readLabels(labelsId)
-        (featuresIO, labelsIO).mapN { (features, labels) =>
-          ClassificationProject(
-            projectRequest.id,
-            projectRequest.name,
-            ClassificationConfiguration(
-              features,
-              labels,
-              streamConfiguration
-            ),
-            Nil,
-            NoAlgorithm()
-          )
+        (featuresIO, labelsIO).mapN {
+          case (Some(features), labels) =>
+            ClassificationProject(
+              projectRequest.id,
+              projectRequest.name,
+              ClassificationConfiguration(
+                features,
+                labels,
+                streamConfiguration
+              ),
+              Nil,
+              NoAlgorithm()
+            )
+          case (None, labels) =>
+            ???
         }
       case (Regression, None) =>
-        featuresIO.map { features =>
-          RegressionProject(
-            projectRequest.id,
-            projectRequest.name,
-            RegressionConfiguration(
-              features,
-              streamConfiguration
-            ),
-            Nil,
-            NoAlgorithm()
-          )
+        featuresIO.map {
+          case Some(features) =>
+            RegressionProject(
+              projectRequest.id,
+              projectRequest.name,
+              RegressionConfiguration(
+                features,
+                streamConfiguration
+              ),
+              Nil,
+              NoAlgorithm()
+            )
+          case None =>
+            ???
         }
       case (Classification, None) =>
         IO.raiseError(

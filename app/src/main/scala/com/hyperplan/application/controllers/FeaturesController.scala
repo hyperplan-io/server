@@ -27,14 +27,17 @@ class FeaturesController(domainService: DomainService)
             MonadError[IO, Throwable],
             FeaturesConfigurationSerializer.entityDecoder
           )
-          _ <- domainService.createFeatures(domainClass)
+          features <- domainService.createFeatures(domainClass).value
           _ <- logger.info(
             s"Domain class created with id ${domainClass.id}"
           )
 
-        } yield domainClass)
-          .flatMap { domainClass =>
-            Ok(FeaturesConfigurationSerializer.encodeJson(domainClass))
+        } yield features)
+          .flatMap {
+            case Right(domainClass) =>
+              Ok(FeaturesConfigurationSerializer.encodeJson(domainClass))
+            case Left(err) =>
+              ???
           }
           .handleErrorWith {
             case err: DomainClassAlreadyExists =>
@@ -49,8 +52,11 @@ class FeaturesController(domainService: DomainService)
       case req @ GET -> Root / featuresId =>
         domainService
           .readFeatures(featuresId)
-          .flatMap { features =>
-            Ok(FeaturesConfigurationSerializer.encodeJson(features))
+          .flatMap {
+            case Some(features) =>
+              Ok(FeaturesConfigurationSerializer.encodeJson(features))
+            case None =>
+              NotFound("")
           }
           .handleErrorWith {
             case err: FeaturesClassDoesNotExist =>
