@@ -11,6 +11,7 @@ import com.hyperplan.application.controllers.requests._
 import com.hyperplan.domain.models._
 import com.hyperplan.domain.services.AlgorithmsService
 import com.hyperplan.infrastructure.serialization._
+import com.hyperplan.infrastructure.serialization.errors._
 import com.hyperplan.infrastructure.logging.IOLogging
 import com.hyperplan.domain.services.DomainService
 import com.hyperplan.domain.errors._
@@ -18,6 +19,9 @@ import com.hyperplan.domain.errors._
 class FeaturesController(domainService: DomainService)
     extends Http4sDsl[IO]
     with IOLogging {
+
+  val unhandledErrorMessage =
+    s"""Unhandled server error, please check the logs or contact support"""
 
   val service: HttpRoutes[IO] = {
     HttpRoutes.of[IO] {
@@ -31,24 +35,33 @@ class FeaturesController(domainService: DomainService)
           _ <- logger.info(
             s"Domain class created with id ${domainClass.id}"
           )
-
         } yield features)
           .flatMap {
             case Right(domainClass) =>
               Ok(FeaturesConfigurationSerializer.encodeJson(domainClass))
-            case Left(err) =>
-              ???
+            case Left(errors) =>
+              BadRequest(
+                ErrorsSerializer.encodeJson(errors.toList: _*)
+              )
           }
           .handleErrorWith {
-            case err: DomainClassAlreadyExists =>
-              Conflict(
-                s"""The features class ${err.domainClassId} already exists"""
+            case err =>
+              InternalServerError(
+                unhandledErrorMessage
               )
           }
       case req @ GET -> Root =>
-        domainService.readAllFeatures.flatMap { features =>
-          Ok(FeaturesConfigurationSerializer.encodeJsonList(features))
-        }
+        domainService.readAllFeatures
+          .flatTap(features => logger.debug(s"Read all features $features"))
+          .flatMap { features =>
+            Ok(FeaturesConfigurationSerializer.encodeJsonList(features))
+          }
+          .handleErrorWith {
+            case err =>
+              logger.warn("Unhandled error in FeaturesController", err) >> InternalServerError(
+                unhandledErrorMessage
+              )
+          }
       case req @ GET -> Root / featuresId =>
         domainService
           .readFeatures(featuresId)
@@ -56,11 +69,16 @@ class FeaturesController(domainService: DomainService)
             case Some(features) =>
               Ok(FeaturesConfigurationSerializer.encodeJson(features))
             case None =>
-              NotFound("")
+              NotFound(
+                ErrorsSerializer
+                  .encodeJson(FeaturesDoesNotExistError(featuresId))
+              )
           }
           .handleErrorWith {
-            case err: FeaturesClassDoesNotExist =>
-              NotFound(s"""The features class "$featuresId" does not exist""")
+            case err =>
+              InternalServerError(
+                unhandledErrorMessage
+              )
           }
     }
   }

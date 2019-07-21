@@ -140,4 +140,7 @@ object FeaturesConfigurationSerializer {
   implicit val entityDecoder: EntityDecoder[IO, FeaturesConfiguration] =
     jsonOf[IO, FeaturesConfiguration]
 
+  implicit val entityDecoderList
+      : EntityDecoder[IO, List[FeaturesConfiguration]] =
+    jsonOf[IO, List[FeaturesConfiguration]]
 }

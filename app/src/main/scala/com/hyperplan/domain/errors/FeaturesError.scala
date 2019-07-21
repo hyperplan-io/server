@@ -1,14 +1,30 @@
 package com.hyperplan.domain.errors
 import com.hyperplan.domain.models.features.FeatureDimension
 
-sealed trait FeaturesError
+sealed trait FeaturesError {
+  def message: String
+}
 
-case class FeaturesDoesNotExistError(featuresId: String) extends FeaturesError
-case class FeaturesAlreadyExistError(featuresId: String) extends FeaturesError
-case class ReferenceFeatureDoesNotExistError() extends FeaturesError
+case class FeaturesDoesNotExistError(featuresId: String) extends FeaturesError {
+  val message = s"The features $featuresId does not exist"
+}
+
+case class FeaturesAlreadyExistError(message: String) extends FeaturesError
+case class ReferenceFeatureDoesNotExistError(reference: String)
+    extends FeaturesError {
+  val message =
+    s"The feature $reference does not exist and cannot be referenced"
+}
 case class UnsupportedDimensionError(
-    featureClass: String,
-    dimension: FeatureDimension
+    message: String
 ) extends FeaturesError
-case class RecursiveFeatureError(featureClass: String, dimension: String)
-    extends FeaturesError
+object UnsupportedDimensionError {
+  def apply(
+      featureClass: String,
+      dimension: FeatureDimension
+  ): UnsupportedDimensionError =
+    UnsupportedDimensionError(
+      s"The feature $featureClass cannot be used with dimension $dimension"
+    )
+}
+case class RecursiveFeatureError(message: String) extends FeaturesError

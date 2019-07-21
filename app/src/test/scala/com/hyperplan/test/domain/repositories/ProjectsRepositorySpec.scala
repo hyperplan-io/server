@@ -22,6 +22,7 @@ class ProjectsRepositorySpec
       check(insertIO)
       check(readIO)
       check(readAllIO)
+      assert(true)
     }
   }
 

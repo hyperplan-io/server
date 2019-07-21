@@ -48,6 +48,7 @@ class PredictionsRepositorySpec
       val readIO = predictionsRepository.readQuery(query.id)
       check(insertIO)
       check(readIO)
+      assert(true)
     }
   }
 

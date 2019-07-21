@@ -26,6 +26,7 @@ class AlgorithmsRepositorySpec
       check(readIO)
       check(readForProjectIO)
       check(readAllIO)
+      assert(true)
     }
   }
 
