@@ -7,11 +7,7 @@ import org.http4s.dsl.Http4sDsl
 import cats.effect.IO
 import cats.implicits._
 import com.hyperplan.application.controllers.requests._
-import com.hyperplan.domain.models.errors.{
-  AlgorithmAlreadyExists,
-  IncompatibleFeatures,
-  IncompatibleLabels
-}
+import com.hyperplan.domain.errors._
 import com.hyperplan.domain.services.AlgorithmsService
 import com.hyperplan.infrastructure.serialization._
 import com.hyperplan.infrastructure.logging.IOLogging

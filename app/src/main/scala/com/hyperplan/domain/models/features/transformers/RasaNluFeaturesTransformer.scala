@@ -4,7 +4,7 @@ import cats.implicits._
 
 import com.hyperplan.domain.models.features.Features.Features
 import com.hyperplan.domain.models.features._
-import com.hyperplan.domain.models.errors._
+import com.hyperplan.domain.errors._
 import cats.data.NonEmptyList
 import scala.collection.immutable.Nil
 

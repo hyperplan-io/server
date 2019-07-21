@@ -6,8 +6,25 @@ import doobie.hikari.HikariTransactor
 import doobie.util.ExecutionContexts
 import cats.implicits._
 import cats.effect.{IO, Resource}
+import cats.effect.ContextShift
 
 object PostgresqlService {
+
+  val predictionsTable = "predictions"
+  val projectsTable = "projects"
+  val algorithmsTable = "algorithms"
+  val featuresTable = "features"
+  val labelsTable = "labels"
+  val entityLinksTable = "entity_links"
+
+  val allTables = List(
+    entityLinksTable,
+    predictionsTable,
+    algorithmsTable,
+    projectsTable,
+    featuresTable,
+    labelsTable
+  )
 
   def testConnection(
       implicit xa: doobie.Transactor[IO]
@@ -25,7 +42,18 @@ object PostgresqlService {
     ).mapN(_ + _ + _ + _ + _ + _)
       .transact(xa)
 
-  import cats.effect.ContextShift
+  def wipeTables(areYouSure: Boolean)(implicit xa: doobie.Transactor[IO]) =
+    if (areYouSure)
+      (
+        sql"DELETE from entity_links".update.run,
+        sql"DELETE from predictions".update.run,
+        sql"DELETE from algorithms".update.run,
+        sql"DELETE from projects".update.run,
+        sql"DELETE from features".update.run,
+        sql"DELETE from labels".update.run
+      ).mapN(_ + _ + _ + _ + _ + _).transact(xa)
+    else IO.unit
+
   def apply(
       host: String,
       port: String,

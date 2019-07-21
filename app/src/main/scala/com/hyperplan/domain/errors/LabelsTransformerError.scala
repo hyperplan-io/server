@@ -1,4 +1,4 @@
-package com.hyperplan.domain.models.errors
+package com.hyperplan.domain.errors
 
 sealed trait TensorFlowLabelsTransformerError extends Throwable
 

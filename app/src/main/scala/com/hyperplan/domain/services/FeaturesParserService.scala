@@ -69,9 +69,12 @@ object FeaturesParserService {
             IO.fromEither(jsonField.as[List[List[String]]])
               .map[Features](value => List(StringVector2dFeature(key, value)))
           case (ReferenceFeatureType(reference), One) =>
-            domainService.readFeatures(reference).flatMap { config =>
-              FeaturesParserService
-                .parseFeatures(config, jsonField, prefix = s"${key}_")
+            domainService.readFeatures(reference).flatMap {
+              case Some(featuresConfig) =>
+                FeaturesParserService
+                  .parseFeatures(featuresConfig, jsonField, prefix = s"${key}_")
+              case None =>
+                ???
             }
           case (reference, dimension) =>
             IO.raiseError(

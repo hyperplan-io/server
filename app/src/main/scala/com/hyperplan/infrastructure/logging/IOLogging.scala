@@ -1,7 +1,10 @@
 package com.hyperplan.infrastructure.logging
 
 import cats.effect.IO
+import cats.implicits._
+
 import org.slf4j.LoggerFactory
+import cats.data.Kleisli
 
 trait IOLogging {
 

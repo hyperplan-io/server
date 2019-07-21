@@ -1,6 +1,6 @@
 package com.hyperplan.application.controllers
 
-import com.hyperplan.domain.models.errors.LabelNotFound
+import com.hyperplan.domain.errors._
 import com.hyperplan.domain.services.PredictionsService
 import com.hyperplan.infrastructure.serialization.events.PredictionEventSerializer
 import com.hyperplan.infrastructure.logging.IOLogging

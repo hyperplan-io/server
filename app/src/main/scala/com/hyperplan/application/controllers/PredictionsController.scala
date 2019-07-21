@@ -11,7 +11,7 @@ import cats.MonadError
 
 import com.hyperplan.application.AuthenticationMiddleware
 import com.hyperplan.application.controllers.requests._
-import com.hyperplan.domain.models.errors._
+import com.hyperplan.domain.errors._
 import com.hyperplan.domain.services.{
   DomainService,
   PredictionsService,

@@ -9,7 +9,7 @@ import cats.effect.IO
 import com.hyperplan.domain.models._
 import com.hyperplan.domain.models.features._
 import com.hyperplan.domain.models.labels.Labels
-import com.hyperplan.domain.models.errors._
+import com.hyperplan.domain.errors._
 
 import com.hyperplan.infrastructure.logging.IOLogging
 import com.hyperplan.infrastructure.serialization._
@@ -77,11 +77,13 @@ class DomainRepository(implicit xa: Transactor[IO]) extends IOLogging {
       ${features.data}
     )""".update
 
-  def insertFeatures(features: FeaturesConfiguration) =
+  def insertFeatures(
+      features: FeaturesConfiguration
+  ): IO[Either[FeaturesError, Int]] =
     insertFeaturesQuery(features).run
       .attemptSomeSqlState {
         case sqlstate.class23.UNIQUE_VIOLATION =>
-          DomainClassAlreadyExists(features.id)
+          FeaturesAlreadyExistError(features.id)
       }
       .transact(xa)
 

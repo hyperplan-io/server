@@ -7,7 +7,7 @@ import com.hyperplan.domain.models.{
   LabelsConfiguration,
   OneOfLabelsConfiguration
 }
-import com.hyperplan.domain.models.errors.LabelsTransformerError
+import com.hyperplan.domain.errors._
 import com.hyperplan.domain.models.labels._
 import com.hyperplan.domain.services.ExampleUrlService
 

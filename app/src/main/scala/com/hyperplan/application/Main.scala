@@ -87,10 +87,14 @@ object Main extends IOApp with IOLogging {
         IO.pure(None)
       }
       kinesisService <- if (config.kinesis.enabled) {
-        KinesisService(config.kinesis.region).map(_.some)
+        logger.info(s"Starting Kinesis service") *> KinesisService(
+          config.kinesis.region
+        ).map(_.some)
       } else IO.pure(None)
       kafkaService <- if (config.kafka.enabled) {
-        KafkaService(config.kafka.topic, config.kafka.bootstrapServers)
+        logger.info(
+          s"Starting Kafka service with bootstrap servers ${config.kafka.bootstrapServers}"
+        ) *> KafkaService(config.kafka.topic, config.kafka.bootstrapServers)
           .map(Some(_))
       } else {
         IO.pure(None)

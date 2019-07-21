@@ -3,7 +3,7 @@ package com.hyperplan.domain.services
 import com.hyperplan.domain.repositories.DomainRepository
 import com.foundaml.server.controllers.requests.PostProjectRequest
 import com.hyperplan.domain.models._
-import com.hyperplan.domain.models.errors._
+import com.hyperplan.domain.errors._
 import com.hyperplan.domain.models.features._
 import com.hyperplan.domain.repositories.ProjectsRepository
 import com.hyperplan.infrastructure.logging.IOLogging
@@ -44,31 +44,37 @@ class ProjectsService(
     ((projectRequest.problem, projectRequest.labelsId) match {
       case (Classification, Some(labelsId)) =>
         val labelsIO = domainService.readLabels(labelsId)
-        (featuresIO, labelsIO).mapN { (features, labels) =>
-          ClassificationProject(
-            projectRequest.id,
-            projectRequest.name,
-            ClassificationConfiguration(
-              features,
-              labels,
-              streamConfiguration
-            ),
-            Nil,
-            NoAlgorithm()
-          )
+        (featuresIO, labelsIO).mapN {
+          case (Some(features), labels) =>
+            ClassificationProject(
+              projectRequest.id,
+              projectRequest.name,
+              ClassificationConfiguration(
+                features,
+                labels,
+                streamConfiguration
+              ),
+              Nil,
+              NoAlgorithm()
+            )
+          case (None, labels) =>
+            ???
         }
       case (Regression, None) =>
-        featuresIO.map { features =>
-          RegressionProject(
-            projectRequest.id,
-            projectRequest.name,
-            RegressionConfiguration(
-              features,
-              streamConfiguration
-            ),
-            Nil,
-            NoAlgorithm()
-          )
+        featuresIO.map {
+          case Some(features) =>
+            RegressionProject(
+              projectRequest.id,
+              projectRequest.name,
+              RegressionConfiguration(
+                features,
+                streamConfiguration
+              ),
+              Nil,
+              NoAlgorithm()
+            )
+          case None =>
+            ???
         }
       case (Classification, None) =>
         IO.raiseError(

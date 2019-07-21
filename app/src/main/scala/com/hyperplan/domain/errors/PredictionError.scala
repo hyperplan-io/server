@@ -1,4 +1,4 @@
-package com.hyperplan.domain.models.errors
+package com.hyperplan.domain.errors
 
 import com.hyperplan.domain.models.ProblemType
 

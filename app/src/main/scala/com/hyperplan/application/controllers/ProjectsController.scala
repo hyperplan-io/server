@@ -5,7 +5,7 @@ import com.foundaml.server.controllers.requests.{
   PostProjectRequest,
   PatchProjectRequest
 }
-import com.hyperplan.domain.models.errors._
+import com.hyperplan.domain.errors._
 import com.hyperplan.domain.services.ProjectsService
 import com.hyperplan.infrastructure.serialization._
 import com.hyperplan.infrastructure.logging.IOLogging

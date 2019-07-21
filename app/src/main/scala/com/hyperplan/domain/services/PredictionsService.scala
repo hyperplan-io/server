@@ -12,7 +12,7 @@ import com.hyperplan.application.ApplicationConfig
 
 import com.hyperplan.domain.models._
 import com.hyperplan.domain.models.backends._
-import com.hyperplan.domain.models.errors._
+import com.hyperplan.domain.errors._
 import com.hyperplan.domain.models.events.{
   ClassificationPredictionEvent,
   PredictionEvent,
@@ -85,7 +85,11 @@ class PredictionsService(
         )
       )
       _ <- kafkaService.fold[IO[Unit]](IO.unit)(
-        _.publish(prediction, prediction.projectId)
+        _.publish(
+          prediction,
+          prediction.projectId,
+          streamConfiguration.map(_.topic)
+        )
       )
       _ <- kinesisService.fold[IO[Unit]](IO.unit)(
         _.put(
