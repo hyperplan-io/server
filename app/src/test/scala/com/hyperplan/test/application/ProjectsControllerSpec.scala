@@ -11,8 +11,6 @@ import org.scalatest.FlatSpec
 import scalacache._
 import scalacache.caffeine._
 
-
-
 import org.scalatest.Matchers
 import org.scalatest._
 
@@ -40,25 +38,28 @@ class ProjectsControllerSpec()
   override def beforeAll(): Unit = initSchema()
   override def beforeEach(): Unit = wipeTables()
 
-
-  implicit val projectEntityDecoder: EntityDecoder[IO, Project] = ProjectSerializer.entityDecoder
-  implicit val projectListEntityDecoder: EntityDecoder[IO, List[Project]] = ProjectSerializer.entityListDecoder
-  implicit val projectEntityEncoder: EntityEncoder[IO, Project] = ProjectSerializer.entityEncoder
-  implicit val projectListEntityEncoder: EntityEncoder[IO, List[Project]] = ProjectSerializer.entityListEncoder
+  implicit val projectEntityDecoder: EntityDecoder[IO, Project] =
+    ProjectSerializer.entityDecoder
+  implicit val projectListEntityDecoder: EntityDecoder[IO, List[Project]] =
+    ProjectSerializer.entityListDecoder
+  implicit val projectEntityEncoder: EntityEncoder[IO, Project] =
+    ProjectSerializer.entityEncoder
+  implicit val projectListEntityEncoder: EntityEncoder[IO, List[Project]] =
+    ProjectSerializer.entityListEncoder
 
   val projectRepository = new ProjectsRepository()(xa)
   val domainRepository = new DomainRepository()(xa)
   val domainService = new DomainService(domainRepository)
 
   val projectCache: Cache[Project] = CaffeineCache[Project]
-  val projectsService= new ProjectsService(
+  val projectsService = new ProjectsService(
     projectRepository,
     domainService,
     projectCache
   )
 
   val projectsController = new ProjectsController(
-    projectsService 
+    projectsService
   )
 
   it should "fetch an empty projects list" in {
@@ -488,6 +489,6 @@ class ProjectsControllerSpec()
       }
       .unsafeRunSync()
   }
-  */
+ */
 
 }

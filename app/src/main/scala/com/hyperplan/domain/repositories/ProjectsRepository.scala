@@ -27,10 +27,10 @@ class ProjectsRepository(implicit xa: Transactor[IO]) {
     Put[String].contramap(AlgorithmPolicySerializer.encodeJsonString)
 
   implicit val featuresConfigurationGet
-      : Get[Either[io.circe.Error, FeaturesConfiguration]] =
+      : Get[Either[io.circe.Error, FeatureVectorDescriptor]] =
     Get[String].map(FeaturesConfigurationSerializer.decodeJson)
 
-  implicit val featuresConfigurationPut: Put[FeaturesConfiguration] =
+  implicit val featuresConfigurationPut: Put[FeatureVectorDescriptor] =
     Put[String].contramap(FeaturesConfigurationSerializer.encodeJsonNoSpaces)
 
   implicit val projectConfigurationGet

@@ -61,7 +61,7 @@ class LabelsControllerSpec()
       .value
       .map(_.get)
     assert(
-      ControllerTestUtils.check[List[LabelsConfiguration]](
+      ControllerTestUtils.check[List[LabelVectorDescriptor]](
         response,
         Status.Ok,
         Some(Nil)
@@ -80,12 +80,12 @@ class LabelsControllerSpec()
       .value
       .map(_.get)
     assert(
-      ControllerTestUtils.check[List[LabelsError]](
+      ControllerTestUtils.check[List[LabelVectorDescriptorError]](
         response,
         Status.NotFound,
         Some(
           List(
-            LabelsDoesNotExist(
+            LabelVectorDescriptorDoesNotExist(
               "The labels my-id does not exist"
             )
           )
@@ -96,9 +96,9 @@ class LabelsControllerSpec()
 
   it should "create labels of type oneOf" in {
 
-    val entityBody = LabelsConfiguration(
+    val entityBody = LabelVectorDescriptor(
       id = "test",
-      data = OneOfLabelsConfiguration(
+      data = OneOfLabelsDescriptor(
         oneOf = Set("label-1", "label-2"),
         description = "my description"
       )
@@ -114,7 +114,7 @@ class LabelsControllerSpec()
       .value
       .map(_.get)
     assert(
-      ControllerTestUtils.check[LabelsConfiguration](
+      ControllerTestUtils.check[LabelVectorDescriptor](
         response,
         Status.Created,
         Some(
@@ -126,9 +126,9 @@ class LabelsControllerSpec()
 
   it should "create labels of type dynamic" in {
 
-    val entityBody = LabelsConfiguration(
+    val entityBody = LabelVectorDescriptor(
       id = "test",
-      data = DynamicLabelsConfiguration(
+      data = DynamicLabelsDescriptor(
         description = "my description"
       )
     )
@@ -143,7 +143,7 @@ class LabelsControllerSpec()
       .value
       .map(_.get)
     assert(
-      ControllerTestUtils.check[LabelsConfiguration](
+      ControllerTestUtils.check[LabelVectorDescriptor](
         response,
         Status.Created,
         Some(
@@ -155,9 +155,9 @@ class LabelsControllerSpec()
 
   it should "eliminate duplicate label ids" in {
 
-    val entityBody = LabelsConfiguration(
+    val entityBody = LabelVectorDescriptor(
       id = "test",
-      data = OneOfLabelsConfiguration(
+      data = OneOfLabelsDescriptor(
         oneOf = Set("feature-1", "feature-1", "feature-2"),
         description = "my description"
       )
@@ -173,7 +173,7 @@ class LabelsControllerSpec()
       .value
       .map(_.get)
     assert(
-      ControllerTestUtils.check[LabelsConfiguration](
+      ControllerTestUtils.check[LabelVectorDescriptor](
         response,
         Status.Created,
         Some(
@@ -185,9 +185,9 @@ class LabelsControllerSpec()
 
   it should "fail to create a label that already exists" in {
 
-    val entityBody = LabelsConfiguration(
+    val entityBody = LabelVectorDescriptor(
       id = "test",
-      data = OneOfLabelsConfiguration(
+      data = OneOfLabelsDescriptor(
         oneOf = Set("feature-1", "feature-2"),
         description = "my description"
       )
@@ -206,9 +206,9 @@ class LabelsControllerSpec()
     response
       .map { previousResponse =>
         println(previousResponse.status)
-        val entityBody2 = LabelsConfiguration(
+        val entityBody2 = LabelVectorDescriptor(
           id = "test",
-          data = OneOfLabelsConfiguration(
+          data = OneOfLabelsDescriptor(
             oneOf = Set("feature-1", "feature-2"),
             description = "my description"
           )
@@ -224,12 +224,12 @@ class LabelsControllerSpec()
           .map(_.get)
 
         assert(
-          ControllerTestUtils.check[List[LabelsError]](
+          ControllerTestUtils.check[List[LabelVectorDescriptorError]](
             response2,
             Status.BadRequest,
             Some(
               List(
-                LabelsAlreadyExist(
+                LabelVectorDescriptorAlreadyExist(
                   s"The labels test already exist"
                 )
               )

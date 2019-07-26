@@ -25,19 +25,6 @@ class ProjectsService(
 
   type ProjectValidationResult[A] = ValidatedNec[ProjectError, A]
 
-  val regex = "[0-9a-zA-Z-_]*"
-  def validateAlphaNumerical(input: String): List[ProjectError] = {
-    if (input.matches(regex)) {
-      Nil
-    } else {
-      List(
-        InvalidProjectIdentifier(
-          s"$input is not an alphanumerical id. It should satisfy the following regular expression: $regex"
-        )
-      )
-    }
-  }
-
   def createEmptyClassificationProject(
       projectRequest: PostProjectRequest
   ): EitherT[IO, NonEmptyChain[ProjectError], Project] =
@@ -47,14 +34,14 @@ class ProjectsService(
         projectRequest.topic.map(topic => StreamConfiguration(topic))
       )
       features <- EitherT
-        .fromOptionF[IO, NonEmptyChain[ProjectError], FeaturesConfiguration](
+        .fromOptionF[IO, NonEmptyChain[ProjectError], FeatureVectorDescriptor](
           domainService.readFeatures(projectRequest.featuresId),
           NonEmptyChain(
             ProjectError.FeaturesDoesNotExistError(projectRequest.featuresId)
           )
         )
       labels <- EitherT
-        .fromOptionF[IO, NonEmptyChain[ProjectError], LabelsConfiguration](
+        .fromOptionF[IO, NonEmptyChain[ProjectError], LabelVectorDescriptor](
           domainService.readLabels(projectRequest.labelsId.getOrElse("")),
           NonEmptyChain(
             ProjectError.LabelsDoesNotExistError(
@@ -114,7 +101,7 @@ class ProjectsService(
         projectRequest.topic.map(topic => StreamConfiguration(topic))
       )
       features <- EitherT
-        .fromOptionF[IO, NonEmptyChain[ProjectError], FeaturesConfiguration](
+        .fromOptionF[IO, NonEmptyChain[ProjectError], FeatureVectorDescriptor](
           domainService.readFeatures(projectRequest.featuresId),
           NonEmptyChain(
             ProjectError.FeaturesDoesNotExistError(projectRequest.featuresId)

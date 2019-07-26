@@ -117,12 +117,12 @@ class PredictionsService(
   }
 
   def validateClassificationLabels(
-      labelsConfiguration: LabelsConfiguration,
-      labels: Set[ClassificationLabel]
+                                    labelsConfiguration: LabelVectorDescriptor,
+                                    labels: Set[ClassificationLabel]
   ): Boolean = labelsConfiguration.data match {
-    case OneOfLabelsConfiguration(oneOf, _) =>
+    case OneOfLabelsDescriptor(oneOf, _) =>
       oneOf == labels.map(_.label)
-    case DynamicLabelsConfiguration(description) => true
+    case DynamicLabelsDescriptor(description) => true
   }
 
   def predict(

@@ -27,7 +27,7 @@ class LabelsController(domainService: DomainService)
     HttpRoutes.of[IO] {
       case req @ POST -> Root =>
         (for {
-          domainClass <- req.as[LabelsConfiguration](
+          domainClass <- req.as[LabelVectorDescriptor](
             MonadError[IO, Throwable],
             LabelsConfigurationSerializer.entityDecoder
           )
@@ -72,7 +72,7 @@ class LabelsController(domainService: DomainService)
               Ok(LabelsConfigurationSerializer.encodeJson(labels))
             case None =>
               NotFound(
-                ErrorsSerializer.encodeJsonLabels(LabelsDoesNotExist(labelsId))
+                ErrorsSerializer.encodeJsonLabels(LabelVectorDescriptorDoesNotExist(labelsId))
               )
           }
           .handleErrorWith {

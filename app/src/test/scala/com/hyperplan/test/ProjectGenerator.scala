@@ -5,7 +5,7 @@ import java.util.UUID
 import com.hyperplan.domain.models
 import com.hyperplan.domain.models._
 import com.hyperplan.domain.models.labels.Labels
-import com.hyperplan.domain.models.features.One
+import com.hyperplan.domain.models.features.Scalar
 import com.hyperplan.domain.models.features.StringFeatureType
 
 object ProjectGenerator {
@@ -41,20 +41,20 @@ object ProjectGenerator {
       projectId,
       "example project",
       ClassificationConfiguration(
-        models.FeaturesConfiguration(
+        models.FeatureVectorDescriptor(
           "id",
           List(
-            FeatureConfiguration(
+            FeatureDescriptor(
               "my feature",
               StringFeatureType,
-              One,
+              Scalar,
               "this is a description of the features"
             )
           )
         ),
-        LabelsConfiguration(
+        LabelVectorDescriptor(
           "id",
-          OneOfLabelsConfiguration(
+          OneOfLabelsDescriptor(
             Set(
               "class1",
               "class2",

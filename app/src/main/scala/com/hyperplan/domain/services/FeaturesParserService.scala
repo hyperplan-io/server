@@ -3,7 +3,7 @@ import com.hyperplan.domain.models.features.Features._
 import com.hyperplan.domain.models.ProjectConfiguration
 import com.hyperplan.domain.models.ClassificationConfiguration
 import com.hyperplan.domain.models.RegressionConfiguration
-import com.hyperplan.domain.models.FeaturesConfiguration
+import com.hyperplan.domain.models.FeatureVectorDescriptor
 
 import com.hyperplan.domain.models.features._
 
@@ -30,9 +30,9 @@ object FeaturesParserService {
   }
 
   def parseFeatures(
-      configuration: FeaturesConfiguration,
-      hcursor: ACursor,
-      prefix: String = ""
+                     configuration: FeatureVectorDescriptor,
+                     hcursor: ACursor,
+                     prefix: String = ""
   )(
       implicit domainService: DomainService
   ): IO[Features] = {
@@ -41,34 +41,34 @@ object FeaturesParserService {
         val key = s"${prefix}${featuresConfiguration.name}"
         val jsonField = hcursor.downField(featuresConfiguration.name)
         (featuresConfiguration.featuresType, featuresConfiguration.dimension) match {
-          case (FloatFeatureType, One) =>
+          case (FloatFeatureType, Scalar) =>
             IO.fromEither(jsonField.as[Float])
               .map[Features](value => List(FloatFeature(key, value)))
-          case (FloatFeatureType, Vector) =>
+          case (FloatFeatureType, Array) =>
             IO.fromEither(jsonField.as[List[Float]])
               .map[Features](value => List(FloatVectorFeature(key, value)))
           case (FloatFeatureType, Matrix) =>
             IO.fromEither(jsonField.as[List[List[Float]]])
               .map[Features](value => List(FloatVector2dFeature(key, value)))
-          case (IntFeatureType, One) =>
+          case (IntFeatureType, Scalar) =>
             IO.fromEither(jsonField.as[Int])
               .map[Features](value => List(IntFeature(key, value)))
-          case (IntFeatureType, Vector) =>
+          case (IntFeatureType, Array) =>
             IO.fromEither(jsonField.as[List[Int]])
               .map[Features](value => List(IntVectorFeature(key, value)))
           case (IntFeatureType, Matrix) =>
             IO.fromEither(jsonField.as[List[List[Int]]])
               .map[Features](value => List(IntVector2dFeature(key, value)))
-          case (StringFeatureType, One) =>
+          case (StringFeatureType, Scalar) =>
             IO.fromEither(jsonField.as[String])
               .map[Features](value => List(StringFeature(key, value)))
-          case (StringFeatureType, Vector) =>
+          case (StringFeatureType, Array) =>
             IO.fromEither(jsonField.as[List[String]])
               .map[Features](value => List(StringVectorFeature(key, value)))
           case (StringFeatureType, Matrix) =>
             IO.fromEither(jsonField.as[List[List[String]]])
               .map[Features](value => List(StringVector2dFeature(key, value)))
-          case (ReferenceFeatureType(reference), One) =>
+          case (ReferenceFeatureType(reference), Scalar) =>
             domainService.readFeatures(reference).flatMap {
               case Some(featuresConfig) =>
                 FeaturesParserService

@@ -27,9 +27,9 @@ object ProjectSerializer {
   implicit val algorithmDecoder: Decoder[Algorithm] =
     AlgorithmsSerializer.decoder
 
-  implicit val featuresConfigurationEncoder: Encoder[FeaturesConfiguration] =
+  implicit val featuresConfigurationEncoder: Encoder[FeatureVectorDescriptor] =
     FeaturesConfigurationSerializer.encoder
-  implicit val featuresConfigurationDecoder: Decoder[FeaturesConfiguration] =
+  implicit val featuresConfigurationDecoder: Decoder[FeatureVectorDescriptor] =
     FeaturesConfigurationSerializer.decoder
 
   implicit val projectConfigurationEncoder: Encoder[ProjectConfiguration] =

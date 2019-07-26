@@ -19,23 +19,23 @@ class ProjectSerializerSpec
 
     val projectId = "test-project-encode"
     val projectName = "test project"
-    import com.hyperplan.domain.models.features.One
+    import com.hyperplan.domain.models.features.Scalar
     import com.hyperplan.domain.models.features.StringFeatureType
     val configuration = ClassificationConfiguration(
-      FeaturesConfiguration(
+      FeatureVectorDescriptor(
         "id",
         List(
-          FeatureConfiguration(
+          FeatureDescriptor(
             "",
             StringFeatureType,
-            One,
+            Scalar,
             ""
           )
         )
       ),
-      LabelsConfiguration(
+      LabelVectorDescriptor(
         "id",
-        OneOfLabelsConfiguration(
+        OneOfLabelsDescriptor(
           Set(""),
           ""
         )

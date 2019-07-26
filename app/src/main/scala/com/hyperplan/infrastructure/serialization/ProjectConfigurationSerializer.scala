@@ -45,10 +45,10 @@ object ProjectConfigurationSerializer {
       for {
         featuresConfiguration <- c
           .downField("features")
-          .as[FeaturesConfiguration](FeaturesConfigurationSerializer.decoder)
+          .as[FeatureVectorDescriptor](FeaturesConfigurationSerializer.decoder)
         labels <- c
           .downField("labels")
-          .as[LabelsConfiguration](LabelsConfigurationSerializer.decoder)
+          .as[LabelVectorDescriptor](LabelsConfigurationSerializer.decoder)
         dataStream <- c
           .downField("dataStream")
           .as[Option[StreamConfiguration]]
@@ -76,7 +76,7 @@ object ProjectConfigurationSerializer {
       for {
         featuresConfiguration <- c
           .downField("features")
-          .as[FeaturesConfiguration](FeaturesConfigurationSerializer.decoder)
+          .as[FeatureVectorDescriptor](FeaturesConfigurationSerializer.decoder)
         dataStream <- c
           .downField("dataStream")
           .as[Option[StreamConfiguration]]

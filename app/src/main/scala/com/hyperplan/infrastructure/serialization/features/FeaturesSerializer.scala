@@ -143,7 +143,7 @@ object FeaturesSerializer {
           featureType <- c.downField("type").as[FeatureType]
           featureDimension <- c.downField("dimension").as[FeatureDimension]
           featureValue <- (featureType, featureDimension) match {
-            case (FloatFeatureType, One) =>
+            case (FloatFeatureType, Scalar) =>
               c.downField("value").as[Float].map[Feature] { value =>
                 FloatFeature(
                   featureKey,
@@ -151,7 +151,7 @@ object FeaturesSerializer {
                 )
               }
 
-            case (FloatFeatureType, Vector) =>
+            case (FloatFeatureType, Array) =>
               c.downField("value").as[List[Float]].map[Feature] { value =>
                 FloatVectorFeature(
                   featureKey,
@@ -167,14 +167,14 @@ object FeaturesSerializer {
                 )
               }
 
-            case (IntFeatureType, One) =>
+            case (IntFeatureType, Scalar) =>
               c.downField("value").as[Int].map[Feature] { value =>
                 IntFeature(
                   featureKey,
                   value
                 )
               }
-            case (IntFeatureType, Vector) =>
+            case (IntFeatureType, Array) =>
               c.downField("value").as[List[Int]].map[Feature] { value =>
                 IntVectorFeature(
                   featureKey,
@@ -190,7 +190,7 @@ object FeaturesSerializer {
                 )
               }
 
-            case (StringFeatureType, One) =>
+            case (StringFeatureType, Scalar) =>
               c.downField("value").as[String].map[Feature] { value =>
                 StringFeature(
                   featureKey,
@@ -198,7 +198,7 @@ object FeaturesSerializer {
                 )
               }
 
-            case (StringFeatureType, Vector) =>
+            case (StringFeatureType, Array) =>
               c.downField("value").as[List[String]].map[Feature] { value =>
                 StringVectorFeature(
                   featureKey,
@@ -215,7 +215,7 @@ object FeaturesSerializer {
                   )
               }
 
-            case (ReferenceFeatureType(reference), One) =>
+            case (ReferenceFeatureType(reference), Scalar) =>
               c.downField("value").as[List[Feature]].map[Feature] { value =>
                 ReferenceFeature(
                   featureKey,
