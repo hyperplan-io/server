@@ -635,4 +635,151 @@ class ProjectsControllerSpec()
     )
   }
 
+  it should "successfully create projects and read them" in {
+    val featuresId = "my-feature-id"
+    val labelsId = "my-label-id".some
+    val topic = "my-topic".some
+
+    val entityBodyFeatures = FeatureVectorDescriptor(
+      id = featuresId,
+      data = List(
+        FeatureDescriptor(
+          name = "feature-1",
+          featuresType = StringFeatureType,
+          dimension = Scalar,
+          description = "my description"
+        )
+      )
+    )
+
+    featuresController.service
+      .run(
+        Request[IO](
+          method = Method.POST,
+          uri = uri"/"
+        ).withEntity(entityBodyFeatures)
+      )
+      .value
+      .map(_.get)
+      .unsafeRunSync()
+
+    val entityBodyLabels = LabelVectorDescriptor(
+      id = labelsId.get,
+      data = DynamicLabelsDescriptor(
+        description = "my description"
+      )
+    )
+
+    labelsController.service
+      .run(
+        Request[IO](
+          method = Method.POST,
+          uri = uri"/"
+        ).withEntity(entityBodyLabels)
+      )
+      .value
+      .map(_.get)
+      .unsafeRunSync()
+
+    val entityBody1 = PostProjectRequest(
+      id = "testregression",
+      name = "regression project",
+      problem = Regression,
+      featuresId = featuresId,
+      labelsId = none[String],
+      topic = topic
+    )
+
+    val entityBody2 = PostProjectRequest(
+      id = "testclassification",
+      name = "classification project",
+      problem = Classification,
+      featuresId = featuresId,
+      labelsId = labelsId,
+      topic = topic
+    )
+
+    val response1 = projectsController.service
+      .run(
+        Request[IO](
+          method = Method.POST,
+          uri = uri"/"
+        ).withEntity(entityBody1)
+      )
+      .value
+      .map(_.get)
+
+    val response2 = projectsController.service
+      .run(
+        Request[IO](
+          method = Method.POST,
+          uri = uri"/"
+        ).withEntity(entityBody2)
+      )
+      .value
+      .map(_.get)
+
+    val regressionProject = models.RegressionProject(
+      entityBody1.id,
+      entityBody1.name,
+      RegressionConfiguration(
+        entityBodyFeatures,
+        StreamConfiguration(topic.get).some
+      ),
+      Nil,
+      NoAlgorithm()
+    )
+
+    val classificationProject = models.ClassificationProject(
+      entityBody2.id,
+      entityBody2.name,
+      ClassificationConfiguration(
+        entityBodyFeatures,
+        entityBodyLabels,
+        StreamConfiguration(topic.get).some
+      ),
+      Nil,
+      NoAlgorithm()
+    )
+
+    assert(
+      ControllerTestUtils.check[Project](
+        response1,
+        Status.Created,
+        regressionProject.some
+      )
+    )
+
+    assert(
+      ControllerTestUtils.check[Project](
+        response2,
+        Status.Created,
+        classificationProject.some
+      )
+    )
+
+    val response = projectsController.service
+      .run(
+        Request(
+          method = Method.GET,
+          uri = uri"/"
+        )
+      )
+      .value
+      .map(_.get)
+
+    assert(
+      ControllerTestUtils.check[List[Project]](
+        response,
+        Status.Ok,
+        Some(
+          List(
+            regressionProject,
+            classificationProject
+          )
+        )
+      )
+    )
+  }
+
 }
