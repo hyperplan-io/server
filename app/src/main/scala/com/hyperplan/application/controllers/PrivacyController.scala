@@ -8,7 +8,7 @@ import cats.implicits._
 import cats.MonadError
 
 import com.hyperplan.domain.services.PrivacyService
-import com.foundaml.server.controllers.requests.ForgetPredictionRequest
+import com.hyperplan.application.controllers.requests.ForgetPredictionRequest
 import com.hyperplan.application.controllers.responses.ForgetPredictionsResponse
 import com.hyperplan.infrastructure.logging.IOLogging
 import com.hyperplan.infrastructure.serialization._

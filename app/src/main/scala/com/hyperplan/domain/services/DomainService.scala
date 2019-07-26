@@ -17,7 +17,8 @@ import com.hyperplan.domain.models.features.ReferenceFeatureType
 
 class DomainService(domainRepository: DomainRepository) extends IOLogging {
 
-  type FeaturesValidationResult[A] = ValidatedNec[FeatureVectorDescriptorError, A]
+  type FeaturesValidationResult[A] =
+    ValidatedNec[FeatureVectorDescriptorError, A]
   type LabelsValidationResult[A] = ValidatedNec[LabelVectorDescriptorError, A]
 
   def readAllFeatures =
@@ -42,7 +43,8 @@ class DomainService(domainRepository: DomainRepository) extends IOLogging {
   ): LabelsValidationResult[Unit] =
     (existingLabels match {
       case None => Validated.valid(())
-      case Some(value) => Validated.invalid(LabelVectorDescriptorAlreadyExist(value.id))
+      case Some(value) =>
+        Validated.invalid(LabelVectorDescriptorAlreadyExist(value.id))
     }).toValidatedNec
 
   def validateLabelsNotEmpty(labelsConfiguration: LabelVectorDescriptor) =
@@ -59,7 +61,8 @@ class DomainService(domainRepository: DomainRepository) extends IOLogging {
   ): FeaturesValidationResult[Unit] =
     (existingFeatures match {
       case None => Validated.valid(())
-      case Some(value) => Validated.invalid(FeatureVectorDescriptorAlreadyExistError(value.id))
+      case Some(value) =>
+        Validated.invalid(FeatureVectorDescriptorAlreadyExistError(value.id))
     }).toValidatedNec
 
   def validateReferenceFeaturesExist(
@@ -113,10 +116,10 @@ class DomainService(domainRepository: DomainRepository) extends IOLogging {
       .toValidatedNec
 
   def validateFeatures(
-                        featuresConfiguration: FeatureVectorDescriptor,
-                        existingFeatures: Option[FeatureVectorDescriptor],
-                        references: List[(String, Option[FeatureVectorDescriptor])],
-                        names: List[String]
+      featuresConfiguration: FeatureVectorDescriptor,
+      existingFeatures: Option[FeatureVectorDescriptor],
+      references: List[(String, Option[FeatureVectorDescriptor])],
+      names: List[String]
   ): FeaturesValidationResult[Unit] =
     (
       validateFeaturesDoesNotAlreadyExist(existingFeatures),
@@ -159,8 +162,8 @@ class DomainService(domainRepository: DomainRepository) extends IOLogging {
     } yield features
 
   def validateLabels(
-                      existingLabels: Option[LabelVectorDescriptor],
-                      labelsConfiguration: LabelVectorDescriptor
+      existingLabels: Option[LabelVectorDescriptor],
+      labelsConfiguration: LabelVectorDescriptor
   ): LabelsValidationResult[Unit] =
     (
       validateLabelsDoesNotAlreadyExist(existingLabels),

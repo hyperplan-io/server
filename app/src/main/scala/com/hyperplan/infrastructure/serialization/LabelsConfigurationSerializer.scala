@@ -32,8 +32,7 @@ object LabelsConfigurationSerializer {
         description <- c.downField("description").as[String]
       } yield OneOfLabelsDescriptor(oneOf, description)
 
-  implicit val dynamicLabelsConfigEncoder
-      : Encoder[DynamicLabelsDescriptor] = {
+  implicit val dynamicLabelsConfigEncoder: Encoder[DynamicLabelsDescriptor] = {
     dynamicConfig: DynamicLabelsDescriptor =>
       Json.obj(
         "type" -> Json.fromString(DynamicLabelsDescriptor.labelsType),
@@ -130,7 +129,8 @@ object LabelsConfigurationSerializer {
   implicit val entityEncoder: EntityEncoder[IO, LabelVectorDescriptor] =
     jsonEncoderOf[IO, LabelVectorDescriptor]
 
-  implicit val entityDecoderList: EntityDecoder[IO, List[LabelVectorDescriptor]] =
+  implicit val entityDecoderList
+      : EntityDecoder[IO, List[LabelVectorDescriptor]] =
     jsonOf[IO, List[LabelVectorDescriptor]]
 
 }

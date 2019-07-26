@@ -81,11 +81,11 @@ class ProjectsRepository(implicit xa: Transactor[IO]) {
     insertQuery(project: Project).run
       .attemptSomeSqlState {
         case sqlstate.class23.UNIQUE_VIOLATION =>
-          ProjectError.ProjectAlreadyExists(project.id)
+          ProjectError.ProjectAlreadyExistsError(project.id)
       }
       .transact(xa)
 
-  def readQuery(projectId: String) =
+  def readQuery(projectId: String): Query0[ProjectData] =
     sql"""
       SELECT id, name, problem, algorithm_policy, configuration
       FROM projects
@@ -93,11 +93,14 @@ class ProjectsRepository(implicit xa: Transactor[IO]) {
       """
       .query[ProjectsRepository.ProjectData]
 
-  def read(projectId: String): ConnectionIO[Project] = {
-    readQuery(projectId).unique.flatMap(dataToProject)
-    readQuery(projectId).unique
-      .flatMap(dataToProject)
-      .flatMap(retrieveProjectAlgorithms)
+  def read(projectId: String): ConnectionIO[Option[Project]] = {
+    readQuery(projectId).option
+      .flatMap {
+        case Some(project) =>
+          dataToProject(project).flatMap(retrieveProjectAlgorithms).map(_.some)
+        case None =>
+          none[Project].pure[ConnectionIO]
+      }
   }
 
   def readAllProjectsQuery =
@@ -143,7 +146,7 @@ class ProjectsRepository(implicit xa: Transactor[IO]) {
   def update(project: Project) = updateQuery(project).run
 
   def retrieveProjectAlgorithms(project: Project): ConnectionIO[Project] =
-    (project match {
+    project match {
       case project: ClassificationProject =>
         readProjectAlgorithms(project.id).map { newAlgorithms =>
           project.copy(
@@ -156,7 +159,7 @@ class ProjectsRepository(implicit xa: Transactor[IO]) {
             algorithms = newAlgorithms
           )
         }
-    })
+    }
 
   def retrieveProjectsAlgorithms(projects: List[Project]) =
     projects.map(retrieveProjectAlgorithms).sequence
@@ -220,9 +223,9 @@ object ProjectsRepository {
         Nil,
         policy
       ): Project).pure[ConnectionIO]
-    case projectData =>
+    case _ =>
       AsyncConnectionIO.raiseError(
-        ProjectError.ProjectDataInconsistent(data._1)
+        ProjectError.ProjectDataInconsistentError(data._1)
       )
   }
 

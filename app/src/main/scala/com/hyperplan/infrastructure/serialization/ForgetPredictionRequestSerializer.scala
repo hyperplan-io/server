@@ -1,6 +1,6 @@
 package com.hyperplan.infrastructure.serialization
 
-import com.foundaml.server.controllers.requests.ForgetPredictionRequest
+import com.hyperplan.application.controllers.requests.ForgetPredictionRequest
 
 import io.circe._
 import org.http4s.EntityDecoder

@@ -10,11 +10,13 @@ case class DuplicateFeatureIds() extends FeatureVectorDescriptorError {
   val message =
     "The feature names that you provided are not unique in the scope of the object"
 }
-case class FeatureVectorDescriptorDoesNotExistError(featuresId: String) extends FeatureVectorDescriptorError {
+case class FeatureVectorDescriptorDoesNotExistError(featuresId: String)
+    extends FeatureVectorDescriptorError {
   val message = s"The features $featuresId does not exist"
 }
 
-case class FeatureVectorDescriptorAlreadyExistError(featuresId: String) extends FeatureVectorDescriptorError {
+case class FeatureVectorDescriptorAlreadyExistError(featuresId: String)
+    extends FeatureVectorDescriptorError {
   val message = s"The feature $featuresId already exists"
 }
 case class ReferenceFeatureDoesNotExistError(reference: String)
@@ -34,4 +36,5 @@ object UnsupportedDimensionError {
       s"The feature $featureClass cannot be used with dimension $dimension"
     )
 }
-case class RecursiveFeatureError(message: String) extends FeatureVectorDescriptorError
+case class RecursiveFeatureError(message: String)
+    extends FeatureVectorDescriptorError

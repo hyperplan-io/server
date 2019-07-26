@@ -72,7 +72,8 @@ class LabelsController(domainService: DomainService)
               Ok(LabelsConfigurationSerializer.encodeJson(labels))
             case None =>
               NotFound(
-                ErrorsSerializer.encodeJsonLabels(LabelVectorDescriptorDoesNotExist(labelsId))
+                ErrorsSerializer
+                  .encodeJsonLabels(LabelVectorDescriptorDoesNotExist(labelsId))
               )
           }
           .handleErrorWith {

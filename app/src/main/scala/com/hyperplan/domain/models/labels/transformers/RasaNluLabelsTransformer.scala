@@ -12,9 +12,9 @@ import com.hyperplan.domain.models._
 case class RasaNluLabelsTransformer() {
 
   def transform(
-                 labelsConfiguration: LabelVectorDescriptor,
-                 predictionId: String,
-                 labels: RasaNluClassificationLabels
+      labelsConfiguration: LabelVectorDescriptor,
+      predictionId: String,
+      labels: RasaNluClassificationLabels
   ): Either[RasaNluLabelsTransformerError, Set[ClassificationLabel]] =
     labelsConfiguration.data match {
       case OneOfLabelsDescriptor(oneOf, description) =>

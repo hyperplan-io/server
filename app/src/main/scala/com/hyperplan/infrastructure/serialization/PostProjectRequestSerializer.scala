@@ -1,11 +1,9 @@
 package com.hyperplan.infrastructure.serialization
 
-import com.foundaml.server.controllers.requests.PostProjectRequest
-
+import com.hyperplan.application.controllers.requests.PostProjectRequest
 import io.circe._
-import org.http4s.EntityDecoder
-import org.http4s.circe.jsonOf
-
+import org.http4s.{EntityDecoder, EntityEncoder}
+import org.http4s.circe.{jsonOf, jsonEncoderOf}
 import cats.effect.IO
 import cats.implicits._
 
@@ -27,8 +25,20 @@ object PostProjectRequestSerializer {
         topic <- c.downField("topic").as[Option[String]]
       } yield
         PostProjectRequest(id, name, problemType, featuresId, labelsId, topic)
+  implicit val encoder: Encoder[PostProjectRequest] =
+    Encoder.forProduct6(
+      "id",
+      "name",
+      "problem",
+      "featuresId",
+      "labelsId",
+      "topic"
+    )(r => (r.id, r.name, r.problem, r.featuresId, r.labelsId, r.topic))
 
   implicit val entityDecoder: EntityDecoder[IO, PostProjectRequest] =
     jsonOf[IO, PostProjectRequest]
+
+  implicit val entityEncoder: EntityEncoder[IO, PostProjectRequest] =
+    jsonEncoderOf[IO, PostProjectRequest]
 
 }

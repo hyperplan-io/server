@@ -16,15 +16,18 @@ import com.hyperplan.domain.errors._
 
 object ErrorsSerializer {
 
-  def featureErrorToClass(error: FeatureVectorDescriptorError): String = error match {
-    case FeatureVectorDescriptorDoesNotExistError(message) => "FeatureDoesNotExist"
-    case UnsupportedDimensionError(message) => "UnsupportedDimension"
-    case ReferenceFeatureDoesNotExistError(message) =>
-      "ReferenceFeatureDoesNotExist"
-    case RecursiveFeatureError(message) => "RecursivityError"
-    case FeatureVectorDescriptorAlreadyExistError(message) => "IdentifierAlreadyExist"
-    case DuplicateFeatureIds() => "DuplicateFeatureIds"
-  }
+  def featureErrorToClass(error: FeatureVectorDescriptorError): String =
+    error match {
+      case FeatureVectorDescriptorDoesNotExistError(message) =>
+        "FeatureDoesNotExist"
+      case UnsupportedDimensionError(message) => "UnsupportedDimension"
+      case ReferenceFeatureDoesNotExistError(message) =>
+        "ReferenceFeatureDoesNotExist"
+      case RecursiveFeatureError(message) => "RecursivityError"
+      case FeatureVectorDescriptorAlreadyExistError(message) =>
+        "IdentifierAlreadyExist"
+      case DuplicateFeatureIds() => "DuplicateFeatureIds"
+    }
 
   def classToFeatureError(
       errorClass: String,
@@ -45,12 +48,14 @@ object ErrorsSerializer {
     case _ => DecodingFailure("Unknown error class", Nil).asLeft
   }
 
-  def labelErrorToClass(error: LabelVectorDescriptorError): String = error match {
-    case OneOfLabelVectorDescriptorCannotBeEmpty() => "OneOfLabelsCannotBeEmpty"
-    case LabelVectorDescriptorAlreadyExist(_) => "LabelsAlreadyExist"
-    case LabelVectorDescriptorDoesNotExist(_) =>
-      "LabelsDoesNotExist"
-  }
+  def labelErrorToClass(error: LabelVectorDescriptorError): String =
+    error match {
+      case OneOfLabelVectorDescriptorCannotBeEmpty() =>
+        "OneOfLabelsCannotBeEmpty"
+      case LabelVectorDescriptorAlreadyExist(_) => "LabelsAlreadyExist"
+      case LabelVectorDescriptorDoesNotExist(_) =>
+        "LabelsDoesNotExist"
+    }
 
   def classToLabelError(
       errorClass: String,
@@ -64,7 +69,8 @@ object ErrorsSerializer {
       LabelVectorDescriptorDoesNotExist(message).asRight
   }
 
-  implicit val featuresEncoder: Encoder[NonEmptyChain[FeatureVectorDescriptorError]] =
+  implicit val featuresEncoder
+      : Encoder[NonEmptyChain[FeatureVectorDescriptorError]] =
     (errors: NonEmptyChain[FeatureVectorDescriptorError]) =>
       Json.obj(
         (
@@ -84,7 +90,8 @@ object ErrorsSerializer {
         "message" -> Json.fromString(error.message)
       )
 
-  implicit val labelsEncoder: Encoder[NonEmptyChain[LabelVectorDescriptorError]] =
+  implicit val labelsEncoder
+      : Encoder[NonEmptyChain[LabelVectorDescriptorError]] =
     (errors: NonEmptyChain[LabelVectorDescriptorError]) =>
       Json.obj(
         (
@@ -132,6 +139,7 @@ object ErrorsSerializer {
       : EntityDecoder[IO, List[FeatureVectorDescriptorError]] =
     jsonOf[IO, List[FeatureVectorDescriptorError]]
 
-  implicit val labelErrorEntityDecoder: EntityDecoder[IO, List[LabelVectorDescriptorError]] =
+  implicit val labelErrorEntityDecoder
+      : EntityDecoder[IO, List[LabelVectorDescriptorError]] =
     jsonOf[IO, List[LabelVectorDescriptorError]]
 }

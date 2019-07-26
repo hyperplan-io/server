@@ -1,6 +1,6 @@
 package com.hyperplan.infrastructure.serialization
 
-import com.foundaml.server.controllers.requests.PatchProjectRequest
+import com.hyperplan.application.controllers.requests.PatchProjectRequest
 import com.hyperplan.domain.models._
 
 import io.circe._

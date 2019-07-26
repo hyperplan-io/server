@@ -1,4 +1,4 @@
-package com.foundaml.server.controllers.requests
+package com.hyperplan.application.controllers.requests
 
 import com.hyperplan.domain.models.{ProblemType, AlgorithmPolicy}
 

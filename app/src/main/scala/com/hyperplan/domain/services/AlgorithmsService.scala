@@ -142,8 +142,8 @@ class AlgorithmsService(
     )
     projectsService
       .readProject(projectId)
-      .flatMap(
-        project => {
+      .flatMap {
+        case Some(project) => {
           val errors = project match {
             case classificationProject: ClassificationProject =>
               validateClassificationAlgorithm(
@@ -191,6 +191,7 @@ class AlgorithmsService(
             }
           } yield result
         }
-      )
+        case None => ???
+      }
   }
 }

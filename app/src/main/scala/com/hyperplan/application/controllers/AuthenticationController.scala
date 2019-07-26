@@ -20,7 +20,7 @@ import com.hyperplan.infrastructure.serialization.auth._
 
 import cats.MonadError
 import com.hyperplan.infrastructure.auth.AuthenticationService
-import com.foundaml.server.controllers.requests.PostAuthenticationRequest
+import com.hyperplan.application.controllers.requests.PostAuthenticationRequest
 
 import com.hyperplan.infrastructure.auth.JwtAuthenticationService
 import java.time.Instant

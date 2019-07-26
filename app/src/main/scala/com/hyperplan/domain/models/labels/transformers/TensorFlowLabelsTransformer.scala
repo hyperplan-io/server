@@ -90,9 +90,9 @@ case class TensorFlowLabelsTransformer(fields: Map[String, String]) {
   }
 
   def transform(
-                 labelsConfiguration: LabelVectorDescriptor,
-                 predictionId: String,
-                 tfLabels: TensorFlowClassificationLabels
+      labelsConfiguration: LabelVectorDescriptor,
+      predictionId: String,
+      tfLabels: TensorFlowClassificationLabels
   ): Either[LabelsTransformerError, Set[ClassificationLabel]] = {
     labelsConfiguration.data match {
       case OneOfLabelsDescriptor(_, _) =>

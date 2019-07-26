@@ -5,14 +5,14 @@ sealed trait ProjectConfiguration {
 }
 
 case class ClassificationConfiguration(
-                                        features: FeatureVectorDescriptor,
-                                        labels: LabelVectorDescriptor,
-                                        dataStream: Option[StreamConfiguration]
+    features: FeatureVectorDescriptor,
+    labels: LabelVectorDescriptor,
+    dataStream: Option[StreamConfiguration]
 ) extends ProjectConfiguration
 
 case class RegressionConfiguration(
-                                    features: FeatureVectorDescriptor,
-                                    dataStream: Option[StreamConfiguration]
+    features: FeatureVectorDescriptor,
+    dataStream: Option[StreamConfiguration]
 ) extends ProjectConfiguration
 
 case class StreamConfiguration(

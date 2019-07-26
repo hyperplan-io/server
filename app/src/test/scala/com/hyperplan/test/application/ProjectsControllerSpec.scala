@@ -1,32 +1,35 @@
 package com.hyperplan.test.application
 
 import cats.effect.IO
-
+import cats.implicits._
 import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl.io._
 import org.http4s.implicits._
-
 import org.scalatest.FlatSpec
 import scalacache._
 import scalacache.caffeine._
-
 import org.scalatest.Matchers
 import org.scalatest._
-
 import com.hyperplan.test.TestDatabase
-import com.hyperplan.application.controllers.FeaturesController
-
+import com.hyperplan.application.controllers.{
+  FeaturesController,
+  LabelsController,
+  ProjectsController
+}
 import com.hyperplan.domain.errors._
 import com.hyperplan.domain.models._
 import com.hyperplan.domain.models.features._
-
 import com.hyperplan.domain.services._
 import com.hyperplan.domain.repositories._
-
-import com.hyperplan.infrastructure.serialization.errors.ErrorsSerializer
+import com.hyperplan.infrastructure.serialization.errors.{
+  ErrorsSerializer,
+  ProjectErrorsSerializer
+}
 import com.hyperplan.infrastructure.serialization._
-import com.hyperplan.application.controllers.ProjectsController
+import com.hyperplan.application.controllers.requests.PostProjectRequest
+import com.hyperplan.domain.errors.ProjectError._
+import com.hyperplan.domain.models
 
 class ProjectsControllerSpec()
     extends FlatSpec
@@ -38,6 +41,9 @@ class ProjectsControllerSpec()
   override def beforeAll(): Unit = initSchema()
   override def beforeEach(): Unit = wipeTables()
 
+  /**
+    * Project
+    */
   implicit val projectEntityDecoder: EntityDecoder[IO, Project] =
     ProjectSerializer.entityDecoder
   implicit val projectListEntityDecoder: EntityDecoder[IO, List[Project]] =
@@ -46,6 +52,36 @@ class ProjectsControllerSpec()
     ProjectSerializer.entityEncoder
   implicit val projectListEntityEncoder: EntityEncoder[IO, List[Project]] =
     ProjectSerializer.entityListEncoder
+
+  /**
+    * Post project request
+    */
+  implicit val postProjectRequestEntityEncoder
+      : EntityEncoder[IO, PostProjectRequest] =
+    PostProjectRequestSerializer.entityEncoder
+
+  implicit val projectErrorDecoder =
+    ProjectErrorsSerializer.projectErrorEntityDecoder
+
+  /**
+    * Features
+    */
+  implicit val featuresDecoderList =
+    FeaturesConfigurationSerializer.entityDecoderList
+  implicit val featuresDecoder = FeaturesConfigurationSerializer.entityDecoder
+  implicit val featuresErrorDecoder = ErrorsSerializer.featureErrorEntityDecoder
+  implicit val featuresConfigurationEncoder =
+    FeaturesConfigurationSerializer.entityEncoder
+
+  /**
+    * Labels
+    */
+  implicit val labelsDecoderList =
+    LabelsConfigurationSerializer.entityDecoderList
+  implicit val labelsDecoder = LabelsConfigurationSerializer.entityDecoder
+  implicit val labelsErrorDecoder = ErrorsSerializer.labelErrorEntityDecoder
+  implicit val labelsConfigurationEncoder =
+    LabelsConfigurationSerializer.entityEncoder
 
   val projectRepository = new ProjectsRepository()(xa)
   val domainRepository = new DomainRepository()(xa)
@@ -56,6 +92,14 @@ class ProjectsControllerSpec()
     projectRepository,
     domainService,
     projectCache
+  )
+
+  val featuresController = new FeaturesController(
+    domainService
+  )
+
+  val labelsController = new LabelsController(
+    domainService
   )
 
   val projectsController = new ProjectsController(
@@ -81,9 +125,8 @@ class ProjectsControllerSpec()
     )
   }
 
-  /*
-  it should "not return a feature that does not exist" in {
-    val response = featuresController.service
+  it should "not return a project that does not exist" in {
+    val response = projectsController.service
       .run(
         Request(
           method = Method.GET,
@@ -93,13 +136,13 @@ class ProjectsControllerSpec()
       .value
       .map(_.get)
     assert(
-      ControllerTestUtils.check[List[FeaturesError]](
+      ControllerTestUtils.check[List[ProjectError]](
         response,
         Status.NotFound,
         Some(
           List(
-            FeaturesDoesNotExistError(
-              "The features my-id does not exist"
+            ProjectDoesNotExistError(
+              "The project my-id does not exist"
             )
           )
         )
@@ -107,21 +150,18 @@ class ProjectsControllerSpec()
     )
   }
 
-  it should "create a basic feature" in {
+  it should "fail to create a project because id is empty" in {
 
-    val entityBody = FeaturesConfiguration(
-      id = "test",
-      data = List(
-        FeatureConfiguration(
-          name = "feature-1",
-          featuresType = StringFeatureType,
-          dimension = One,
-          description = "my description"
-        )
-      )
+    val entityBody = PostProjectRequest(
+      id = "",
+      name = "my-classification-project",
+      problem = Classification,
+      featuresId = "test-features",
+      labelsId = "test-labels".some,
+      topic = "test-topic".some
     )
 
-    val response = featuresController.service
+    val response = projectsController.service
       .run(
         Request[IO](
           method = Method.POST,
@@ -131,43 +171,371 @@ class ProjectsControllerSpec()
       .value
       .map(_.get)
     assert(
-      ControllerTestUtils.check[FeaturesConfiguration](
+      ControllerTestUtils.check[List[ProjectError]](
+        response,
+        Status.BadRequest,
+        Some(
+          List(
+            ProjectIdIsEmptyError()
+          )
+        )
+      )
+    )
+  }
+
+  it should "fail to create a project because id not alpha numeric" in {
+    val id = "&$dfknd"
+    val entityBody = PostProjectRequest(
+      id = id,
+      name = "my-classification-project",
+      problem = Classification,
+      featuresId = "test-features",
+      labelsId = "test-labels".some,
+      topic = "test-topic".some
+    )
+
+    val response = projectsController.service
+      .run(
+        Request[IO](
+          method = Method.POST,
+          uri = uri"/"
+        ).withEntity(entityBody)
+      )
+      .value
+      .map(_.get)
+    assert(
+      ControllerTestUtils.check[List[ProjectError]](
+        response,
+        Status.BadRequest,
+        Some(
+          List(
+            ProjectIdIsNotAlphaNumericalError(
+              ProjectIdIsNotAlphaNumericalError.message(id)
+            )
+          )
+        )
+      )
+    )
+  }
+
+  it should "fail to create a project because id contains a space" in {
+    val id = "my id"
+    val entityBody = PostProjectRequest(
+      id = id,
+      name = "my-classification-project",
+      problem = Classification,
+      featuresId = "test-features",
+      labelsId = "test-labels".some,
+      topic = "test-topic".some
+    )
+
+    val response = projectsController.service
+      .run(
+        Request[IO](
+          method = Method.POST,
+          uri = uri"/"
+        ).withEntity(entityBody)
+      )
+      .value
+      .map(_.get)
+    assert(
+      ControllerTestUtils.check[List[ProjectError]](
+        response,
+        Status.BadRequest,
+        Some(
+          List(
+            ProjectIdIsNotAlphaNumericalError(
+              ProjectIdIsNotAlphaNumericalError.message(id)
+            )
+          )
+        )
+      )
+    )
+  }
+
+  it should "fail to create a project because features do not exist" in {
+
+    val entityBody = PostProjectRequest(
+      id = "test",
+      name = "my-classification-project",
+      problem = Classification,
+      featuresId = "test-features",
+      labelsId = "test-labels".some,
+      topic = "test-topic".some
+    )
+
+    val response = projectsController.service
+      .run(
+        Request[IO](
+          method = Method.POST,
+          uri = uri"/"
+        ).withEntity(entityBody)
+      )
+      .value
+      .map(_.get)
+    assert(
+      ControllerTestUtils.check[List[ProjectError]](
+        response,
+        Status.BadRequest,
+        Some(
+          List(
+            FeaturesDoesNotExistError(
+              FeaturesDoesNotExistError.message(entityBody.featuresId)
+            )
+          )
+        )
+      )
+    )
+  }
+
+  it should "fail to create a project because labels do not exist" in {
+
+    val id = "test"
+    val name = "my classification project"
+    val problem = Classification
+    val featuresId = "my-feature-id"
+    val labelsId = "my-label-id".some
+    val topic = "my-topic".some
+
+    val entityBodyFeatures = FeatureVectorDescriptor(
+      id = featuresId,
+      data = List(
+        FeatureDescriptor(
+          name = "feature-1",
+          featuresType = StringFeatureType,
+          dimension = Scalar,
+          description = "my description"
+        )
+      )
+    )
+
+    featuresController.service
+      .run(
+        Request[IO](
+          method = Method.POST,
+          uri = uri"/"
+        ).withEntity(entityBodyFeatures)
+      )
+      .value
+      .map(_.get)
+      .unsafeRunSync()
+
+    val entityBody = PostProjectRequest(
+      id = id,
+      name = name,
+      problem = problem,
+      featuresId = featuresId,
+      labelsId = labelsId,
+      topic = topic
+    )
+
+    val response = projectsController.service
+      .run(
+        Request[IO](
+          method = Method.POST,
+          uri = uri"/"
+        ).withEntity(entityBody)
+      )
+      .value
+      .map(_.get)
+    assert(
+      ControllerTestUtils.check[List[ProjectError]](
+        response,
+        Status.BadRequest,
+        Some(
+          List(
+            ProjectError.LabelsDoesNotExistError(
+              ProjectError.LabelsDoesNotExistError.message(labelsId.get)
+            )
+          )
+        )
+      )
+    )
+  }
+
+  it should "fail to create a classification project because labels are not set" in {
+
+    val entityBody = PostProjectRequest(
+      id = "test",
+      name = "my-classification-project",
+      problem = Classification,
+      featuresId = "test-features",
+      labelsId = none[String],
+      topic = "test-topic".some
+    )
+
+    val response = projectsController.service
+      .run(
+        Request[IO](
+          method = Method.POST,
+          uri = uri"/"
+        ).withEntity(entityBody)
+      )
+      .value
+      .map(_.get)
+    assert(
+      ControllerTestUtils.check[List[ProjectError]](
+        response,
+        Status.BadRequest,
+        Some(
+          List(
+            ProjectLabelsAreRequiredForClassificationError()
+          )
+        )
+      )
+    )
+  }
+
+  it should "successfully create a classification project with oneOf labels" in {
+
+    val id = "test"
+    val name = "my classification project"
+    val problem = Classification
+    val featuresId = "my-feature-id"
+    val labelsId = "my-label-id".some
+    val topic = "my-topic".some
+
+    val entityBodyFeatures = FeatureVectorDescriptor(
+      id = featuresId,
+      data = List(
+        FeatureDescriptor(
+          name = "feature-1",
+          featuresType = StringFeatureType,
+          dimension = Scalar,
+          description = "my description"
+        )
+      )
+    )
+
+    featuresController.service
+      .run(
+        Request[IO](
+          method = Method.POST,
+          uri = uri"/"
+        ).withEntity(entityBodyFeatures)
+      )
+      .value
+      .map(_.get)
+      .unsafeRunSync()
+
+    val entityBodyLabels = LabelVectorDescriptor(
+      id = labelsId.get,
+      data = OneOfLabelsDescriptor(
+        oneOf = Set("label-1", "label-2"),
+        description = "my description"
+      )
+    )
+
+    labelsController.service
+      .run(
+        Request[IO](
+          method = Method.POST,
+          uri = uri"/"
+        ).withEntity(entityBodyLabels)
+      )
+      .value
+      .map(_.get)
+      .unsafeRunSync()
+
+    val entityBody = PostProjectRequest(
+      id = id,
+      name = name,
+      problem = problem,
+      featuresId = featuresId,
+      labelsId = labelsId,
+      topic = topic
+    )
+
+    val response = projectsController.service
+      .run(
+        Request[IO](
+          method = Method.POST,
+          uri = uri"/"
+        ).withEntity(entityBody)
+      )
+      .value
+      .map(_.get)
+    assert(
+      ControllerTestUtils.check[Project](
         response,
         Status.Created,
         Some(
-          entityBody
+          models.ClassificationProject(
+            id,
+            name,
+            ClassificationConfiguration(
+              entityBodyFeatures,
+              entityBodyLabels,
+              StreamConfiguration(topic.get).some
+            ),
+            Nil,
+            NoAlgorithm()
+          )
         )
       )
     )
   }
 
-  it should "not create a feature that contains duplicate ids" in {
+  it should "successfully create a classification project with dynamic labels" in {
 
-    val entityBody = FeaturesConfiguration(
-      id = "test",
+    val id = "test"
+    val name = "my classification project"
+    val problem = Classification
+    val featuresId = "my-feature-id"
+    val labelsId = "my-label-id".some
+    val topic = none[String]
+
+    val entityBodyFeatures = FeatureVectorDescriptor(
+      id = featuresId,
       data = List(
-        FeatureConfiguration(
+        FeatureDescriptor(
           name = "feature-1",
           featuresType = StringFeatureType,
-          dimension = One,
-          description = "my description"
-        ),
-        FeatureConfiguration(
-          name = "feature-1",
-          featuresType = IntFeatureType,
-          dimension = One,
-          description = "my description"
-        ),
-        FeatureConfiguration(
-          name = "feature-3",
-          featuresType = FloatFeatureType,
-          dimension = Vector,
+          dimension = Scalar,
           description = "my description"
         )
       )
     )
 
-    val response = featuresController.service
+    featuresController.service
+      .run(
+        Request[IO](
+          method = Method.POST,
+          uri = uri"/"
+        ).withEntity(entityBodyFeatures)
+      )
+      .value
+      .map(_.get)
+      .unsafeRunSync()
+
+    val entityBodyLabels = LabelVectorDescriptor(
+      id = labelsId.get,
+      data = DynamicLabelsDescriptor(
+        description = "my description"
+      )
+    )
+
+    labelsController.service
+      .run(
+        Request[IO](
+          method = Method.POST,
+          uri = uri"/"
+        ).withEntity(entityBodyLabels)
+      )
+      .value
+      .map(_.get)
+      .unsafeRunSync()
+
+    val entityBody = PostProjectRequest(
+      id = id,
+      name = name,
+      problem = problem,
+      featuresId = featuresId,
+      labelsId = labelsId,
+      topic = topic
+    )
+
+    val response = projectsController.service
       .run(
         Request[IO](
           method = Method.POST,
@@ -177,106 +545,67 @@ class ProjectsControllerSpec()
       .value
       .map(_.get)
     assert(
-      ControllerTestUtils.check[List[FeaturesError]](
+      ControllerTestUtils.check[Project](
         response,
-        Status.BadRequest,
+        Status.Created,
         Some(
-          List(
-            DuplicateFeatureIds()
+          models.ClassificationProject(
+            id,
+            name,
+            ClassificationConfiguration(
+              entityBodyFeatures,
+              entityBodyLabels,
+              none[StreamConfiguration]
+            ),
+            Nil,
+            NoAlgorithm()
           )
         )
       )
     )
   }
 
-  it should "fail to create a feature that already exists" in {
+  it should "successfully create a regression project" in {
 
-    val entityBody = FeaturesConfiguration(
-      id = "test",
+    val id = "test"
+    val name = "my regression project"
+    val problem = Regression
+    val featuresId = "my-feature-id"
+    val topic = "my-topic".some
+
+    val entityBodyFeatures = FeatureVectorDescriptor(
+      id = featuresId,
       data = List(
-        FeatureConfiguration(
+        FeatureDescriptor(
           name = "feature-1",
           featuresType = StringFeatureType,
-          dimension = One,
+          dimension = Scalar,
           description = "my description"
         )
       )
     )
 
-    val response = featuresController.service
+    featuresController.service
       .run(
         Request[IO](
           method = Method.POST,
           uri = uri"/"
-        ).withEntity(entityBody)
+        ).withEntity(entityBodyFeatures)
       )
       .value
       .map(_.get)
-
-    response
-      .map { previousResponse =>
-        println(previousResponse.status)
-        val entityBody2 = FeaturesConfiguration(
-          id = "test",
-          data = List(
-            FeatureConfiguration(
-              name = "blabla",
-              featuresType = ReferenceFeatureType("test"),
-              dimension = One,
-              description = "my description"
-            )
-          )
-        )
-
-        val response2 = featuresController.service
-          .run(
-            Request[IO](
-              method = Method.POST,
-              uri = uri"/"
-            ).withEntity(entityBody2)
-          )
-          .value
-          .map(_.get)
-
-        assert(
-          ControllerTestUtils.check[List[FeaturesError]](
-            response2,
-            Status.BadRequest,
-            Some(
-              List(
-                FeaturesAlreadyExistError(
-                  s"The feature test already exists"
-                )
-              )
-            )
-          )
-        )
-      }
       .unsafeRunSync()
 
-  }
-
-  it should "fail to create a feature that references a another that does not exist" in {
-
-    val entityBody = FeaturesConfiguration(
-      id = "test",
-      data = List(
-        FeatureConfiguration(
-          name = "feature-1",
-          featuresType = StringFeatureType,
-          dimension = One,
-          description = "my description"
-        ),
-        FeatureConfiguration(
-          name = "feature-2",
-          featuresType = ReferenceFeatureType("this-features-does-not-exist"),
-          dimension = One,
-          description = "my description"
-        )
-      )
+    val entityBody = PostProjectRequest(
+      id = id,
+      name = name,
+      problem = problem,
+      featuresId = featuresId,
+      labelsId = none[String],
+      topic = topic
     )
 
-    val response = featuresController.service
+    val response = projectsController.service
       .run(
         Request[IO](
           method = Method.POST,
@@ -285,210 +614,25 @@ class ProjectsControllerSpec()
       )
       .value
       .map(_.get)
+
     assert(
-      ControllerTestUtils.check[List[FeaturesError]](
+      ControllerTestUtils.check[Project](
         response,
-        Status.BadRequest,
+        Status.Created,
         Some(
-          List(
-            ReferenceFeatureDoesNotExistError(
-              s"The feature feature-2 does not exist and cannot be referenced"
-            )
+          models.RegressionProject(
+            id,
+            name,
+            RegressionConfiguration(
+              entityBodyFeatures,
+              StreamConfiguration(topic.get).some
+            ),
+            Nil,
+            NoAlgorithm()
           )
         )
       )
     )
   }
-
-  it should "create features with a reference that exists" in {
-
-    val entityBody = FeaturesConfiguration(
-      id = "test",
-      data = List(
-        FeatureConfiguration(
-          name = "feature-1",
-          featuresType = StringFeatureType,
-          dimension = One,
-          description = "my description"
-        )
-      )
-    )
-
-    val response = featuresController.service
-      .run(
-        Request[IO](
-          method = Method.POST,
-          uri = uri"/"
-        ).withEntity(entityBody)
-      )
-      .value
-      .map(_.get)
-
-    response
-      .map { previousResponse =>
-        println(previousResponse.status)
-        val entityBody2 = FeaturesConfiguration(
-          id = "test2",
-          data = List(
-            FeatureConfiguration(
-              name = "blabla",
-              featuresType = ReferenceFeatureType("test"),
-              dimension = One,
-              description = "my description"
-            )
-          )
-        )
-
-        val response2 = featuresController.service
-          .run(
-            Request[IO](
-              method = Method.POST,
-              uri = uri"/"
-            ).withEntity(entityBody2)
-          )
-          .value
-          .map(_.get)
-
-        assert(
-          ControllerTestUtils.check[FeaturesConfiguration](
-            response2,
-            Status.Created,
-            Some(
-              entityBody2
-            )
-          )
-        )
-      }
-      .unsafeRunSync()
-  }
-
-  it should "not support reference features with dimensions Vector" in {
-
-    val entityBody = FeaturesConfiguration(
-      id = "test",
-      data = List(
-        FeatureConfiguration(
-          name = "feature-1",
-          featuresType = StringFeatureType,
-          dimension = One,
-          description = "my description"
-        )
-      )
-    )
-
-    val response = featuresController.service
-      .run(
-        Request[IO](
-          method = Method.POST,
-          uri = uri"/"
-        ).withEntity(entityBody)
-      )
-      .value
-      .map(_.get)
-    response
-      .map { _ =>
-        val entityBody2 = FeaturesConfiguration(
-          id = "test2",
-          data = List(
-            FeatureConfiguration(
-              name = "feature-test",
-              featuresType = ReferenceFeatureType("test"),
-              dimension = Vector,
-              description = "my description"
-            )
-          )
-        )
-
-        val response2 = featuresController.service
-          .run(
-            Request[IO](
-              method = Method.POST,
-              uri = uri"/"
-            ).withEntity(entityBody2)
-          )
-          .value
-          .map(_.get)
-
-        assert(
-          ControllerTestUtils.check[List[FeaturesError]](
-            response2,
-            Status.BadRequest,
-            Some(
-              List(
-                UnsupportedDimensionError(
-                  s"The feature feature-test cannot be used with dimension Vector"
-                )
-              )
-            )
-          )
-        )
-      }
-      .unsafeRunSync()
-  }
-
-  it should "not support reference features with dimensions Matrix" in {
-
-    val entityBody = FeaturesConfiguration(
-      id = "test",
-      data = List(
-        FeatureConfiguration(
-          name = "feature-1",
-          featuresType = StringFeatureType,
-          dimension = One,
-          description = "my description"
-        )
-      )
-    )
-
-    val response = featuresController.service
-      .run(
-        Request[IO](
-          method = Method.POST,
-          uri = uri"/"
-        ).withEntity(entityBody)
-      )
-      .value
-      .map(_.get)
-    response
-      .map { _ =>
-        val entityBody2 = FeaturesConfiguration(
-          id = "test2",
-          data = List(
-            FeatureConfiguration(
-              name = "feature-test",
-              featuresType = ReferenceFeatureType("test"),
-              dimension = Matrix,
-              description = "my description"
-            )
-          )
-        )
-
-        val response2 = featuresController.service
-          .run(
-            Request[IO](
-              method = Method.POST,
-              uri = uri"/"
-            ).withEntity(entityBody2)
-          )
-          .value
-          .map(_.get)
-
-        assert(
-          ControllerTestUtils.check[List[FeaturesError]](
-            response2,
-            Status.BadRequest,
-            Some(
-              List(
-                UnsupportedDimensionError(
-                  s"The feature feature-test cannot be used with dimension Matrix"
-                )
-              )
-            )
-          )
-        )
-      }
-      .unsafeRunSync()
-  }
- */
 
 }

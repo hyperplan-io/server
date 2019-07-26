@@ -71,7 +71,9 @@ class FeaturesController(domainService: DomainService)
             case None =>
               NotFound(
                 ErrorsSerializer
-                  .encodeJson(FeatureVectorDescriptorDoesNotExistError(featuresId))
+                  .encodeJson(
+                    FeatureVectorDescriptorDoesNotExistError(featuresId)
+                  )
               )
           }
           .handleErrorWith {

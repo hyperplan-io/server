@@ -30,9 +30,9 @@ object FeaturesParserService {
   }
 
   def parseFeatures(
-                     configuration: FeatureVectorDescriptor,
-                     hcursor: ACursor,
-                     prefix: String = ""
+      configuration: FeatureVectorDescriptor,
+      hcursor: ACursor,
+      prefix: String = ""
   )(
       implicit domainService: DomainService
   ): IO[Features] = {

@@ -67,6 +67,10 @@ object ProjectConfigurationSerializer {
         (
           "features",
           FeaturesConfigurationSerializer.encoder(configuration.features)
+        ),
+        (
+          "dataStream",
+          configuration.dataStream.fold(Json.Null)(_.asJson)
         )
       )
 

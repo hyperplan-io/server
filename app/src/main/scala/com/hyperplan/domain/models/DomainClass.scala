@@ -29,6 +29,7 @@ case class FeatureDescriptor(
     dimension: FeatureDimension,
     description: String
 ) {
+
   /**
     * Whether or not this feature actually is a pointer to another feature. This is useful to create nested features.
     * @return whether or not this feature is a reference to another feature
@@ -62,8 +63,7 @@ object OneOfLabelsDescriptor {
   * A label descriptor of type `dynamic` is useful when the different labels are not known or when the cardinality is high.
   * @param description a short description of the label
   */
-case class DynamicLabelsDescriptor(description: String)
-    extends LabelDescriptor
+case class DynamicLabelsDescriptor(description: String) extends LabelDescriptor
 object DynamicLabelsDescriptor {
   val labelsType = "dynamic"
 }

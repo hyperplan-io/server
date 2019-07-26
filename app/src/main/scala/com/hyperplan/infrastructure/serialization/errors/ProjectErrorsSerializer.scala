@@ -18,27 +18,29 @@ import com.hyperplan.domain.errors.ProjectError._
 object ProjectErrorsSerializer {
 
   def projectErrorToClass(error: ProjectError): String = error match {
-    case ClassificationProjectRequiresLabels(message) =>
+    case ClassificationProjectRequiresLabelsError(message) =>
       "ClassificationProjectRequiresLabels"
-    case ProjectDoesNotExist(projectId) =>
+    case ProjectDoesNotExistError(projectId) =>
       "ProjectDoesNotExist"
+    case ProjectIdIsEmptyError() =>
+      "ProjectIdIsEmptyError"
     case FeaturesConfigurationError(message) =>
       "FeaturesConfigurationError"
-    case ProjectAlreadyExists(projectId) =>
+    case ProjectAlreadyExistsError(projectId) =>
       "ProjectAlreadyExists"
-    case InvalidProjectIdentifier(message) =>
+    case InvalidProjectIdentifierError(message) =>
       "InvalidProjectIdentifier"
-    case ProjectDataInconsistent(projectId) =>
+    case ProjectDataInconsistentError(projectId) =>
       "ProjectDataInconsistent"
-    case RegressionProjectDoesNotRequireLabels(message) =>
+    case RegressionProjectDoesNotRequireLabelsError(message) =>
       "RegressionProjectDoesNotRequireLabels"
     case FeaturesDoesNotExistError(message) =>
       "FeaturesDoesNotExistError"
     case LabelsDoesNotExistError(message) =>
       "LabelsDoesNotExistError"
-    case ProjectIdIsNotAlphaNumerical(message) =>
+    case ProjectIdIsNotAlphaNumericalError(message) =>
       "ProjectIdIsNotAlphaNumerical"
-    case ProjectLabelsAreRequiredForClassification() =>
+    case ProjectLabelsAreRequiredForClassificationError() =>
       "ProjectLabelsAreRequiredForClassification"
   }
 
@@ -47,27 +49,29 @@ object ProjectErrorsSerializer {
       message: String
   ): Decoder.Result[ProjectError] = errorClass match {
     case "ClassificationProjectRequiresLabels" =>
-      ClassificationProjectRequiresLabels(message).asRight
+      ClassificationProjectRequiresLabelsError(message).asRight
     case "ProjectDoesNotExist" =>
-      ProjectDoesNotExist(message).asRight
+      ProjectDoesNotExistError(message).asRight
+    case "ProjectIdIsEmptyError" =>
+      ProjectIdIsEmptyError().asRight
     case "FeaturesConfigurationError" =>
       FeaturesConfigurationError(message).asRight
     case "ProjectAlreadyExists" =>
-      ProjectAlreadyExists(message).asRight
+      ProjectAlreadyExistsError(message).asRight
     case "InvalidProjectIdentifier" =>
-      InvalidProjectIdentifier(message).asRight
+      InvalidProjectIdentifierError(message).asRight
     case "ProjectDataInconsistent" =>
-      ProjectDataInconsistent(message).asRight
+      ProjectDataInconsistentError(message).asRight
     case "RegressionProjectDoesNotRequireLabels" =>
-      RegressionProjectDoesNotRequireLabels(message).asRight
+      RegressionProjectDoesNotRequireLabelsError(message).asRight
     case "FeaturesDoesNotExistError" =>
       FeaturesDoesNotExistError(message).asRight
     case "LabelsDoesNotExistError" =>
       LabelsDoesNotExistError(message).asRight
     case "ProjectIdIsNotAlphaNumerical" =>
-      ProjectIdIsNotAlphaNumerical(message).asRight
+      ProjectIdIsNotAlphaNumericalError(message).asRight
     case "ProjectLabelsAreRequiredForClassification" =>
-      ProjectLabelsAreRequiredForClassification().asRight
+      ProjectLabelsAreRequiredForClassificationError().asRight
     case _ => DecodingFailure("Unknown error class", Nil).asLeft
   }
 

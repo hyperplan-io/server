@@ -5,7 +5,7 @@ import cats.implicits._
 import cats.data._
 
 import com.hyperplan.domain.repositories.DomainRepository
-import com.foundaml.server.controllers.requests.PostProjectRequest
+import com.hyperplan.application.controllers.requests.PostProjectRequest
 import com.hyperplan.domain.models._
 import com.hyperplan.domain.errors.ProjectError
 import com.hyperplan.domain.errors.ProjectError._
@@ -37,7 +37,11 @@ class ProjectsService(
         .fromOptionF[IO, NonEmptyChain[ProjectError], FeatureVectorDescriptor](
           domainService.readFeatures(projectRequest.featuresId),
           NonEmptyChain(
-            ProjectError.FeaturesDoesNotExistError(projectRequest.featuresId)
+            ProjectError.FeaturesDoesNotExistError(
+              ProjectError.FeaturesDoesNotExistError.message(
+                projectRequest.featuresId
+              )
+            )
           )
         )
       labels <- EitherT
@@ -45,7 +49,9 @@ class ProjectsService(
           domainService.readLabels(projectRequest.labelsId.getOrElse("")),
           NonEmptyChain(
             ProjectError.LabelsDoesNotExistError(
-              projectRequest.labelsId.getOrElse("")
+              ProjectError.LabelsDoesNotExistError.message(
+                projectRequest.labelsId.getOrElse("")
+              )
             )
           )
         )
@@ -62,21 +68,33 @@ class ProjectsService(
         NoAlgorithm()
       )
 
-  def validateProjectId(id: String): ProjectValidationResult[String] =
+  def validateAlphanumericalProjectId(
+      id: String
+  ): ProjectValidationResult[String] =
     Either
       .cond(
         id.matches("^[a-zA-Z0-9]*$"),
         id,
-        ProjectIdIsNotAlphaNumerical(ProjectIdIsNotAlphaNumerical.message(id))
+        ProjectIdIsNotAlphaNumericalError(
+          ProjectIdIsNotAlphaNumericalError.message(id)
+        )
       )
       .toValidatedNec
 
+  def validateProjectIdNotEmpty(id: String): ProjectValidationResult[String] =
+    Either
+      .cond(
+        id.nonEmpty,
+        id,
+        ProjectIdIsEmptyError()
+      )
+      .toValidatedNec
   def validateLabels(
       projectRequest: PostProjectRequest
   ): ProjectValidationResult[Unit] = projectRequest.problem match {
     case Classification if projectRequest.labelsId.isEmpty =>
       Validated.invalid(
-        NonEmptyChain(ProjectLabelsAreRequiredForClassification())
+        NonEmptyChain(ProjectLabelsAreRequiredForClassificationError())
       )
     case Classification if projectRequest.labelsId.isDefined =>
       Validated.valid(Unit)
@@ -88,9 +106,10 @@ class ProjectsService(
       projectRequest: PostProjectRequest
   ): ProjectValidationResult[Unit] =
     (
-      validateProjectId(projectRequest.id),
+      validateAlphanumericalProjectId(projectRequest.id),
+      validateProjectIdNotEmpty(projectRequest.id),
       validateLabels(projectRequest)
-    ).mapN((_, _) => Unit)
+    ).mapN((_, _, _) => Unit)
 
   def createEmptyRegressionProject(
       projectRequest: PostProjectRequest
@@ -104,7 +123,11 @@ class ProjectsService(
         .fromOptionF[IO, NonEmptyChain[ProjectError], FeatureVectorDescriptor](
           domainService.readFeatures(projectRequest.featuresId),
           NonEmptyChain(
-            ProjectError.FeaturesDoesNotExistError(projectRequest.featuresId)
+            ProjectError.FeaturesDoesNotExistError(
+              ProjectError.FeaturesDoesNotExistError.message(
+                projectRequest.featuresId
+              )
+            )
           )
         )
     } yield
@@ -157,16 +180,18 @@ class ProjectsService(
         projectsRepository
           .read(projectId)
           .map {
-            case project: ClassificationProject =>
+            case Some(project: ClassificationProject) =>
               project.copy(
                 name = name.getOrElse(project.name),
                 policy = policy.getOrElse(project.policy)
               )
-            case project: RegressionProject =>
+            case Some(project: RegressionProject) =>
               project.copy(
                 name = name.getOrElse(project.name),
                 policy = policy.getOrElse(project.policy)
               )
+            case None =>
+              ???
           }
           .flatMap { project =>
             projectsRepository.update(project)
@@ -179,12 +204,12 @@ class ProjectsService(
   def readProjects =
     projectsRepository.transact(projectsRepository.readAll)
 
-  def readProject(id: String): IO[Project] =
+  def readProject(id: String): IO[Option[Project]] =
     cache.get[IO](id).flatMap { cacheElement =>
       cacheElement.fold(
         projectsRepository.transact(projectsRepository.read(id))
       )(
-        project => IO.pure(project)
+        project => IO.pure(project.some)
       )
     }
 

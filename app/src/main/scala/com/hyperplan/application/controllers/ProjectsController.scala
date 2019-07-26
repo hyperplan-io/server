@@ -3,12 +3,12 @@ package com.hyperplan.application.controllers
 import cats.effect.IO
 import cats.implicits._
 import cats.{Functor, MonadError}
-
 import com.hyperplan.application.controllers.requests._
-import com.foundaml.server.controllers.requests.{
-  PostProjectRequest,
-  PatchProjectRequest
+import com.hyperplan.application.controllers.requests.{
+  PatchProjectRequest,
+  PostProjectRequest
 }
+import com.hyperplan.domain.errors.ProjectError.ProjectDoesNotExistError
 import com.hyperplan.domain.errors._
 import com.hyperplan.domain.services.ProjectsService
 import com.hyperplan.infrastructure.serialization._
@@ -71,9 +71,9 @@ class ProjectsController(
             NoContent()
           }
           .handleErrorWith {
-            case ProjectError.ProjectDoesNotExist(projectId) =>
+            case ProjectError.ProjectDoesNotExistError(projectId) =>
               NotFound(s"The project $projectId does not exist")
-            case ProjectError.ProjectDataInconsistent(projectId) =>
+            case ProjectError.ProjectDataInconsistentError(projectId) =>
               logger.error(s"The project $projectId has inconsistent data") *>
                 InternalServerError(s"The project data is inconsistent")
             case err =>
@@ -102,17 +102,23 @@ class ProjectsController(
         projectsService
           .readProject(projectId)
           .flatMap {
-            case project =>
+            case Some(project) =>
               Ok(
                 ProjectSerializer.encodeJson(
                   project
                 )
               )
+            case None =>
+              NotFound(
+                ProjectErrorsSerializer.encodeJson(
+                  ProjectDoesNotExistError(
+                    ProjectDoesNotExistError.message(projectId)
+                  )
+                )
+              )
           }
           .handleErrorWith {
-            case ProjectError.ProjectDoesNotExist(_) =>
-              NotFound(s"The project $projectId does not exist")
-            case ProjectError.ProjectDataInconsistent(_) =>
+            case ProjectError.ProjectDataInconsistentError(_) =>
               InternalServerError(
                 s"The project $projectId has inconsistent data"
               )
