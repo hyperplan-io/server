@@ -221,7 +221,9 @@ object ProjectsRepository {
         policy
       ): Project).pure[ConnectionIO]
     case projectData =>
-      AsyncConnectionIO.raiseError(ProjectError.ProjectDataInconsistent(data._1))
+      AsyncConnectionIO.raiseError(
+        ProjectError.ProjectDataInconsistent(data._1)
+      )
   }
 
   def dataListToProject(dataList: List[ProjectData]) =

@@ -46,16 +46,22 @@ class ProjectsService(
       streamConfiguration <- EitherT.pure[IO, NonEmptyChain[ProjectError]](
         projectRequest.topic.map(topic => StreamConfiguration(topic))
       )
-      features <- EitherT.fromOptionF[IO, NonEmptyChain[ProjectError], FeaturesConfiguration](
-        domainService.readFeatures(projectRequest.featuresId),
-        NonEmptyChain(ProjectError.FeaturesDoesNotExistError(projectRequest.featuresId))
-      )
-      labels <- EitherT.fromOptionF[IO, NonEmptyChain[ProjectError], LabelsConfiguration](
-        domainService.readLabels(projectRequest.labelsId.getOrElse("")),
-        NonEmptyChain(ProjectError.LabelsDoesNotExistError(
-          projectRequest.labelsId.getOrElse("")
-        ))
-      )
+      features <- EitherT
+        .fromOptionF[IO, NonEmptyChain[ProjectError], FeaturesConfiguration](
+          domainService.readFeatures(projectRequest.featuresId),
+          NonEmptyChain(
+            ProjectError.FeaturesDoesNotExistError(projectRequest.featuresId)
+          )
+        )
+      labels <- EitherT
+        .fromOptionF[IO, NonEmptyChain[ProjectError], LabelsConfiguration](
+          domainService.readLabels(projectRequest.labelsId.getOrElse("")),
+          NonEmptyChain(
+            ProjectError.LabelsDoesNotExistError(
+              projectRequest.labelsId.getOrElse("")
+            )
+          )
+        )
     } yield
       ClassificationProject(
         projectRequest.id,
@@ -69,23 +75,31 @@ class ProjectsService(
         NoAlgorithm()
       )
 
-  def validateProjectId(id: String): ProjectValidationResult[String] = 
-    Either.cond(
-      id.matches("^[a-zA-Z0-9]*$"),
-      id,
-      ProjectIdIsNotAlphaNumerical(ProjectIdIsNotAlphaNumerical.message(id))
-    ).toValidatedNec
+  def validateProjectId(id: String): ProjectValidationResult[String] =
+    Either
+      .cond(
+        id.matches("^[a-zA-Z0-9]*$"),
+        id,
+        ProjectIdIsNotAlphaNumerical(ProjectIdIsNotAlphaNumerical.message(id))
+      )
+      .toValidatedNec
 
-  def validateLabels(projectRequest: PostProjectRequest): ProjectValidationResult[Unit] = projectRequest.problem match {
-    case Classification if projectRequest.labelsId.isEmpty => 
-      Validated.invalid(NonEmptyChain(ProjectLabelsAreRequiredForClassification()))
+  def validateLabels(
+      projectRequest: PostProjectRequest
+  ): ProjectValidationResult[Unit] = projectRequest.problem match {
+    case Classification if projectRequest.labelsId.isEmpty =>
+      Validated.invalid(
+        NonEmptyChain(ProjectLabelsAreRequiredForClassification())
+      )
     case Classification if projectRequest.labelsId.isDefined =>
       Validated.valid(Unit)
     case Regression =>
       Validated.valid(Unit)
   }
 
-  def validateProject(projectRequest: PostProjectRequest): ProjectValidationResult[Unit] =
+  def validateProject(
+      projectRequest: PostProjectRequest
+  ): ProjectValidationResult[Unit] =
     (
       validateProjectId(projectRequest.id),
       validateLabels(projectRequest)
@@ -99,10 +113,13 @@ class ProjectsService(
       streamConfiguration <- EitherT.pure[IO, NonEmptyChain[ProjectError]](
         projectRequest.topic.map(topic => StreamConfiguration(topic))
       )
-      features <- EitherT.fromOptionF[IO, NonEmptyChain[ProjectError], FeaturesConfiguration](
-        domainService.readFeatures(projectRequest.featuresId),
-        NonEmptyChain(ProjectError.FeaturesDoesNotExistError(projectRequest.featuresId))
-      )
+      features <- EitherT
+        .fromOptionF[IO, NonEmptyChain[ProjectError], FeaturesConfiguration](
+          domainService.readFeatures(projectRequest.featuresId),
+          NonEmptyChain(
+            ProjectError.FeaturesDoesNotExistError(projectRequest.featuresId)
+          )
+        )
     } yield
       RegressionProject(
         projectRequest.id,
@@ -122,7 +139,7 @@ class ProjectsService(
       case Classification => createEmptyClassificationProject(projectRequest)
       case Regression => createEmptyRegressionProject(projectRequest)
     }).flatMap { project =>
-      EitherT(projectsRepository.insert(project).map { 
+      EitherT(projectsRepository.insert(project).map {
         case Left(err) =>
           // we need a NonEmptyChain of errors but insert returns a single error
           NonEmptyChain(err).asLeft

@@ -18,7 +18,7 @@ import com.hyperplan.domain.errors.ProjectError._
 object ProjectErrorsSerializer {
 
   def projectErrorToClass(error: ProjectError): String = error match {
-    case ClassificationProjectRequiresLabels(message) => 
+    case ClassificationProjectRequiresLabels(message) =>
       "ClassificationProjectRequiresLabels"
     case ProjectDoesNotExist(projectId) =>
       "ProjectDoesNotExist"
@@ -32,7 +32,7 @@ object ProjectErrorsSerializer {
       "ProjectDataInconsistent"
     case RegressionProjectDoesNotRequireLabels(message) =>
       "RegressionProjectDoesNotRequireLabels"
-    case FeaturesDoesNotExistError(message) => 
+    case FeaturesDoesNotExistError(message) =>
       "FeaturesDoesNotExistError"
     case LabelsDoesNotExistError(message) =>
       "LabelsDoesNotExistError"
@@ -70,7 +70,6 @@ object ProjectErrorsSerializer {
       ProjectLabelsAreRequiredForClassification().asRight
     case _ => DecodingFailure("Unknown error class", Nil).asLeft
   }
-
 
   implicit val projectsEncoder: Encoder[NonEmptyChain[ProjectError]] =
     (errors: NonEmptyChain[ProjectError]) =>
