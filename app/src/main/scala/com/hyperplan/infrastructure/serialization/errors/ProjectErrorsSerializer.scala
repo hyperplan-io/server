@@ -24,6 +24,10 @@ object ProjectErrorsSerializer {
       "ProjectDoesNotExist"
     case ProjectIdIsEmptyError() =>
       "ProjectIdIsEmptyError"
+    case ProjectNameIsEmptyError() =>
+      "ProjectNameIsEmptyError"
+    case ProjectPolicyAlgorithmDoesNotExist(message) =>
+      "ProjectPolicyAlgorithmDoesNotExist"
     case FeaturesConfigurationError(message) =>
       "FeaturesConfigurationError"
     case ProjectAlreadyExistsError(projectId) =>
@@ -54,8 +58,12 @@ object ProjectErrorsSerializer {
       ProjectDoesNotExistError(message).asRight
     case "ProjectIdIsEmptyError" =>
       ProjectIdIsEmptyError().asRight
+    case "ProjectNameIsEmptyError" =>
+      ProjectNameIsEmptyError().asRight
     case "FeaturesConfigurationError" =>
       FeaturesConfigurationError(message).asRight
+    case "ProjectPolicyAlgorithmDoesNotExist" =>
+      ProjectPolicyAlgorithmDoesNotExist(message).asRight
     case "ProjectAlreadyExists" =>
       ProjectAlreadyExistsError(message).asRight
     case "InvalidProjectIdentifier" =>

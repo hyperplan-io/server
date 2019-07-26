@@ -47,11 +47,10 @@ class ProjectsController(
                 ProjectErrorsSerializer.encodeJson(errors.toList: _*)
               )
           }
-          .handleErrorWith {
-            case err =>
-              logger.warn("Unhandled error in ProjectsController") >> InternalServerError(
-                unhandledErrorMessage
-              )
+          .handleErrorWith { err =>
+            logger.warn("Unhandled error in ProjectsController", err) >> InternalServerError(
+              unhandledErrorMessage
+            )
           }
 
       case req @ PATCH -> Root / projectId =>
@@ -60,26 +59,29 @@ class ProjectsController(
             MonadError[IO, Throwable],
             PatchProjectRequestSerializer.entityDecoder
           )
-          project <- projectsService.updateProject(
-            projectId,
-            request.name,
-            request.policy
-          )
+          project <- projectsService
+            .updateProject(
+              projectId,
+              request.name,
+              request.policy
+            )
+            .value
           _ <- logger.info(s"Project ${projectId} updated")
         } yield project)
-          .flatMap { project =>
-            NoContent()
-          }
-          .handleErrorWith {
-            case ProjectError.ProjectDoesNotExistError(projectId) =>
-              NotFound(s"The project $projectId does not exist")
-            case ProjectError.ProjectDataInconsistentError(projectId) =>
-              logger.error(s"The project $projectId has inconsistent data") *>
-                InternalServerError(s"The project data is inconsistent")
-            case err =>
-              logger.error(s"Unhandled error: ${err}") *> InternalServerError(
-                "An unknown error occurred"
+          .flatMap {
+            case Right(project) =>
+              Ok(
+                ProjectSerializer.encodeJson(project)
               )
+            case Left(errors) =>
+              BadRequest(
+                ProjectErrorsSerializer.encodeJson(errors.toList: _*)
+              )
+          }
+          .handleErrorWith { err =>
+            logger.warn("Unhandled error in ProjectsController", err) >> InternalServerError(
+              unhandledErrorMessage
+            )
           }
 
       case GET -> Root =>
@@ -91,11 +93,10 @@ class ProjectsController(
               )
             )
           }
-          .handleErrorWith {
-            case err =>
-              logger.error(s"Unhandled error: ${err}") *> InternalServerError(
-                "An unknown error occurred"
-              )
+          .handleErrorWith { err =>
+            logger.warn(s"Unhandled error in ProjectsController", err) *> InternalServerError(
+              "An unknown error occurred"
+            )
           }
 
       case GET -> Root / projectId =>
@@ -123,7 +124,7 @@ class ProjectsController(
                 s"The project $projectId has inconsistent data"
               )
             case err =>
-              logger.error(s"Unhandled error: ${err}") *> InternalServerError(
+              logger.warn(s"Unhandled error in ProjectsController", err) *> InternalServerError(
                 "An unknown error occurred"
               )
           }

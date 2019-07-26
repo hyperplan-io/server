@@ -3,7 +3,6 @@ package com.hyperplan.domain.services
 import cats.effect.IO
 import cats.implicits._
 import cats.data._
-
 import com.hyperplan.domain.repositories.DomainRepository
 import com.hyperplan.application.controllers.requests.PostProjectRequest
 import com.hyperplan.domain.models._
@@ -12,8 +11,8 @@ import com.hyperplan.domain.errors.ProjectError._
 import com.hyperplan.domain.models.features._
 import com.hyperplan.domain.repositories.ProjectsRepository
 import com.hyperplan.infrastructure.logging.IOLogging
+import doobie.free.connection.{ConnectionIO, AsyncConnectionIO}
 import doobie.util.invariant.UnexpectedEnd
-
 import scalacache.Cache
 import scalacache.CatsEffect.modes._
 
@@ -29,7 +28,9 @@ class ProjectsService(
       projectRequest: PostProjectRequest
   ): EitherT[IO, NonEmptyChain[ProjectError], Project] =
     for {
-      _ <- EitherT.fromEither[IO](validateProject(projectRequest).toEither)
+      _ <- EitherT.fromEither[IO](
+        validateCreateProject(projectRequest).toEither
+      )
       streamConfiguration <- EitherT.pure[IO, NonEmptyChain[ProjectError]](
         projectRequest.topic.map(topic => StreamConfiguration(topic))
       )
@@ -89,6 +90,16 @@ class ProjectsService(
         ProjectIdIsEmptyError()
       )
       .toValidatedNec
+
+  def validateProjectNameNotEmpty(id: String): ProjectValidationResult[String] =
+    Either
+      .cond(
+        id.nonEmpty,
+        id,
+        ProjectNameIsEmptyError()
+      )
+      .toValidatedNec
+
   def validateLabels(
       projectRequest: PostProjectRequest
   ): ProjectValidationResult[Unit] = projectRequest.problem match {
@@ -102,20 +113,23 @@ class ProjectsService(
       Validated.valid(Unit)
   }
 
-  def validateProject(
+  def validateCreateProject(
       projectRequest: PostProjectRequest
   ): ProjectValidationResult[Unit] =
     (
       validateAlphanumericalProjectId(projectRequest.id),
       validateProjectIdNotEmpty(projectRequest.id),
+      validateProjectNameNotEmpty(projectRequest.name),
       validateLabels(projectRequest)
-    ).mapN((_, _, _) => Unit)
+    ).mapN((_, _, _, _) => Unit)
 
   def createEmptyRegressionProject(
       projectRequest: PostProjectRequest
   ): EitherT[IO, NonEmptyChain[ProjectError], Project] =
     for {
-      _ <- EitherT.fromEither[IO](validateProject(projectRequest).toEither)
+      _ <- EitherT.fromEither[IO](
+        validateCreateProject(projectRequest).toEither
+      )
       streamConfiguration <- EitherT.pure[IO, NonEmptyChain[ProjectError]](
         projectRequest.topic.map(topic => StreamConfiguration(topic))
       )
@@ -174,31 +188,92 @@ class ProjectsService(
       projectId: String,
       name: Option[String],
       policy: Option[AlgorithmPolicy]
-  ): IO[Int] =
-    projectsRepository
-      .transact(
-        projectsRepository
-          .read(projectId)
-          .map {
-            case Some(project: ClassificationProject) =>
-              project.copy(
-                name = name.getOrElse(project.name),
-                policy = policy.getOrElse(project.policy)
-              )
-            case Some(project: RegressionProject) =>
-              project.copy(
-                name = name.getOrElse(project.name),
-                policy = policy.getOrElse(project.policy)
-              )
-            case None =>
-              ???
-          }
-          .flatMap { project =>
-            projectsRepository.update(project)
-          }
+  ): EitherT[IO, NonEmptyChain[ProjectError], Project] =
+    EitherT
+      .fromEither[IO](
+        name
+          .fold[ProjectValidationResult[String]](
+            Validated.valid("").toValidatedNec
+          )(validateProjectNameNotEmpty)
+          .toEither
       )
-      .flatMap { count =>
-        cache.remove[IO](projectId).map(_ => count)
+      .flatMap { _ =>
+        EitherT(
+          projectsRepository
+            .transact(
+              projectsRepository
+                .read(projectId)
+                .flatMap[Project] {
+                  case Some(project: ClassificationProject) =>
+                    (project.copy(
+                      name = name.getOrElse(project.name),
+                      policy = policy.getOrElse(project.policy)
+                    ): Project).pure[ConnectionIO]
+                  case Some(project: RegressionProject) =>
+                    (project.copy(
+                      name = name.getOrElse(project.name),
+                      policy = policy.getOrElse(project.policy)
+                    ): Project).pure[ConnectionIO]
+                  case None =>
+                    AsyncConnectionIO.raiseError(
+                      ProjectDoesNotExistError(
+                        ProjectDoesNotExistError.message(projectId)
+                      )
+                    )
+                }
+                .flatMap { project =>
+                  val validated = project.policy match {
+                    case NoAlgorithm() => Validated.valid(Unit)
+                    case DefaultAlgorithm(algorithmId) =>
+                      Either
+                        .cond(
+                          project.algorithms.map(_.id).contains(algorithmId),
+                          Unit,
+                          ProjectPolicyAlgorithmDoesNotExist(
+                            ProjectPolicyAlgorithmDoesNotExist
+                              .message(algorithmId)
+                          )
+                        )
+                        .toValidatedNec
+                    case WeightedAlgorithm(weights) =>
+                      val projectAlgorithmIds = project.algorithms.map(_.id)
+                      val algorithmsMissing: Seq[String] =
+                        weights.map(_.algorithmId).collect {
+                          case id if !projectAlgorithmIds.contains(id) => id
+                        }
+                      Either
+                        .cond(
+                          algorithmsMissing.isEmpty,
+                          Unit,
+                          ProjectPolicyAlgorithmDoesNotExist(
+                            ProjectPolicyAlgorithmDoesNotExist
+                              .message(algorithmsMissing)
+                          )
+                        )
+                        .toValidatedNec
+                  }
+                  validated.fold[ConnectionIO[Project]](
+                    err => AsyncConnectionIO.raiseError(err.head),
+                    _ =>
+                      projectsRepository.update(project) *> project
+                        .pure[ConnectionIO]
+                  )
+
+                }
+            )
+            .flatMap { project =>
+              cache.remove[IO](projectId).map(_ => project.asRight)
+            }
+            .handleErrorWith {
+              case err: ProjectDoesNotExistError =>
+                IO.pure(NonEmptyChain(err).asLeft)
+              case err: ProjectPolicyAlgorithmDoesNotExist =>
+                IO.pure(NonEmptyChain(err).asLeft)
+              case err =>
+                IO.raiseError(err)
+            }
+        )
+
       }
 
   def readProjects =

@@ -17,6 +17,10 @@ object ProjectError {
     val message: String = "Empty id is not allowed"
   }
 
+  case class ProjectNameIsEmptyError() extends ProjectError {
+    val message: String = "Empty name is not allowed"
+  }
+
   case class FeaturesDoesNotExistError(message: String) extends ProjectError
   object FeaturesDoesNotExistError {
     def message(featuresId: String) = s"The features $featuresId does not exist"
@@ -49,6 +53,15 @@ object ProjectError {
   object ProjectDoesNotExistError {
     def message(projectId: String): String =
       s"The project $projectId does not exist"
+  }
+
+  case class ProjectPolicyAlgorithmDoesNotExist(message: String)
+      extends ProjectError
+  object ProjectPolicyAlgorithmDoesNotExist {
+    def message(algorithmId: String): String =
+      s"The algorithm  $algorithmId set in the policy does not exist"
+    def message(algorithmIds: Seq[String]): String =
+      s"The following algorithms set in the policy do not exist: ${algorithmIds.mkString(",")}"
   }
 
   case class ClassificationProjectRequiresLabelsError(message: String)

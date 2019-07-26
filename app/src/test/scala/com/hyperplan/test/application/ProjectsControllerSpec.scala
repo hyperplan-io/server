@@ -17,7 +17,7 @@ import com.hyperplan.application.controllers.{
   LabelsController,
   ProjectsController
 }
-import com.hyperplan.domain.errors._
+import com.hyperplan.domain.errors.{ProjectError, _}
 import com.hyperplan.domain.models._
 import com.hyperplan.domain.models.features._
 import com.hyperplan.domain.services._
@@ -27,7 +27,10 @@ import com.hyperplan.infrastructure.serialization.errors.{
   ProjectErrorsSerializer
 }
 import com.hyperplan.infrastructure.serialization._
-import com.hyperplan.application.controllers.requests.PostProjectRequest
+import com.hyperplan.application.controllers.requests.{
+  PatchProjectRequest,
+  PostProjectRequest
+}
 import com.hyperplan.domain.errors.ProjectError._
 import com.hyperplan.domain.models
 
@@ -53,6 +56,9 @@ class ProjectsControllerSpec()
   implicit val projectListEntityEncoder: EntityEncoder[IO, List[Project]] =
     ProjectSerializer.entityListEncoder
 
+  implicit val projectErrorDecoder: EntityDecoder[IO, List[ProjectError]] =
+    ProjectErrorsSerializer.projectErrorEntityDecoder
+
   /**
     * Post project request
     */
@@ -60,8 +66,15 @@ class ProjectsControllerSpec()
       : EntityEncoder[IO, PostProjectRequest] =
     PostProjectRequestSerializer.entityEncoder
 
-  implicit val projectErrorDecoder =
-    ProjectErrorsSerializer.projectErrorEntityDecoder
+  /**
+    * Patch project request
+    */
+  implicit val patchProjectRequestEntityEncoder
+      : EntityEncoder[IO, PatchProjectRequest] =
+    PatchProjectRequestSerializer.entityEncoder
+  implicit val patchProjectRequestEntityDecoder
+      : EntityDecoder[IO, PatchProjectRequest] =
+    PatchProjectRequestSerializer.entityDecoder
 
   /**
     * Features
@@ -776,6 +789,277 @@ class ProjectsControllerSpec()
           List(
             regressionProject,
             classificationProject
+          )
+        )
+      )
+    )
+  }
+
+  it should "fail to update a project that does not exist" in {
+    val response = projectsController.service
+      .run(
+        Request(
+          method = Method.PATCH,
+          uri = uri"/myproject"
+        ).withEntity(
+          PatchProjectRequest(
+            "myproject".some,
+            DefaultAlgorithm("test").some
+          )
+        )
+      )
+      .value
+      .map(_.get)
+
+    assert(
+      ControllerTestUtils.check[List[ProjectError]](
+        response,
+        Status.BadRequest,
+        Some(
+          List(
+            ProjectDoesNotExistError(
+              ProjectDoesNotExistError.message("myproject")
+            )
+          )
+        )
+      )
+    )
+  }
+
+  it should "fail to update a project with an empty name" in {
+    val response = projectsController.service
+      .run(
+        Request(
+          method = Method.PATCH,
+          uri = uri"/myproject"
+        ).withEntity(
+          PatchProjectRequest(
+            "".some,
+            DefaultAlgorithm("test").some
+          )
+        )
+      )
+      .value
+      .map(_.get)
+
+    assert(
+      ControllerTestUtils.check[List[ProjectError]](
+        response,
+        Status.BadRequest,
+        Some(
+          List(
+            ProjectError.ProjectNameIsEmptyError()
+          )
+        )
+      )
+    )
+  }
+
+  it should "fail to update a project policy to default with an algorithm that does not exist" in {
+
+    val id = "test"
+    val name = "my regression project"
+    val problem = Regression
+    val featuresId = "my-feature-id"
+    val topic = "my-topic".some
+
+    val entityBodyFeatures = FeatureVectorDescriptor(
+      id = featuresId,
+      data = List(
+        FeatureDescriptor(
+          name = "feature-1",
+          featuresType = StringFeatureType,
+          dimension = Scalar,
+          description = "my description"
+        )
+      )
+    )
+
+    featuresController.service
+      .run(
+        Request[IO](
+          method = Method.POST,
+          uri = uri"/"
+        ).withEntity(entityBodyFeatures)
+      )
+      .value
+      .map(_.get)
+      .unsafeRunSync()
+
+    val entityBody = PostProjectRequest(
+      id = id,
+      name = name,
+      problem = problem,
+      featuresId = featuresId,
+      labelsId = none[String],
+      topic = topic
+    )
+
+    val response = projectsController.service
+      .run(
+        Request[IO](
+          method = Method.POST,
+          uri = uri"/"
+        ).withEntity(entityBody)
+      )
+      .value
+      .map(_.get)
+
+    assert(
+      ControllerTestUtils.check[Project](
+        response,
+        Status.Created,
+        Some(
+          models.RegressionProject(
+            id,
+            name,
+            RegressionConfiguration(
+              entityBodyFeatures,
+              StreamConfiguration(topic.get).some
+            ),
+            Nil,
+            NoAlgorithm()
+          )
+        )
+      )
+    )
+
+    val response2 = projectsController.service
+      .run(
+        Request(
+          method = Method.PATCH,
+          uri = uri"/test"
+        ).withEntity(
+          PatchProjectRequest(
+            none[String],
+            DefaultAlgorithm("test").some
+          )
+        )
+      )
+      .value
+      .map(_.get)
+
+    assert(
+      ControllerTestUtils.check[List[ProjectError]](
+        response2,
+        Status.BadRequest,
+        Some(
+          List(
+            ProjectPolicyAlgorithmDoesNotExist(
+              ProjectPolicyAlgorithmDoesNotExist.message("test")
+            )
+          )
+        )
+      )
+    )
+  }
+
+  it should "fail to update a project policy to weighted with an algorithm that does not exist" in {
+
+    val id = "test"
+    val name = "my regression project"
+    val problem = Regression
+    val featuresId = "my-feature-id"
+    val topic = "my-topic".some
+
+    val entityBodyFeatures = FeatureVectorDescriptor(
+      id = featuresId,
+      data = List(
+        FeatureDescriptor(
+          name = "feature-1",
+          featuresType = StringFeatureType,
+          dimension = Scalar,
+          description = "my description"
+        )
+      )
+    )
+
+    featuresController.service
+      .run(
+        Request[IO](
+          method = Method.POST,
+          uri = uri"/"
+        ).withEntity(entityBodyFeatures)
+      )
+      .value
+      .map(_.get)
+      .unsafeRunSync()
+
+    val entityBody = PostProjectRequest(
+      id = id,
+      name = name,
+      problem = problem,
+      featuresId = featuresId,
+      labelsId = none[String],
+      topic = topic
+    )
+
+    val response = projectsController.service
+      .run(
+        Request[IO](
+          method = Method.POST,
+          uri = uri"/"
+        ).withEntity(entityBody)
+      )
+      .value
+      .map(_.get)
+
+    assert(
+      ControllerTestUtils.check[Project](
+        response,
+        Status.Created,
+        Some(
+          models.RegressionProject(
+            id,
+            name,
+            RegressionConfiguration(
+              entityBodyFeatures,
+              StreamConfiguration(topic.get).some
+            ),
+            Nil,
+            NoAlgorithm()
+          )
+        )
+      )
+    )
+
+    val response2 = projectsController.service
+      .run(
+        Request(
+          method = Method.PATCH,
+          uri = uri"/test"
+        ).withEntity(
+          PatchProjectRequest(
+            none[String],
+            models
+              .WeightedAlgorithm(
+                List(
+                  AlgorithmWeight(
+                    "algo1",
+                    0.5f
+                  ),
+                  AlgorithmWeight(
+                    "algo2",
+                    0.5f
+                  )
+                )
+              )
+              .some
+          )
+        )
+      )
+      .value
+      .map(_.get)
+
+    assert(
+      ControllerTestUtils.check[List[ProjectError]](
+        response2,
+        Status.BadRequest,
+        Some(
+          List(
+            ProjectPolicyAlgorithmDoesNotExist(
+              ProjectPolicyAlgorithmDoesNotExist.message(Seq("algo1", "algo2"))
+            )
           )
         )
       )
