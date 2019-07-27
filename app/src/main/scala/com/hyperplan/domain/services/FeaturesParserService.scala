@@ -46,28 +46,28 @@ object FeaturesParserService {
               .map[Features](value => List(FloatFeature(key, value)))
           case (FloatFeatureType, Array) =>
             IO.fromEither(jsonField.as[List[Float]])
-              .map[Features](value => List(FloatVectorFeature(key, value)))
+              .map[Features](value => List(FloatArrayFeature(key, value)))
           case (FloatFeatureType, Matrix) =>
             IO.fromEither(jsonField.as[List[List[Float]]])
-              .map[Features](value => List(FloatVector2dFeature(key, value)))
+              .map[Features](value => List(FloatMatrixFeature(key, value)))
           case (IntFeatureType, Scalar) =>
             IO.fromEither(jsonField.as[Int])
               .map[Features](value => List(IntFeature(key, value)))
           case (IntFeatureType, Array) =>
             IO.fromEither(jsonField.as[List[Int]])
-              .map[Features](value => List(IntVectorFeature(key, value)))
+              .map[Features](value => List(IntArrayFeature(key, value)))
           case (IntFeatureType, Matrix) =>
             IO.fromEither(jsonField.as[List[List[Int]]])
-              .map[Features](value => List(IntVector2dFeature(key, value)))
+              .map[Features](value => List(IntMatrixFeature(key, value)))
           case (StringFeatureType, Scalar) =>
             IO.fromEither(jsonField.as[String])
               .map[Features](value => List(StringFeature(key, value)))
           case (StringFeatureType, Array) =>
             IO.fromEither(jsonField.as[List[String]])
-              .map[Features](value => List(StringVectorFeature(key, value)))
+              .map[Features](value => List(StringArrayFeature(key, value)))
           case (StringFeatureType, Matrix) =>
             IO.fromEither(jsonField.as[List[List[String]]])
-              .map[Features](value => List(StringVector2dFeature(key, value)))
+              .map[Features](value => List(StringMatrixFeature(key, value)))
           case (ReferenceFeatureType(reference), Scalar) =>
             domainService.readFeatures(reference).flatMap {
               case Some(featuresConfig) =>

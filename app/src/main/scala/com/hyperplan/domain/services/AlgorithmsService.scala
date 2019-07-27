@@ -19,14 +19,19 @@ import com.hyperplan.domain.repositories.{
   AlgorithmsRepository,
   ProjectsRepository
 }
+import com.hyperplan.domain.services._
 import com.hyperplan.infrastructure.logging.IOLogging
 import com.hyperplan.domain.models.backends.RasaNluClassificationBackend
+import java.{util => ju}
+import cats.effect.ContextShift
 
 class AlgorithmsService(
     projectsService: ProjectsService,
+    predictionsService: PredictionsService,
     algorithmsRepository: AlgorithmsRepository,
     projectsRepository: ProjectsRepository
-) extends IOLogging {
+)(implicit cs: ContextShift[IO])
+    extends IOLogging {
 
   type AlgorithmValidationResult[A] = ValidatedNec[AlgorithmError, A]
 
@@ -278,6 +283,19 @@ class AlgorithmsService(
         )
       _ <- EitherT.fromEither[IO](
         validateAlgorithmCreate(algorithm, project).toEither
+      )
+      _ <- EitherT.liftF[IO, NonEmptyChain[AlgorithmError], Prediction](
+        predictionsService.predictWithBackend(
+          ju.UUID.randomUUID().toString,
+          project,
+          algorithm,
+          project.configuration match {
+            case ClassificationConfiguration(features, labels, dataStream) =>
+              FeatureVectorDescriptor.generateRandomFeatureVector(features)
+            case RegressionConfiguration(features, dataStream) =>
+              FeatureVectorDescriptor.generateRandomFeatureVector(features)
+          }
+        )
       )
       _ <- EitherT[IO, NonEmptyChain[AlgorithmError], Algorithm](
         algorithmsRepository.insert(algorithm).map {

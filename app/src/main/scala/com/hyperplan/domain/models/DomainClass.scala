@@ -1,6 +1,10 @@
 package com.hyperplan.domain.models
 
+import cats.implicits._
+
+import com.hyperplan.domain.models.features.Features._
 import com.hyperplan.domain.models.features._
+import scala.util.Random
 
 /**
   * A feature vector descriptor is a representation of what data the feature vector will hold when instantiated
@@ -8,6 +12,75 @@ import com.hyperplan.domain.models.features._
   * @param data the description of the data it will hold when instantiated
   */
 case class FeatureVectorDescriptor(id: String, data: List[FeatureDescriptor])
+object FeatureVectorDescriptor {
+
+  def randomFloatList(): List[Float] =
+    (for (i <- 1 to 10) yield (Random.nextFloat())).toList
+
+  def randomIntList(): List[Int] =
+    (for (i <- 1 to 10) yield (Random.nextInt())).toList
+  def randomStringList(): List[String] =
+    (for (i <- 1 to 10) yield (Random.nextString(10))).toList
+
+  def generateRandomFeatureVector(
+      featureVectorDescriptor: FeatureVectorDescriptor
+  ): Features =
+    featureVectorDescriptor.data.flatMap { descriptor =>
+      (descriptor.featuresType, descriptor.dimension) match {
+        case (FloatFeatureType, Scalar) =>
+          FloatFeature(
+            descriptor.name,
+            Random.nextFloat()
+          ).some
+        case (FloatFeatureType, Array) =>
+          FloatArrayFeature(
+            descriptor.name,
+            randomFloatList()
+          ).some
+        case (FloatFeatureType, Matrix) =>
+          FloatMatrixFeature(
+            descriptor.name,
+            (for (i <- 1 to 5) yield (randomFloatList()).toList).toList
+          ).some
+        case (IntFeatureType, Scalar) =>
+          IntFeature(
+            descriptor.name,
+            Random.nextInt()
+          ).some
+        case (IntFeatureType, Array) =>
+          IntArrayFeature(
+            descriptor.name,
+            randomIntList()
+          ).some
+        case (IntFeatureType, Matrix) =>
+          IntMatrixFeature(
+            descriptor.name,
+            (for (i <- 1 to 5) yield (randomIntList()).toList).toList
+          ).some
+        case (StringFeatureType, Scalar) =>
+          StringFeature(
+            descriptor.name,
+            Random.nextString(10)
+          ).some
+        case (StringFeatureType, Array) =>
+          StringArrayFeature(
+            descriptor.name,
+            randomStringList()
+          ).some
+        case (StringFeatureType, Matrix) =>
+          StringMatrixFeature(
+            descriptor.name,
+            (for (i <- 1 to 5) yield (randomStringList()).toList).toList
+          ).some
+        case (ReferenceFeatureType(name), Scalar) =>
+          none[Feature]
+        case (ReferenceFeatureType(name), Array) =>
+          none[Feature]
+        case (ReferenceFeatureType(name), Matrix) =>
+          none[Feature]
+      }
+    }
+}
 
 /**
   * A label vector descriptor is a representation of what data the label vector will hold when instantiated

@@ -5,6 +5,7 @@ import cats.implicits._
 
 import org.http4s._
 
+import pureconfig.generic.auto._
 import com.hyperplan.application.controllers.requests.{
   PatchProjectRequest,
   PostProjectRequest
@@ -39,6 +40,12 @@ import com.hyperplan.infrastructure.serialization.errors.AlgorithmErrorsSerializ
 import com.hyperplan.domain.models.backends._
 import com.hyperplan.domain.models.features.transformers.RasaNluFeaturesTransformer
 import com.hyperplan.domain.models.labels.transformers.RasaNluLabelsTransformer
+import cats.effect.Resource
+import org.http4s.client.Client
+import scala.concurrent.ExecutionContext
+import org.http4s.client.blaze.BlazeClientBuilder
+import cats.effect.ContextShift
+import com.hyperplan.application.ApplicationConfig
 
 class AlgorithmsControllerSpec()
     extends FlatSpec
@@ -46,6 +53,9 @@ class AlgorithmsControllerSpec()
     with BeforeAndAfterAll
     with BeforeAndAfterEach
     with TestDatabase {
+
+  implicit val timer = IO.timer(ExecutionContext.global)
+  // context shift is inherited from trait TestDatabase
 
   override def beforeAll(): Unit = initSchema()
   override def beforeEach(): Unit = wipeTables()
@@ -66,6 +76,7 @@ class AlgorithmsControllerSpec()
   val projectRepository = new ProjectsRepository()(xa)
   val domainRepository = new DomainRepository()(xa)
   val algorithmsRepository = new AlgorithmsRepository()(xa)
+  val predictionsRepository = new PredictionsRepository()(xa)
 
   val domainService = new DomainService(domainRepository)
 
@@ -75,8 +86,25 @@ class AlgorithmsControllerSpec()
     domainService,
     projectCache
   )
+
+  val blazeClient: Resource[IO, Client[IO]] = BlazeClientBuilder[IO](
+    ExecutionContext.global
+  ).resource
+
+  val config = pureconfig.loadConfig[ApplicationConfig].right.get
+
+  val predictionsService = new PredictionsService(
+    predictionsRepository,
+    projectsService,
+    None,
+    None,
+    None,
+    blazeClient,
+    config
+  )
   val algorithmsService = new AlgorithmsService(
     projectsService,
+    predictionsService,
     algorithmsRepository,
     projectRepository
   )
