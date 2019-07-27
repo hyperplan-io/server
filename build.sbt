@@ -57,6 +57,8 @@ lazy val root = (project in file("."))
       "com.lightbend.akka" %% "akka-stream-alpakka-kinesis" % akkaStreamVersion,
       "com.typesafe.akka" %% "akka-testkit" % "2.5.23" % Test,
 
+      "io.lemonlabs" %% "scala-uri" % "1.4.10",
+
       "com.github.pureconfig" %% "pureconfig" % "0.10.2",
       "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
 
