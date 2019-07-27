@@ -46,6 +46,8 @@ object ProjectErrorsSerializer {
       "ProjectIdIsNotAlphaNumerical"
     case ProjectLabelsAreRequiredForClassificationError() =>
       "ProjectLabelsAreRequiredForClassification"
+    case AlgorithmDataIsIncorrectError(_) =>
+      "AlgorithmDataIsIncorrectError"
   }
 
   def classToProjectError(
@@ -80,6 +82,8 @@ object ProjectErrorsSerializer {
       ProjectIdIsNotAlphaNumericalError(message).asRight
     case "ProjectLabelsAreRequiredForClassification" =>
       ProjectLabelsAreRequiredForClassificationError().asRight
+    case "AlgorithmDataIsIncorrectError" =>
+      AlgorithmDataIsIncorrectError(message).asRight
     case _ => DecodingFailure("Unknown error class", Nil).asLeft
   }
 

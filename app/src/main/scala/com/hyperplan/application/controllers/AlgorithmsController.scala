@@ -7,9 +7,11 @@ import org.http4s.dsl.Http4sDsl
 import cats.effect.IO
 import cats.implicits._
 import com.hyperplan.application.controllers.requests._
-import com.hyperplan.domain.errors._
+import com.hyperplan.domain.errors.AlgorithmError
+import com.hyperplan.domain.errors.AlgorithmError._
 import com.hyperplan.domain.services.AlgorithmsService
 import com.hyperplan.infrastructure.serialization._
+import com.hyperplan.infrastructure.serialization.errors.AlgorithmErrorsSerializer
 import com.hyperplan.infrastructure.logging.IOLogging
 
 class AlgorithmsController(
@@ -26,29 +28,35 @@ class AlgorithmsController(
             MonadError[IO, Throwable],
             PostAlgorithmRequestEntitySerializer.entityDecoder
           )
-          algorithm <- algorithmsService.createAlgorithm(
-            request.id,
-            request.backend,
-            request.projectId,
-            request.security
-          )
-          _ <- logger.info(
-            s"Algorithm created with id ${algorithm.id} on project ${algorithm.projectId}"
-          )
+          algorithm <- algorithmsService
+            .createAlgorithm(
+              request.id,
+              request.backend,
+              request.projectId,
+              request.security
+            )
+            .value
         } yield algorithm)
-          .flatMap { algorithm =>
-            Created(AlgorithmsSerializer.encodeJson(algorithm))
+          .flatMap {
+            case Right(algorithm) =>
+              logger.info(
+                s"Algorithm created with id ${algorithm.id} on project ${algorithm.projectId}"
+              ) *> Created(AlgorithmsSerializer.encodeJson(algorithm))
+            case Left(errors) =>
+              BadRequest(
+                AlgorithmErrorsSerializer.encodeJson(errors.toList: _*)
+              )
           }
           .handleErrorWith {
-            case AlgorithmAlreadyExists(algorithmId) =>
+            case AlgorithmAlreadyExistsError(algorithmId) =>
               logger.warn(s"The algorithm $algorithmId already exists") *> Conflict(
                 s"Algorithm $algorithmId already exists"
               )
-            case IncompatibleFeatures(message) =>
+            case IncompatibleFeaturesError(message) =>
               logger.warn(
                 s"The features of this algorithm are not compatible with the project"
               ) *> BadRequest(message)
-            case IncompatibleLabels(message) =>
+            case IncompatibleLabelsError(message) =>
               logger.warn(
                 s"The labels of this algorithm are not compatible with the project"
               ) *> BadRequest(message)
