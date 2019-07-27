@@ -15,15 +15,15 @@ sealed trait FeatureType {
 }
 
 case object FloatFeatureType extends FeatureType {
-  val name = "Float"
+  val name = "float"
 }
 
 case object IntFeatureType extends FeatureType {
-  val name = "Int"
+  val name = "int"
 }
 
 case object StringFeatureType extends FeatureType {
-  val name = "String"
+  val name = "string"
 }
 
 case class ReferenceFeatureType(name: String) extends FeatureType
@@ -60,9 +60,6 @@ case class FloatVector2dFeature(key: String, data: List[List[Float]])
 case class IntFeature(key: String, value: Int) extends Feature {
   val dimension = Scalar
   val featureType = IntFeatureType
-}
-object IntFeature {
-  val featureClass = "Int"
 }
 
 case class IntVectorFeature(key: String, data: List[Int]) extends Feature {

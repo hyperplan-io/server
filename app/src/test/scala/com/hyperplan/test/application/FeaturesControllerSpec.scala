@@ -404,7 +404,7 @@ class FeaturesControllerSpec()
             Some(
               List(
                 UnsupportedDimensionError(
-                  s"The feature feature-test cannot be used with dimension Vector"
+                  s"The feature feature-test cannot be used with dimension Array"
                 )
               )
             )
