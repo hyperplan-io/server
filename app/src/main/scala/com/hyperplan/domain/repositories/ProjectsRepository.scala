@@ -81,7 +81,9 @@ class ProjectsRepository(implicit xa: Transactor[IO]) {
     insertQuery(project: Project).run
       .attemptSomeSqlState {
         case sqlstate.class23.UNIQUE_VIOLATION =>
-          ProjectError.ProjectAlreadyExistsError(project.id)
+          ProjectError.ProjectAlreadyExistsError(
+            ProjectError.ProjectAlreadyExistsError.message(project.id)
+          )
       }
       .transact(xa)
 
@@ -225,7 +227,9 @@ object ProjectsRepository {
       ): Project).pure[ConnectionIO]
     case _ =>
       AsyncConnectionIO.raiseError(
-        ProjectError.ProjectDataInconsistentError(data._1)
+        ProjectError.ProjectDataInconsistentError(
+          ProjectError.ProjectDataInconsistentError.message(data._1)
+        )
       )
   }
 

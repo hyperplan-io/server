@@ -18,31 +18,31 @@ import com.hyperplan.domain.errors.ProjectError._
 object ProjectErrorsSerializer {
 
   def projectErrorToClass(error: ProjectError): String = error match {
-    case ClassificationProjectRequiresLabelsError(message) =>
+    case ClassificationProjectRequiresLabelsError(_) =>
       "ClassificationProjectRequiresLabels"
-    case ProjectDoesNotExistError(projectId) =>
+    case ProjectDoesNotExistError(_) =>
       "ProjectDoesNotExist"
     case ProjectIdIsEmptyError() =>
       "ProjectIdIsEmptyError"
     case ProjectNameIsEmptyError() =>
       "ProjectNameIsEmptyError"
-    case ProjectPolicyAlgorithmDoesNotExist(message) =>
+    case ProjectPolicyAlgorithmDoesNotExist(_) =>
       "ProjectPolicyAlgorithmDoesNotExist"
-    case FeaturesConfigurationError(message) =>
+    case FeaturesConfigurationError(_) =>
       "FeaturesConfigurationError"
-    case ProjectAlreadyExistsError(projectId) =>
+    case ProjectAlreadyExistsError(_) =>
       "ProjectAlreadyExists"
-    case InvalidProjectIdentifierError(message) =>
+    case InvalidProjectIdentifierError(_) =>
       "InvalidProjectIdentifier"
-    case ProjectDataInconsistentError(projectId) =>
+    case ProjectDataInconsistentError(_) =>
       "ProjectDataInconsistent"
-    case RegressionProjectDoesNotRequireLabelsError(message) =>
+    case RegressionProjectDoesNotRequireLabelsError(_) =>
       "RegressionProjectDoesNotRequireLabels"
-    case FeaturesDoesNotExistError(message) =>
+    case FeaturesDoesNotExistError(_) =>
       "FeaturesDoesNotExistError"
-    case LabelsDoesNotExistError(message) =>
+    case LabelsDoesNotExistError(_) =>
       "LabelsDoesNotExistError"
-    case ProjectIdIsNotAlphaNumericalError(message) =>
+    case ProjectIdIsNotAlphaNumericalError(_) =>
       "ProjectIdIsNotAlphaNumerical"
     case ProjectLabelsAreRequiredForClassificationError() =>
       "ProjectLabelsAreRequiredForClassification"

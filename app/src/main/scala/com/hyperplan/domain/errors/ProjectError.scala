@@ -40,13 +40,16 @@ object ProjectError {
 
   case class FeaturesConfigurationError(message: String) extends ProjectError
 
-  case class ProjectDataInconsistentError(projectId: String)
-      extends ProjectError {
-    val message = s"The project $projectId has inconsistent data"
+  case class ProjectDataInconsistentError(message: String) extends ProjectError
+
+  object ProjectDataInconsistentError {
+    def message(projectId: String) =
+      s"The project $projectId has inconsistent data"
   }
 
-  case class ProjectAlreadyExistsError(projectId: String) extends ProjectError {
-    val message = s"The project $projectId already exists"
+  case class ProjectAlreadyExistsError(message: String) extends ProjectError
+  object ProjectAlreadyExistsError {
+    def message(projectId: String) = s"The project $projectId already exists"
   }
 
   case class ProjectDoesNotExistError(message: String) extends ProjectError
