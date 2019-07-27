@@ -42,9 +42,9 @@ class AlgorithmsService(
 
   def validateLabelsConfiguration(
       labels: Map[String, String],
-      labelsConfiguration: LabelsConfiguration
+      labelsConfiguration: LabelVectorDescriptor
   ) = labelsConfiguration.data match {
-    case OneOfLabelsConfiguration(oneOf, _) =>
+    case OneOfLabelsDescriptor(oneOf, _) =>
       if (labels.size != oneOf.size) {
         Some(
           IncompatibleLabels(
@@ -54,7 +54,7 @@ class AlgorithmsService(
       } else {
         None
       }
-    case DynamicLabelsConfiguration(description) =>
+    case DynamicLabelsDescriptor(description) =>
       None
   }
 
@@ -71,9 +71,9 @@ class AlgorithmsService(
           TensorFlowLabelsTransformer(labels)
           ) =>
         val size = project.configuration.features match {
-          case FeaturesConfiguration(
+          case FeatureVectorDescriptor(
               id,
-              featuresClasses: List[FeatureConfiguration]
+              featuresClasses: List[FeatureDescriptor]
               ) =>
             featuresClasses.size
         }
@@ -108,9 +108,9 @@ class AlgorithmsService(
           TensorFlowFeaturesTransformer(signatureName, fields)
           ) =>
         val size = project.configuration.features match {
-          case FeaturesConfiguration(
+          case FeatureVectorDescriptor(
               id,
-              featuresClasses: List[FeatureConfiguration]
+              featuresClasses: List[FeatureDescriptor]
               ) =>
             featuresClasses.size
         }
@@ -142,8 +142,8 @@ class AlgorithmsService(
     )
     projectsService
       .readProject(projectId)
-      .flatMap(
-        project => {
+      .flatMap {
+        case Some(project) => {
           val errors = project match {
             case classificationProject: ClassificationProject =>
               validateClassificationAlgorithm(
@@ -173,24 +173,28 @@ class AlgorithmsService(
             _ <- if (project.algorithms.isEmpty) {
               project match {
                 case classificationProject: ClassificationProject =>
-                  projectsService.updateProject(
-                    projectId,
-                    None,
-                    Some(DefaultAlgorithm(id))
-                  )
+                  projectsService
+                    .updateProject(
+                      projectId,
+                      None,
+                      Some(DefaultAlgorithm(id))
+                    )
+                    .value
                 case regressionProject: RegressionProject =>
-                  projectsService.updateProject(
-                    projectId,
-                    None,
-                    Some(DefaultAlgorithm(id))
-                  )
-
+                  projectsService
+                    .updateProject(
+                      projectId,
+                      None,
+                      Some(DefaultAlgorithm(id))
+                    )
+                    .value
               }
             } else {
               IO.unit
             }
           } yield result
         }
-      )
+        case None => ???
+      }
   }
 }

@@ -8,7 +8,6 @@ import org.http4s.dsl.Http4sDsl
 import cats.effect.IO
 import cats.implicits._
 import cats.MonadError
-
 import com.hyperplan.application.AuthenticationMiddleware
 import com.hyperplan.application.controllers.requests._
 import com.hyperplan.domain.errors._
@@ -23,11 +22,12 @@ import com.hyperplan.infrastructure.serialization.{
   PredictionSerializer
 }
 import com.hyperplan.domain.services.FeaturesParserService
-
 import java.nio.charset.StandardCharsets
 
+import com.hyperplan.domain.models.Project
 import io.circe.Json
-import io.circe._, io.circe.parser._
+import io.circe._
+import io.circe.parser._
 
 class PredictionsController(
     projectsService: ProjectsService,
@@ -45,7 +45,10 @@ class PredictionsController(
             MonadError[IO, Throwable],
             PredictionRequestEntitySerializer.requestDecoder
           )
-          project <- projectsService.readProject(predictionRequest.projectId)
+          optProject <- projectsService.readProject(predictionRequest.projectId)
+          project <- optProject.fold[IO[Project]](
+            IO.raiseError(new Exception(""))
+          )(project => project.pure[IO])
           body <- req.body.compile.toList
           jsonBody <- IO.fromEither(
             parse(new String(body.toArray, StandardCharsets.UTF_8))

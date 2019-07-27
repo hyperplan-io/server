@@ -15,15 +15,15 @@ sealed trait FeatureType {
 }
 
 case object FloatFeatureType extends FeatureType {
-  val name = "Float"
+  val name = "float"
 }
 
 case object IntFeatureType extends FeatureType {
-  val name = "Int"
+  val name = "int"
 }
 
 case object StringFeatureType extends FeatureType {
-  val name = "String"
+  val name = "string"
 }
 
 case class ReferenceFeatureType(name: String) extends FeatureType
@@ -31,23 +31,23 @@ case class ReferenceFeatureType(name: String) extends FeatureType
 sealed trait FeatureDimension {
   val name: String
 }
-case object One extends FeatureDimension {
-  val name = "One"
+case object Scalar extends FeatureDimension {
+  val name = "scalar"
 }
-case object Vector extends FeatureDimension {
-  val name = "Vector"
+case object Array extends FeatureDimension {
+  val name = "array"
 }
 case object Matrix extends FeatureDimension {
-  val name = "Matrix"
+  val name = "matrix"
 }
 
 case class FloatFeature(key: String, value: Float) extends Feature {
-  val dimension = One
+  val dimension = Scalar
   val featureType = FloatFeatureType
 }
 
 case class FloatVectorFeature(key: String, data: List[Float]) extends Feature {
-  val dimension = Vector
+  val dimension = Array
   val featureType = FloatFeatureType
 }
 
@@ -58,15 +58,12 @@ case class FloatVector2dFeature(key: String, data: List[List[Float]])
 }
 
 case class IntFeature(key: String, value: Int) extends Feature {
-  val dimension = One
+  val dimension = Scalar
   val featureType = IntFeatureType
-}
-object IntFeature {
-  val featureClass = "Int"
 }
 
 case class IntVectorFeature(key: String, data: List[Int]) extends Feature {
-  val dimension = Vector
+  val dimension = Array
   val featureType = IntFeatureType
 }
 
@@ -77,13 +74,13 @@ case class IntVector2dFeature(key: String, data: List[List[Int]])
 }
 
 case class StringFeature(key: String, value: String) extends Feature {
-  val dimension = One
+  val dimension = Scalar
   val featureType = StringFeatureType
 }
 
 case class StringVectorFeature(key: String, data: List[String])
     extends Feature {
-  val dimension = Vector
+  val dimension = Array
   val featureType = StringFeatureType
 }
 
@@ -98,6 +95,6 @@ case class ReferenceFeature(
     reference: String,
     value: Features.Features
 ) extends Feature {
-  val dimension = One
+  val dimension = Scalar
   val featureType = ReferenceFeatureType(reference)
 }

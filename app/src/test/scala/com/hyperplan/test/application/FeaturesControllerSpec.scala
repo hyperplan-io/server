@@ -62,7 +62,7 @@ class FeaturesControllerSpec()
       .value
       .map(_.get)
     assert(
-      ControllerTestUtils.check[List[FeaturesConfiguration]](
+      ControllerTestUtils.check[List[FeatureVectorDescriptor]](
         response,
         Status.Ok,
         Some(Nil)
@@ -81,12 +81,12 @@ class FeaturesControllerSpec()
       .value
       .map(_.get)
     assert(
-      ControllerTestUtils.check[List[FeaturesError]](
+      ControllerTestUtils.check[List[FeatureVectorDescriptorError]](
         response,
         Status.NotFound,
         Some(
           List(
-            FeaturesDoesNotExistError(
+            FeatureVectorDescriptorDoesNotExistError(
               "The features my-id does not exist"
             )
           )
@@ -97,13 +97,13 @@ class FeaturesControllerSpec()
 
   it should "create a basic feature" in {
 
-    val entityBody = FeaturesConfiguration(
+    val entityBody = FeatureVectorDescriptor(
       id = "test",
       data = List(
-        FeatureConfiguration(
+        FeatureDescriptor(
           name = "feature-1",
           featuresType = StringFeatureType,
-          dimension = One,
+          dimension = Scalar,
           description = "my description"
         )
       )
@@ -119,7 +119,7 @@ class FeaturesControllerSpec()
       .value
       .map(_.get)
     assert(
-      ControllerTestUtils.check[FeaturesConfiguration](
+      ControllerTestUtils.check[FeatureVectorDescriptor](
         response,
         Status.Created,
         Some(
@@ -131,25 +131,25 @@ class FeaturesControllerSpec()
 
   it should "not create a feature that contains duplicate ids" in {
 
-    val entityBody = FeaturesConfiguration(
+    val entityBody = FeatureVectorDescriptor(
       id = "test",
       data = List(
-        FeatureConfiguration(
+        FeatureDescriptor(
           name = "feature-1",
           featuresType = StringFeatureType,
-          dimension = One,
+          dimension = Scalar,
           description = "my description"
         ),
-        FeatureConfiguration(
+        FeatureDescriptor(
           name = "feature-1",
           featuresType = IntFeatureType,
-          dimension = One,
+          dimension = Scalar,
           description = "my description"
         ),
-        FeatureConfiguration(
+        FeatureDescriptor(
           name = "feature-3",
           featuresType = FloatFeatureType,
-          dimension = Vector,
+          dimension = Array,
           description = "my description"
         )
       )
@@ -165,7 +165,7 @@ class FeaturesControllerSpec()
       .value
       .map(_.get)
     assert(
-      ControllerTestUtils.check[List[FeaturesError]](
+      ControllerTestUtils.check[List[FeatureVectorDescriptorError]](
         response,
         Status.BadRequest,
         Some(
@@ -179,13 +179,13 @@ class FeaturesControllerSpec()
 
   it should "fail to create a feature that already exists" in {
 
-    val entityBody = FeaturesConfiguration(
+    val entityBody = FeatureVectorDescriptor(
       id = "test",
       data = List(
-        FeatureConfiguration(
+        FeatureDescriptor(
           name = "feature-1",
           featuresType = StringFeatureType,
-          dimension = One,
+          dimension = Scalar,
           description = "my description"
         )
       )
@@ -204,13 +204,13 @@ class FeaturesControllerSpec()
     response
       .map { previousResponse =>
         println(previousResponse.status)
-        val entityBody2 = FeaturesConfiguration(
+        val entityBody2 = FeatureVectorDescriptor(
           id = "test",
           data = List(
-            FeatureConfiguration(
+            FeatureDescriptor(
               name = "blabla",
               featuresType = ReferenceFeatureType("test"),
-              dimension = One,
+              dimension = Scalar,
               description = "my description"
             )
           )
@@ -227,12 +227,12 @@ class FeaturesControllerSpec()
           .map(_.get)
 
         assert(
-          ControllerTestUtils.check[List[FeaturesError]](
+          ControllerTestUtils.check[List[FeatureVectorDescriptorError]](
             response2,
             Status.BadRequest,
             Some(
               List(
-                FeaturesAlreadyExistError(
+                FeatureVectorDescriptorAlreadyExistError(
                   s"The feature test already exists"
                 )
               )
@@ -246,19 +246,19 @@ class FeaturesControllerSpec()
 
   it should "fail to create a feature that references a another that does not exist" in {
 
-    val entityBody = FeaturesConfiguration(
+    val entityBody = FeatureVectorDescriptor(
       id = "test",
       data = List(
-        FeatureConfiguration(
+        FeatureDescriptor(
           name = "feature-1",
           featuresType = StringFeatureType,
-          dimension = One,
+          dimension = Scalar,
           description = "my description"
         ),
-        FeatureConfiguration(
+        FeatureDescriptor(
           name = "feature-2",
           featuresType = ReferenceFeatureType("this-features-does-not-exist"),
-          dimension = One,
+          dimension = Scalar,
           description = "my description"
         )
       )
@@ -274,7 +274,7 @@ class FeaturesControllerSpec()
       .value
       .map(_.get)
     assert(
-      ControllerTestUtils.check[List[FeaturesError]](
+      ControllerTestUtils.check[List[FeatureVectorDescriptorError]](
         response,
         Status.BadRequest,
         Some(
@@ -290,13 +290,13 @@ class FeaturesControllerSpec()
 
   it should "create features with a reference that exists" in {
 
-    val entityBody = FeaturesConfiguration(
+    val entityBody = FeatureVectorDescriptor(
       id = "test",
       data = List(
-        FeatureConfiguration(
+        FeatureDescriptor(
           name = "feature-1",
           featuresType = StringFeatureType,
-          dimension = One,
+          dimension = Scalar,
           description = "my description"
         )
       )
@@ -315,13 +315,13 @@ class FeaturesControllerSpec()
     response
       .map { previousResponse =>
         println(previousResponse.status)
-        val entityBody2 = FeaturesConfiguration(
+        val entityBody2 = FeatureVectorDescriptor(
           id = "test2",
           data = List(
-            FeatureConfiguration(
+            FeatureDescriptor(
               name = "blabla",
               featuresType = ReferenceFeatureType("test"),
-              dimension = One,
+              dimension = Scalar,
               description = "my description"
             )
           )
@@ -338,7 +338,7 @@ class FeaturesControllerSpec()
           .map(_.get)
 
         assert(
-          ControllerTestUtils.check[FeaturesConfiguration](
+          ControllerTestUtils.check[FeatureVectorDescriptor](
             response2,
             Status.Created,
             Some(
@@ -352,13 +352,13 @@ class FeaturesControllerSpec()
 
   it should "not support reference features with dimensions Vector" in {
 
-    val entityBody = FeaturesConfiguration(
+    val entityBody = FeatureVectorDescriptor(
       id = "test",
       data = List(
-        FeatureConfiguration(
+        FeatureDescriptor(
           name = "feature-1",
           featuresType = StringFeatureType,
-          dimension = One,
+          dimension = Scalar,
           description = "my description"
         )
       )
@@ -375,13 +375,13 @@ class FeaturesControllerSpec()
       .map(_.get)
     response
       .map { _ =>
-        val entityBody2 = FeaturesConfiguration(
+        val entityBody2 = FeatureVectorDescriptor(
           id = "test2",
           data = List(
-            FeatureConfiguration(
+            FeatureDescriptor(
               name = "feature-test",
               featuresType = ReferenceFeatureType("test"),
-              dimension = Vector,
+              dimension = Array,
               description = "my description"
             )
           )
@@ -398,13 +398,13 @@ class FeaturesControllerSpec()
           .map(_.get)
 
         assert(
-          ControllerTestUtils.check[List[FeaturesError]](
+          ControllerTestUtils.check[List[FeatureVectorDescriptorError]](
             response2,
             Status.BadRequest,
             Some(
               List(
                 UnsupportedDimensionError(
-                  s"The feature feature-test cannot be used with dimension Vector"
+                  s"The feature feature-test cannot be used with dimension Array"
                 )
               )
             )
@@ -416,13 +416,13 @@ class FeaturesControllerSpec()
 
   it should "not support reference features with dimensions Matrix" in {
 
-    val entityBody = FeaturesConfiguration(
+    val entityBody = FeatureVectorDescriptor(
       id = "test",
       data = List(
-        FeatureConfiguration(
+        FeatureDescriptor(
           name = "feature-1",
           featuresType = StringFeatureType,
-          dimension = One,
+          dimension = Scalar,
           description = "my description"
         )
       )
@@ -439,10 +439,10 @@ class FeaturesControllerSpec()
       .map(_.get)
     response
       .map { _ =>
-        val entityBody2 = FeaturesConfiguration(
+        val entityBody2 = FeatureVectorDescriptor(
           id = "test2",
           data = List(
-            FeatureConfiguration(
+            FeatureDescriptor(
               name = "feature-test",
               featuresType = ReferenceFeatureType("test"),
               dimension = Matrix,
@@ -462,7 +462,7 @@ class FeaturesControllerSpec()
           .map(_.get)
 
         assert(
-          ControllerTestUtils.check[List[FeaturesError]](
+          ControllerTestUtils.check[List[FeatureVectorDescriptorError]](
             response2,
             Status.BadRequest,
             Some(

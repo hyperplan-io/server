@@ -1,4 +1,4 @@
-package com.foundaml.server.controllers.requests
+package com.hyperplan.application.controllers.requests
 
 case class ForgetPredictionRequest(
     entityName: String,

@@ -8,9 +8,10 @@ import com.hyperplan.domain.models._
 import com.hyperplan.infrastructure.serialization._
 import com.hyperplan.domain.models.backends.Backend
 import doobie.postgres.sqlstate
-import com.hyperplan.domain.errors._
+import com.hyperplan.domain.errors.ProjectError
 
 import com.hyperplan.domain.models._
+import com.hyperplan.domain.errors.AlgorithmDataIncorrect
 
 class ProjectsRepository(implicit xa: Transactor[IO]) {
 
@@ -26,10 +27,10 @@ class ProjectsRepository(implicit xa: Transactor[IO]) {
     Put[String].contramap(AlgorithmPolicySerializer.encodeJsonString)
 
   implicit val featuresConfigurationGet
-      : Get[Either[io.circe.Error, FeaturesConfiguration]] =
+      : Get[Either[io.circe.Error, FeatureVectorDescriptor]] =
     Get[String].map(FeaturesConfigurationSerializer.decodeJson)
 
-  implicit val featuresConfigurationPut: Put[FeaturesConfiguration] =
+  implicit val featuresConfigurationPut: Put[FeatureVectorDescriptor] =
     Put[String].contramap(FeaturesConfigurationSerializer.encodeJsonNoSpaces)
 
   implicit val projectConfigurationGet
@@ -80,11 +81,13 @@ class ProjectsRepository(implicit xa: Transactor[IO]) {
     insertQuery(project: Project).run
       .attemptSomeSqlState {
         case sqlstate.class23.UNIQUE_VIOLATION =>
-          ProjectAlreadyExists(project.id)
+          ProjectError.ProjectAlreadyExistsError(
+            ProjectError.ProjectAlreadyExistsError.message(project.id)
+          )
       }
       .transact(xa)
 
-  def readQuery(projectId: String) =
+  def readQuery(projectId: String): Query0[ProjectData] =
     sql"""
       SELECT id, name, problem, algorithm_policy, configuration
       FROM projects
@@ -92,11 +95,14 @@ class ProjectsRepository(implicit xa: Transactor[IO]) {
       """
       .query[ProjectsRepository.ProjectData]
 
-  def read(projectId: String): ConnectionIO[Project] = {
-    readQuery(projectId).unique.flatMap(dataToProject)
-    readQuery(projectId).unique
-      .flatMap(dataToProject)
-      .flatMap(retrieveProjectAlgorithms)
+  def read(projectId: String): ConnectionIO[Option[Project]] = {
+    readQuery(projectId).option
+      .flatMap {
+        case Some(project) =>
+          dataToProject(project).flatMap(retrieveProjectAlgorithms).map(_.some)
+        case None =>
+          none[Project].pure[ConnectionIO]
+      }
   }
 
   def readAllProjectsQuery =
@@ -142,7 +148,7 @@ class ProjectsRepository(implicit xa: Transactor[IO]) {
   def update(project: Project) = updateQuery(project).run
 
   def retrieveProjectAlgorithms(project: Project): ConnectionIO[Project] =
-    (project match {
+    project match {
       case project: ClassificationProject =>
         readProjectAlgorithms(project.id).map { newAlgorithms =>
           project.copy(
@@ -155,7 +161,7 @@ class ProjectsRepository(implicit xa: Transactor[IO]) {
             algorithms = newAlgorithms
           )
         }
-    })
+    }
 
   def retrieveProjectsAlgorithms(projects: List[Project]) =
     projects.map(retrieveProjectAlgorithms).sequence
@@ -219,8 +225,12 @@ object ProjectsRepository {
         Nil,
         policy
       ): Project).pure[ConnectionIO]
-    case projectData =>
-      AsyncConnectionIO.raiseError(ProjectDataInconsistent(data._1))
+    case _ =>
+      AsyncConnectionIO.raiseError(
+        ProjectError.ProjectDataInconsistentError(
+          ProjectError.ProjectDataInconsistentError.message(data._1)
+        )
+      )
   }
 
   def dataListToProject(dataList: List[ProjectData]) =

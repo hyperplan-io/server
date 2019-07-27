@@ -1,6 +1,7 @@
 package com.hyperplan.infrastructure.serialization
 
-import com.foundaml.server.controllers.requests.PostProjectRequest
+import com.hyperplan.application.controllers.requests.PostProjectRequest
+import com.hyperplan.application.controllers.requests.PostAuthenticationRequest
 
 import io.circe._
 import org.http4s.EntityDecoder
@@ -8,8 +9,6 @@ import org.http4s.circe.jsonOf
 
 import cats.effect.IO
 import cats.implicits._
-
-import com.foundaml.server.controllers.requests.PostAuthenticationRequest
 
 object PostAuthenticationRequestEntitySerializer {
 

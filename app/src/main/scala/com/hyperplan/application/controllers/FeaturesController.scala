@@ -27,7 +27,7 @@ class FeaturesController(domainService: DomainService)
     HttpRoutes.of[IO] {
       case req @ POST -> Root =>
         (for {
-          domainClass <- req.as[FeaturesConfiguration](
+          domainClass <- req.as[FeatureVectorDescriptor](
             MonadError[IO, Throwable],
             FeaturesConfigurationSerializer.entityDecoder
           )
@@ -71,7 +71,9 @@ class FeaturesController(domainService: DomainService)
             case None =>
               NotFound(
                 ErrorsSerializer
-                  .encodeJson(FeaturesDoesNotExistError(featuresId))
+                  .encodeJson(
+                    FeatureVectorDescriptorDoesNotExistError(featuresId)
+                  )
               )
           }
           .handleErrorWith {

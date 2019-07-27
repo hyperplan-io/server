@@ -2,7 +2,7 @@ package com.hyperplan.test.domain.services
 
 import java.util.UUID
 
-import com.hyperplan.domain.models.OneOfLabelsConfiguration
+import com.hyperplan.domain.models.OneOfLabelsDescriptor
 import com.hyperplan.domain.models.labels.{
   ClassificationLabel,
   TensorFlowClassificationLabels
@@ -29,12 +29,12 @@ class LabelsTransformerServiceSpec extends FlatSpec with Matchers {
       )
     )
 
-    import com.hyperplan.domain.models.LabelsConfiguration
+    import com.hyperplan.domain.models.LabelVectorDescriptor
     inside(
       transformer2.transform(
-        LabelsConfiguration(
+        LabelVectorDescriptor(
           "id",
-          OneOfLabelsConfiguration(
+          OneOfLabelsDescriptor(
             Set("toto", "toto3"),
             "Either toto or toto3"
           )
@@ -68,9 +68,9 @@ class LabelsTransformerServiceSpec extends FlatSpec with Matchers {
 
     inside(
       transformer1.transform(
-        LabelsConfiguration(
+        LabelVectorDescriptor(
           "id",
-          OneOfLabelsConfiguration(
+          OneOfLabelsDescriptor(
             Set("toto", "toto3"),
             "Either toto or toto3"
           )
@@ -106,11 +106,11 @@ class LabelsTransformerServiceSpec extends FlatSpec with Matchers {
       )
     )
 
-    import com.hyperplan.domain.models.LabelsConfiguration
+    import com.hyperplan.domain.models.LabelVectorDescriptor
     val transformedLabels = transformer.transform(
-      LabelsConfiguration(
+      LabelVectorDescriptor(
         "id",
-        OneOfLabelsConfiguration(
+        OneOfLabelsDescriptor(
           Set("toto", "titi"),
           "Either toto or titi"
         )

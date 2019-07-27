@@ -19,56 +19,56 @@ import doobie.postgres.sqlstate
 class DomainRepository(implicit xa: Transactor[IO]) extends IOLogging {
 
   implicit val featuresConfigurationGet
-      : Get[Either[io.circe.Error, FeaturesConfiguration]] =
+      : Get[Either[io.circe.Error, FeatureVectorDescriptor]] =
     Get[String].map(FeaturesConfigurationSerializer.decodeJson)
-  implicit val featuresConfigurationPut: Put[FeaturesConfiguration] =
+  implicit val featuresConfigurationPut: Put[FeatureVectorDescriptor] =
     Put[String].contramap(FeaturesConfigurationSerializer.encodeJsonNoSpaces)
 
   implicit val featureConfigurationGet
-      : Get[Either[io.circe.Error, FeatureConfiguration]] =
+      : Get[Either[io.circe.Error, FeatureDescriptor]] =
     Get[String].map(
       FeaturesConfigurationSerializer.decodeFeatureConfigurationJson
     )
-  implicit val featureConfigurationPut: Put[FeatureConfiguration] =
+  implicit val featureConfigurationPut: Put[FeatureDescriptor] =
     Put[String].contramap(
       FeaturesConfigurationSerializer.encodeJsonConfigurationNoSpaces
     )
 
   implicit val featureconfigurationlistget
-      : Get[Either[io.circe.Error, List[FeatureConfiguration]]] =
+      : Get[Either[io.circe.Error, List[FeatureDescriptor]]] =
     Get[String].map(
       FeaturesConfigurationSerializer.decodeFeatureConfigurationListJson
     )
 
-  implicit val featureconfigurationlistput: Put[List[FeatureConfiguration]] =
+  implicit val featureconfigurationlistput: Put[List[FeatureDescriptor]] =
     Put[String].contramap(
       FeaturesConfigurationSerializer.encodeJsonConfigurationListNoSpaces
     )
 
   implicit val labelsConfigurationGet
-      : Get[Either[io.circe.Error, LabelsConfiguration]] =
+      : Get[Either[io.circe.Error, LabelVectorDescriptor]] =
     Get[String].map(LabelsConfigurationSerializer.decodeJson)
-  implicit val labelsConfigurationPut: Put[LabelsConfiguration] =
+  implicit val labelsConfigurationPut: Put[LabelVectorDescriptor] =
     Put[String].contramap(LabelsConfigurationSerializer.encodeJsonNoSpaces)
 
   implicit val labelConfigurationGet
-      : Get[Either[io.circe.Error, LabelConfiguration]] =
+      : Get[Either[io.circe.Error, LabelDescriptor]] =
     Get[String].map(LabelsConfigurationSerializer.decodeLabelConfigurationJson)
-  implicit val labelConfigurationPut: Put[LabelConfiguration] =
+  implicit val labelConfigurationPut: Put[LabelDescriptor] =
     Put[String].contramap(
       LabelsConfigurationSerializer.encodeJsonConfigurationNoSpaces
     )
   implicit val labelConfigurationListGet
-      : Get[Either[io.circe.Error, List[LabelConfiguration]]] =
+      : Get[Either[io.circe.Error, List[LabelDescriptor]]] =
     Get[String].map(
       LabelsConfigurationSerializer.decodeLabelConfigurationListJson
     )
-  implicit val featureConfigurationListPut: Put[List[LabelConfiguration]] =
+  implicit val featureConfigurationListPut: Put[List[LabelDescriptor]] =
     Put[String].contramap(
       LabelsConfigurationSerializer.encodeJsonConfigurationListNoSpaces
     )
 
-  def insertFeaturesQuery(features: FeaturesConfiguration): doobie.Update0 =
+  def insertFeaturesQuery(features: FeatureVectorDescriptor): doobie.Update0 =
     sql"""INSERT INTO features(
       id, 
       data
@@ -78,16 +78,16 @@ class DomainRepository(implicit xa: Transactor[IO]) extends IOLogging {
     )""".update
 
   def insertFeatures(
-      features: FeaturesConfiguration
-  ): IO[Either[FeaturesError, Int]] =
+      features: FeatureVectorDescriptor
+  ): IO[Either[FeatureVectorDescriptorError, Int]] =
     insertFeaturesQuery(features).run
       .attemptSomeSqlState {
         case sqlstate.class23.UNIQUE_VIOLATION =>
-          FeaturesAlreadyExistError(features.id)
+          FeatureVectorDescriptorAlreadyExistError(features.id)
       }
       .transact(xa)
 
-  def insertLabelsQuery(labels: LabelsConfiguration): doobie.Update0 =
+  def insertLabelsQuery(labels: LabelVectorDescriptor): doobie.Update0 =
     sql"""INSERT INTO labels(
       id, 
       data
@@ -96,7 +96,7 @@ class DomainRepository(implicit xa: Transactor[IO]) extends IOLogging {
       ${labels.data}
     )""".update
 
-  def insertLabels(labels: LabelsConfiguration) =
+  def insertLabels(labels: LabelVectorDescriptor) =
     insertLabelsQuery(labels).run
       .attemptSomeSqlState {
         case sqlstate.class23.UNIQUE_VIOLATION =>
@@ -114,7 +114,7 @@ class DomainRepository(implicit xa: Transactor[IO]) extends IOLogging {
       """
       .query[DomainRepository.FeaturesConfigurationData]
 
-  def readFeatures(id: String): IO[FeaturesConfiguration] =
+  def readFeatures(id: String): IO[FeatureVectorDescriptor] =
     readFeaturesQuery(id).unique
       .transact(xa)
       .flatMap(dataToFeaturesConfiguration _)
@@ -129,7 +129,7 @@ class DomainRepository(implicit xa: Transactor[IO]) extends IOLogging {
       """
       .query[DomainRepository.LabelsConfigurationData]
 
-  def readLabels(id: String): IO[LabelsConfiguration] =
+  def readLabels(id: String): IO[LabelVectorDescriptor] =
     readLabelsQuery(id).unique.transact(xa).flatMap(dataToLabelsConfiguration _)
 
   def readAllFeaturesQuery()
@@ -140,7 +140,7 @@ class DomainRepository(implicit xa: Transactor[IO]) extends IOLogging {
       """
       .query[DomainRepository.FeaturesConfigurationData]
 
-  def readAllFeatures(): IO[List[FeaturesConfiguration]] =
+  def readAllFeatures(): IO[List[FeatureVectorDescriptor]] =
     readAllFeaturesQuery()
       .to[List]
       .transact(xa)
@@ -154,7 +154,7 @@ class DomainRepository(implicit xa: Transactor[IO]) extends IOLogging {
       """
       .query[DomainRepository.LabelsConfigurationData]
 
-  def readAllLabels(): IO[List[LabelsConfiguration]] =
+  def readAllLabels(): IO[List[LabelVectorDescriptor]] =
     readAllLabelsQuery()
       .to[List]
       .transact(xa)
@@ -162,13 +162,13 @@ class DomainRepository(implicit xa: Transactor[IO]) extends IOLogging {
 
   def dataToFeaturesConfiguration(
       data: DomainRepository.FeaturesConfigurationData
-  ): IO[FeaturesConfiguration] = data match {
+  ): IO[FeatureVectorDescriptor] = data match {
     case (
         id,
         Right(data)
         ) =>
       IO.pure(
-        FeaturesConfiguration(id, data)
+        FeatureVectorDescriptor(id, data)
       )
 
     case featuresClassData =>
@@ -179,13 +179,13 @@ class DomainRepository(implicit xa: Transactor[IO]) extends IOLogging {
 
   def dataToLabelsConfiguration(
       data: DomainRepository.LabelsConfigurationData
-  ): IO[LabelsConfiguration] = data match {
+  ): IO[LabelVectorDescriptor] = data match {
     case (
         id,
         Right(data)
         ) =>
       IO.pure(
-        LabelsConfiguration(id, data)
+        LabelVectorDescriptor(id, data)
       )
 
     case labelsClassData =>
@@ -202,7 +202,7 @@ class DomainRepository(implicit xa: Transactor[IO]) extends IOLogging {
 
 object DomainRepository {
   type FeaturesConfigurationData =
-    (String, Either[io.circe.Error, List[FeatureConfiguration]])
+    (String, Either[io.circe.Error, List[FeatureDescriptor]])
   type LabelsConfigurationData =
-    (String, Either[io.circe.Error, LabelConfiguration])
+    (String, Either[io.circe.Error, LabelDescriptor])
 }

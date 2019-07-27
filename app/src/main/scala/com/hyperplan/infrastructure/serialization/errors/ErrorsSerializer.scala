@@ -16,22 +16,25 @@ import com.hyperplan.domain.errors._
 
 object ErrorsSerializer {
 
-  def featureErrorToClass(error: FeaturesError): String = error match {
-    case FeaturesDoesNotExistError(message) => "FeatureDoesNotExist"
-    case UnsupportedDimensionError(message) => "UnsupportedDimension"
-    case ReferenceFeatureDoesNotExistError(message) =>
-      "ReferenceFeatureDoesNotExist"
-    case RecursiveFeatureError(message) => "RecursivityError"
-    case FeaturesAlreadyExistError(message) => "IdentifierAlreadyExist"
-    case DuplicateFeatureIds() => "DuplicateFeatureIds"
-  }
+  def featureErrorToClass(error: FeatureVectorDescriptorError): String =
+    error match {
+      case FeatureVectorDescriptorDoesNotExistError(message) =>
+        "FeatureDoesNotExist"
+      case UnsupportedDimensionError(message) => "UnsupportedDimension"
+      case ReferenceFeatureDoesNotExistError(message) =>
+        "ReferenceFeatureDoesNotExist"
+      case RecursiveFeatureError(message) => "RecursivityError"
+      case FeatureVectorDescriptorAlreadyExistError(message) =>
+        "IdentifierAlreadyExist"
+      case DuplicateFeatureIds() => "DuplicateFeatureIds"
+    }
 
   def classToFeatureError(
       errorClass: String,
       message: String
-  ): Decoder.Result[FeaturesError] = errorClass match {
+  ): Decoder.Result[FeatureVectorDescriptorError] = errorClass match {
     case "FeatureDoesNotExist" =>
-      FeaturesDoesNotExistError(message).asRight
+      FeatureVectorDescriptorDoesNotExistError(message).asRight
     case "UnsupportedDimension" =>
       UnsupportedDimensionError(message).asRight
     case "ReferenceFeatureDoesNotExist" =>
@@ -41,31 +44,34 @@ object ErrorsSerializer {
     case "DuplicateFeatureIds" =>
       DuplicateFeatureIds().asRight
     case "IdentifierAlreadyExist" =>
-      FeaturesAlreadyExistError(message).asRight
+      FeatureVectorDescriptorAlreadyExistError(message).asRight
     case _ => DecodingFailure("Unknown error class", Nil).asLeft
   }
 
-  def labelErrorToClass(error: LabelsError): String = error match {
-    case OneOfLabelsCannotBeEmpty() => "OneOfLabelsCannotBeEmpty"
-    case LabelsAlreadyExist(_) => "LabelsAlreadyExist"
-    case LabelsDoesNotExist(_) =>
-      "LabelsDoesNotExist"
-  }
+  def labelErrorToClass(error: LabelVectorDescriptorError): String =
+    error match {
+      case OneOfLabelVectorDescriptorCannotBeEmpty() =>
+        "OneOfLabelsCannotBeEmpty"
+      case LabelVectorDescriptorAlreadyExist(_) => "LabelsAlreadyExist"
+      case LabelVectorDescriptorDoesNotExist(_) =>
+        "LabelsDoesNotExist"
+    }
 
   def classToLabelError(
       errorClass: String,
       message: String
-  ): Decoder.Result[LabelsError] = errorClass match {
+  ): Decoder.Result[LabelVectorDescriptorError] = errorClass match {
     case "OneOfLabelsCannotBeEmpty" =>
-      OneOfLabelsCannotBeEmpty().asRight
+      OneOfLabelVectorDescriptorCannotBeEmpty().asRight
     case "LabelsAlreadyExist" =>
-      LabelsAlreadyExist(message).asRight
+      LabelVectorDescriptorAlreadyExist(message).asRight
     case "LabelsDoesNotExist" =>
-      LabelsDoesNotExist(message).asRight
+      LabelVectorDescriptorDoesNotExist(message).asRight
   }
 
-  implicit val featuresEncoder: Encoder[NonEmptyChain[FeaturesError]] =
-    (errors: NonEmptyChain[FeaturesError]) =>
+  implicit val featuresEncoder
+      : Encoder[NonEmptyChain[FeatureVectorDescriptorError]] =
+    (errors: NonEmptyChain[FeatureVectorDescriptorError]) =>
       Json.obj(
         (
           "errors",
@@ -77,15 +83,16 @@ object ErrorsSerializer {
         )
       )
 
-  implicit val featureEncoder: Encoder[FeaturesError] =
-    (error: FeaturesError) =>
+  implicit val featureEncoder: Encoder[FeatureVectorDescriptorError] =
+    (error: FeatureVectorDescriptorError) =>
       Json.obj(
         "class" -> Json.fromString(featureErrorToClass(error)),
         "message" -> Json.fromString(error.message)
       )
 
-  implicit val labelsEncoder: Encoder[NonEmptyChain[LabelsError]] =
-    (errors: NonEmptyChain[LabelsError]) =>
+  implicit val labelsEncoder
+      : Encoder[NonEmptyChain[LabelVectorDescriptorError]] =
+    (errors: NonEmptyChain[LabelVectorDescriptorError]) =>
       Json.obj(
         (
           "errors",
@@ -97,14 +104,14 @@ object ErrorsSerializer {
         )
       )
 
-  implicit val labelEncoder: Encoder[LabelsError] =
-    (error: LabelsError) =>
+  implicit val labelEncoder: Encoder[LabelVectorDescriptorError] =
+    (error: LabelVectorDescriptorError) =>
       Json.obj(
         "class" -> Json.fromString(labelErrorToClass(error)),
         "message" -> Json.fromString(error.message)
       )
 
-  implicit val labelDecoder: Decoder[LabelsError] =
+  implicit val labelDecoder: Decoder[LabelVectorDescriptorError] =
     (cursor: HCursor) =>
       for {
         errorClass <- cursor.downField("class").as[String]
@@ -112,7 +119,7 @@ object ErrorsSerializer {
         error <- classToLabelError(errorClass, message)
       } yield error
 
-  implicit val featureDecoder: Decoder[FeaturesError] =
+  implicit val featureDecoder: Decoder[FeatureVectorDescriptorError] =
     (cursor: HCursor) =>
       for {
         errorClass <- cursor.downField("class").as[String]
@@ -120,18 +127,19 @@ object ErrorsSerializer {
         error <- classToFeatureError(errorClass, message)
       } yield error
 
-  def encodeJson[E](errors: FeaturesError*): Json = {
+  def encodeJson[E](errors: FeatureVectorDescriptorError*): Json = {
     errors.asJson
   }
 
-  def encodeJsonLabels[E](errors: LabelsError*): Json = {
+  def encodeJsonLabels[E](errors: LabelVectorDescriptorError*): Json = {
     errors.asJson
   }
 
   implicit val featureErrorEntityDecoder
-      : EntityDecoder[IO, List[FeaturesError]] =
-    jsonOf[IO, List[FeaturesError]]
+      : EntityDecoder[IO, List[FeatureVectorDescriptorError]] =
+    jsonOf[IO, List[FeatureVectorDescriptorError]]
 
-  implicit val labelErrorEntityDecoder: EntityDecoder[IO, List[LabelsError]] =
-    jsonOf[IO, List[LabelsError]]
+  implicit val labelErrorEntityDecoder
+      : EntityDecoder[IO, List[LabelVectorDescriptorError]] =
+    jsonOf[IO, List[LabelVectorDescriptorError]]
 }

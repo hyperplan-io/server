@@ -16,121 +16,121 @@ object LabelsConfigurationSerializer {
   import io.circe.syntax._
   import io.circe.{Decoder, Encoder}
 
-  implicit val oneOfLabelsConfigEncoder: Encoder[OneOfLabelsConfiguration] = {
-    oneOfConfig: OneOfLabelsConfiguration =>
+  implicit val oneOfLabelsConfigEncoder: Encoder[OneOfLabelsDescriptor] = {
+    oneOfConfig: OneOfLabelsDescriptor =>
       Json.obj(
-        "type" -> Json.fromString(OneOfLabelsConfiguration.labelsType),
+        "type" -> Json.fromString(OneOfLabelsDescriptor.labelsType),
         "oneOf" -> Json.fromValues(oneOfConfig.oneOf.map(Json.fromString)),
         "description" -> Json.fromString(oneOfConfig.description)
       )
   }
 
-  implicit val oneOfLabelsConfigDecoder: Decoder[OneOfLabelsConfiguration] =
+  implicit val oneOfLabelsConfigDecoder: Decoder[OneOfLabelsDescriptor] =
     (c: HCursor) =>
       for {
         oneOf <- c.downField("oneOf").as[Set[String]]
         description <- c.downField("description").as[String]
-      } yield OneOfLabelsConfiguration(oneOf, description)
+      } yield OneOfLabelsDescriptor(oneOf, description)
 
-  implicit val dynamicLabelsConfigEncoder
-      : Encoder[DynamicLabelsConfiguration] = {
-    dynamicConfig: DynamicLabelsConfiguration =>
+  implicit val dynamicLabelsConfigEncoder: Encoder[DynamicLabelsDescriptor] = {
+    dynamicConfig: DynamicLabelsDescriptor =>
       Json.obj(
-        "type" -> Json.fromString(DynamicLabelsConfiguration.labelsType),
+        "type" -> Json.fromString(DynamicLabelsDescriptor.labelsType),
         "description" -> Json.fromString(dynamicConfig.description)
       )
   }
 
-  implicit val dynamicLabelsConfigDecoder: Decoder[DynamicLabelsConfiguration] =
+  implicit val dynamicLabelsConfigDecoder: Decoder[DynamicLabelsDescriptor] =
     (c: HCursor) =>
       for {
         description <- c.downField("description").as[String]
-      } yield DynamicLabelsConfiguration(description)
+      } yield DynamicLabelsDescriptor(description)
 
-  implicit val labelConfigurationDecoder: Decoder[LabelConfiguration] =
+  implicit val labelConfigurationDecoder: Decoder[LabelDescriptor] =
     (c: HCursor) =>
       c.downField("type").as[String].flatMap {
-        case OneOfLabelsConfiguration.labelsType => oneOfLabelsConfigDecoder(c)
-        case DynamicLabelsConfiguration.labelsType =>
+        case OneOfLabelsDescriptor.labelsType => oneOfLabelsConfigDecoder(c)
+        case DynamicLabelsDescriptor.labelsType =>
           dynamicLabelsConfigDecoder(c)
       }
 
-  implicit val labelConfigurationEncoder: Encoder[LabelConfiguration] =
-    (labelConfiguration: LabelConfiguration) =>
+  implicit val labelConfigurationEncoder: Encoder[LabelDescriptor] =
+    (labelConfiguration: LabelDescriptor) =>
       labelConfiguration match {
-        case configuration: OneOfLabelsConfiguration =>
+        case configuration: OneOfLabelsDescriptor =>
           oneOfLabelsConfigEncoder(configuration)
-        case configuration: DynamicLabelsConfiguration =>
+        case configuration: DynamicLabelsDescriptor =>
           dynamicLabelsConfigEncoder(configuration)
       }
 
-  implicit val encoder: Encoder[LabelsConfiguration] = {
-    case LabelsConfiguration(id, oneOfConfig: OneOfLabelsConfiguration) =>
+  implicit val encoder: Encoder[LabelVectorDescriptor] = {
+    case LabelVectorDescriptor(id, oneOfConfig: OneOfLabelsDescriptor) =>
       Json.obj(
         "id" -> Json.fromString(id),
         "data" -> oneOfLabelsConfigEncoder(oneOfConfig)
       )
-    case LabelsConfiguration(id, dynamicConfig: DynamicLabelsConfiguration) =>
+    case LabelVectorDescriptor(id, dynamicConfig: DynamicLabelsDescriptor) =>
       Json.obj(
         "id" -> Json.fromString(id),
         "data" -> dynamicLabelsConfigEncoder(dynamicConfig)
       )
   }
 
-  implicit val decoder: Decoder[LabelsConfiguration] =
+  implicit val decoder: Decoder[LabelVectorDescriptor] =
     (c: HCursor) =>
       for {
         id <- c.downField("id").as[String]
-        data <- c.downField("data").as[LabelConfiguration]
-      } yield LabelsConfiguration(id, data)
+        data <- c.downField("data").as[LabelDescriptor]
+      } yield LabelVectorDescriptor(id, data)
 
-  def encodeJsonNoSpaces(labelConfiguration: LabelsConfiguration): String = {
+  def encodeJsonNoSpaces(labelConfiguration: LabelVectorDescriptor): String = {
     labelConfiguration.asJson.noSpaces
   }
 
   def encodeJsonConfigurationNoSpaces(
-      labelConfiguration: LabelConfiguration
+      labelConfiguration: LabelDescriptor
   ): String = {
     labelConfiguration.asJson.noSpaces
   }
 
   def encodeJsonConfigurationListNoSpaces(
-      labelConfiguration: List[LabelConfiguration]
+      labelConfiguration: List[LabelDescriptor]
   ): String = {
     labelConfiguration.asJson.noSpaces
   }
 
-  def encodeJson(labelConfiguration: LabelsConfiguration): Json = {
+  def encodeJson(labelConfiguration: LabelVectorDescriptor): Json = {
     labelConfiguration.asJson
   }
 
-  def encodeJsonList(labelConfiguration: List[LabelsConfiguration]): Json = {
+  def encodeJsonList(labelConfiguration: List[LabelVectorDescriptor]): Json = {
     labelConfiguration.asJson
   }
 
-  def decodeJson(n: String): Either[io.circe.Error, LabelsConfiguration] = {
-    decode[LabelsConfiguration](n)
+  def decodeJson(n: String): Either[io.circe.Error, LabelVectorDescriptor] = {
+    decode[LabelVectorDescriptor](n)
   }
 
   def decodeLabelConfigurationJson(
       n: String
-  ): Either[io.circe.Error, LabelConfiguration] = {
-    decode[LabelConfiguration](n)
+  ): Either[io.circe.Error, LabelDescriptor] = {
+    decode[LabelDescriptor](n)
   }
 
   def decodeLabelConfigurationListJson(
       n: String
-  ): Either[io.circe.Error, List[LabelConfiguration]] = {
-    decode[List[LabelConfiguration]](n)
+  ): Either[io.circe.Error, List[LabelDescriptor]] = {
+    decode[List[LabelDescriptor]](n)
   }
 
-  implicit val entityDecoder: EntityDecoder[IO, LabelsConfiguration] =
-    jsonOf[IO, LabelsConfiguration]
+  implicit val entityDecoder: EntityDecoder[IO, LabelVectorDescriptor] =
+    jsonOf[IO, LabelVectorDescriptor]
 
-  implicit val entityEncoder: EntityEncoder[IO, LabelsConfiguration] =
-    jsonEncoderOf[IO, LabelsConfiguration]
+  implicit val entityEncoder: EntityEncoder[IO, LabelVectorDescriptor] =
+    jsonEncoderOf[IO, LabelVectorDescriptor]
 
-  implicit val entityDecoderList: EntityDecoder[IO, List[LabelsConfiguration]] =
-    jsonOf[IO, List[LabelsConfiguration]]
+  implicit val entityDecoderList
+      : EntityDecoder[IO, List[LabelVectorDescriptor]] =
+    jsonOf[IO, List[LabelVectorDescriptor]]
 
 }

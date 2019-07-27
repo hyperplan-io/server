@@ -1,6 +1,6 @@
 package com.hyperplan.infrastructure.serialization
 
-import com.hyperplan.domain.models.{FeatureConfiguration, FeaturesConfiguration}
+import com.hyperplan.domain.models.{FeatureDescriptor, FeatureVectorDescriptor}
 import com.hyperplan.domain.models.features._
 import io.circe
 import io.circe.{HCursor, Json}
@@ -26,8 +26,8 @@ object FeaturesConfigurationSerializer {
   implicit val featureDimensionDecoder: Decoder[FeatureDimension] =
     (c: HCursor) =>
       c.as[String].flatMap {
-        case One.name => Right(One)
-        case Vector.name => Right(Vector)
+        case Scalar.name => Right(Scalar)
+        case Array.name => Right(Array)
         case Matrix.name => Right(Matrix)
       }
 
@@ -43,8 +43,8 @@ object FeaturesConfigurationSerializer {
         case reference => Right(ReferenceFeatureType(reference))
       }
 
-  implicit val customFeatureEncoder: Encoder[FeatureConfiguration] =
-    (a: FeatureConfiguration) =>
+  implicit val customFeatureEncoder: Encoder[FeatureDescriptor] =
+    (a: FeatureDescriptor) =>
       Json.obj(
         ("name", Json.fromString(a.name)),
         ("type", a.featuresType.asJson),
@@ -52,7 +52,7 @@ object FeaturesConfigurationSerializer {
         ("description", Json.fromString(a.description))
       )
 
-  implicit val customFeatureDecoder: Decoder[FeatureConfiguration] =
+  implicit val customFeatureDecoder: Decoder[FeatureDescriptor] =
     (c: HCursor) =>
       for {
         name <- c.downField("name").as[String]
@@ -60,91 +60,91 @@ object FeaturesConfigurationSerializer {
         dimension <- c.downField("dimension").as[FeatureDimension]
         description <- c.downField("description").as[String]
       } yield {
-        FeatureConfiguration(name, featuresType, dimension, description)
+        FeatureDescriptor(name, featuresType, dimension, description)
       }
 
-  implicit val customFeatureListEncoder: Encoder[List[FeatureConfiguration]] =
-    (a: List[FeatureConfiguration]) =>
+  implicit val customFeatureListEncoder: Encoder[List[FeatureDescriptor]] =
+    (a: List[FeatureDescriptor]) =>
       Json.fromValues(a.map(customFeatureEncoder.apply))
 
-  implicit val customFeatureListDecoder: Decoder[List[FeatureConfiguration]] =
+  implicit val customFeatureListDecoder: Decoder[List[FeatureDescriptor]] =
     (c: HCursor) =>
-      Decoder.decodeList[FeatureConfiguration](customFeatureDecoder)(c)
+      Decoder.decodeList[FeatureDescriptor](customFeatureDecoder)(c)
 
-  implicit val decoder: Decoder[FeaturesConfiguration] =
+  implicit val decoder: Decoder[FeatureVectorDescriptor] =
     (c: HCursor) =>
       for {
         id <- c.downField("id").as[String]
         data <- c
           .downField("data")
-          .as[List[FeatureConfiguration]](
+          .as[List[FeatureDescriptor]](
             customFeatureListDecoder
           )
-      } yield FeaturesConfiguration(id, data)
+      } yield FeatureVectorDescriptor(id, data)
 
-  implicit val encoder: Encoder[FeaturesConfiguration] =
-    (a: FeaturesConfiguration) =>
+  implicit val encoder: Encoder[FeatureVectorDescriptor] =
+    (a: FeatureVectorDescriptor) =>
       Json.obj(
         ("id", Json.fromString(a.id)),
         ("data", Json.arr(a.data.map(customFeatureEncoder.apply): _*))
       )
 
-  implicit val decoderList: Decoder[List[FeaturesConfiguration]] =
-    (c: HCursor) => Decoder.decodeList[FeaturesConfiguration](decoder)(c)
+  implicit val decoderList: Decoder[List[FeatureVectorDescriptor]] =
+    (c: HCursor) => Decoder.decodeList[FeatureVectorDescriptor](decoder)(c)
 
-  implicit val encoderList: Encoder[List[FeaturesConfiguration]] =
-    (a: List[FeaturesConfiguration]) => Json.fromValues(a.map(encoder.apply))
+  implicit val encoderList: Encoder[List[FeatureVectorDescriptor]] =
+    (a: List[FeatureVectorDescriptor]) => Json.fromValues(a.map(encoder.apply))
 
-  def encodeJson(featuresConfiguration: FeaturesConfiguration): Json = {
+  def encodeJson(featuresConfiguration: FeatureVectorDescriptor): Json = {
     featuresConfiguration.asJson
   }
 
   def encodeJsonList(
-      featuresConfiguration: List[FeaturesConfiguration]
+      featuresConfiguration: List[FeatureVectorDescriptor]
   ): Json = {
     featuresConfiguration.asJson
   }
   def encodeJsonNoSpaces(
-      featuresConfiguration: FeaturesConfiguration
+      featuresConfiguration: FeatureVectorDescriptor
   ): String = {
     featuresConfiguration.asJson.noSpaces
   }
 
   def encodeJsonConfigurationNoSpaces(
-      featuresConfiguration: FeatureConfiguration
+      featuresConfiguration: FeatureDescriptor
   ): String = {
     featuresConfiguration.asJson.noSpaces
   }
 
   def encodeJsonConfigurationListNoSpaces(
-      featuresConfiguration: List[FeatureConfiguration]
+      featuresConfiguration: List[FeatureDescriptor]
   ): String = {
     featuresConfiguration.asJson.noSpaces
   }
 
-  def decodeJson(n: String): Either[io.circe.Error, FeaturesConfiguration] = {
-    decode[FeaturesConfiguration](n)
+  def decodeJson(n: String): Either[io.circe.Error, FeatureVectorDescriptor] = {
+    decode[FeatureVectorDescriptor](n)
   }
 
   def decodeFeatureConfigurationJson(
       n: String
-  ): Either[io.circe.Error, FeatureConfiguration] = {
-    decode[FeatureConfiguration](n)
+  ): Either[io.circe.Error, FeatureDescriptor] = {
+    decode[FeatureDescriptor](n)
   }
 
   def decodeFeatureConfigurationListJson(
       n: String
-  ): Either[io.circe.Error, List[FeatureConfiguration]] = {
-    decode[List[FeatureConfiguration]](n)
+  ): Either[io.circe.Error, List[FeatureDescriptor]] = {
+    decode[List[FeatureDescriptor]](n)
   }
 
-  implicit val entityDecoder: EntityDecoder[IO, FeaturesConfiguration] =
-    jsonOf[IO, FeaturesConfiguration]
+  implicit val entityDecoder: EntityDecoder[IO, FeatureVectorDescriptor] =
+    jsonOf[IO, FeatureVectorDescriptor]
 
-  implicit val entityEncoder: EntityEncoder[IO, FeaturesConfiguration] =
-    jsonEncoderOf[IO, FeaturesConfiguration]
+  implicit val entityEncoder: EntityEncoder[IO, FeatureVectorDescriptor] =
+    jsonEncoderOf[IO, FeatureVectorDescriptor]
 
   implicit val entityDecoderList
-      : EntityDecoder[IO, List[FeaturesConfiguration]] =
-    jsonOf[IO, List[FeaturesConfiguration]]
+      : EntityDecoder[IO, List[FeatureVectorDescriptor]] =
+    jsonOf[IO, List[FeatureVectorDescriptor]]
 }

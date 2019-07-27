@@ -117,12 +117,12 @@ class PredictionsService(
   }
 
   def validateClassificationLabels(
-      labelsConfiguration: LabelsConfiguration,
+      labelsConfiguration: LabelVectorDescriptor,
       labels: Set[ClassificationLabel]
   ): Boolean = labelsConfiguration.data match {
-    case OneOfLabelsConfiguration(oneOf, _) =>
+    case OneOfLabelsDescriptor(oneOf, _) =>
       oneOf == labels.map(_.label)
-    case DynamicLabelsConfiguration(description) => true
+    case DynamicLabelsDescriptor(description) => true
   }
 
   def predict(
@@ -131,7 +131,7 @@ class PredictionsService(
       entityLinks: List[EntityLink],
       optionalAlgorithmId: Option[String]
   ): IO[Prediction] = projectsService.readProject(projectId).flatMap {
-    project =>
+    case Some(project) =>
       val maybeAlgorithmId = optionalAlgorithmId.fold(
         (project.policy.take)
       )(algorithmId => algorithmId.some)
@@ -173,7 +173,8 @@ class PredictionsService(
             }
           } yield prediction
         }
-
+    case None =>
+      ???
   }
 
   def addClassificationExample(
@@ -241,14 +242,17 @@ class PredictionsService(
       predictionId: String,
       labelOpt: Option[String],
       valueOpt: Option[Float]
-  ) = {
+  ): IO[PredictionEvent] = {
     val transaction = for {
       prediction <- predictionsRepository.read(predictionId)
-      project <- AsyncConnectionIO.liftIO(
+      optProject <- AsyncConnectionIO.liftIO(
         Effect[IO].toIO(
           projectsService.readProject(prediction.projectId)
         )
       )
+      project <- optProject.fold[ConnectionIO[Project]](
+        AsyncConnectionIO.raiseError(new Exception("project does not exist"))
+      )(project => project.pure[ConnectionIO])
       event: PredictionEvent <- prediction match {
         case prediction: ClassificationPrediction =>
           addClassificationExample(labelOpt, predictionId, prediction)

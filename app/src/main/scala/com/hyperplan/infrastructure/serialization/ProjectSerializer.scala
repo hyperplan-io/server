@@ -2,9 +2,9 @@ package com.hyperplan.infrastructure.serialization
 
 import io.circe.parser.decode
 import io.circe.syntax._
-import org.http4s.circe.jsonOf
+import org.http4s.circe.{jsonOf, jsonEncoderOf}
 import com.hyperplan.domain.models._
-import org.http4s.EntityDecoder
+import org.http4s.{EntityDecoder, EntityEncoder}
 import cats.effect.IO
 import cats.implicits._
 
@@ -27,9 +27,9 @@ object ProjectSerializer {
   implicit val algorithmDecoder: Decoder[Algorithm] =
     AlgorithmsSerializer.decoder
 
-  implicit val featuresConfigurationEncoder: Encoder[FeaturesConfiguration] =
+  implicit val featuresConfigurationEncoder: Encoder[FeatureVectorDescriptor] =
     FeaturesConfigurationSerializer.encoder
-  implicit val featuresConfigurationDecoder: Decoder[FeaturesConfiguration] =
+  implicit val featuresConfigurationDecoder: Decoder[FeatureVectorDescriptor] =
     FeaturesConfigurationSerializer.decoder
 
   implicit val projectConfigurationEncoder: Encoder[ProjectConfiguration] =
@@ -104,6 +104,15 @@ object ProjectSerializer {
 
   implicit val entityDecoder: EntityDecoder[IO, Project] =
     jsonOf[IO, Project]
+
+  implicit val entityListDecoder: EntityDecoder[IO, List[Project]] =
+    jsonOf[IO, List[Project]]
+
+  implicit val entityEncoder: EntityEncoder[IO, Project] =
+    jsonEncoderOf[IO, Project]
+
+  implicit val entityListEncoder: EntityEncoder[IO, List[Project]] =
+    jsonEncoderOf[IO, List[Project]]
 
   def encodeJson(project: Project): Json = {
     project.asJson

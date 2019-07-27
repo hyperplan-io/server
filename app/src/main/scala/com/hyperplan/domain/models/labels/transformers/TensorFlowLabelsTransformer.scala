@@ -3,9 +3,9 @@ package com.hyperplan.domain.models.labels.transformers
 import java.util.UUID
 
 import com.hyperplan.domain.models.{
-  DynamicLabelsConfiguration,
-  LabelsConfiguration,
-  OneOfLabelsConfiguration
+  DynamicLabelsDescriptor,
+  LabelVectorDescriptor,
+  OneOfLabelsDescriptor
 }
 import com.hyperplan.domain.errors._
 import com.hyperplan.domain.models.labels._
@@ -90,14 +90,14 @@ case class TensorFlowLabelsTransformer(fields: Map[String, String]) {
   }
 
   def transform(
-      labelsConfiguration: LabelsConfiguration,
+      labelsConfiguration: LabelVectorDescriptor,
       predictionId: String,
       tfLabels: TensorFlowClassificationLabels
   ): Either[LabelsTransformerError, Set[ClassificationLabel]] = {
     labelsConfiguration.data match {
-      case OneOfLabelsConfiguration(_, _) =>
+      case OneOfLabelsDescriptor(_, _) =>
         transformWithOneOfConfiguration(predictionId, tfLabels)
-      case DynamicLabelsConfiguration(_) =>
+      case DynamicLabelsDescriptor(_) =>
         transformWithDynamicLabelsConfiguration(predictionId, tfLabels)
     }
   }
