@@ -4,19 +4,35 @@ import io.circe._
 import io.circe.parser.decode
 import io.circe.syntax._
 import io.circe.{Decoder, Encoder}
-
-import com.hyperplan.domain.models.labels.Labels
+import com.hyperplan.domain.models.labels.{ClassificationLabel, Labels}
 import com.hyperplan.domain.models.backends._
-
 import com.hyperplan.domain.models.features.transformers._
 import com.hyperplan.domain.models.labels.transformers._
-
 import com.hyperplan.infrastructure.serialization.features.FeaturesTransformerSerializer
-import com.hyperplan.infrastructure.serialization.labels.LabelsTransformerSerializer
+import com.hyperplan.infrastructure.serialization.labels.{
+  ClassificationLabelSerializer,
+  LabelsTransformerSerializer
+}
 
 object BackendSerializer {
 
   object Implicits {
+
+    implicit val classificationLabelEncoder: Encoder[Set[ClassificationLabel]] =
+      ClassificationLabelSerializer.classificationLabelsSetEncoder
+    implicit val classificationLabelDecoder: Decoder[Set[ClassificationLabel]] =
+      ClassificationLabelSerializer.classificationLabelsSetDecoder
+
+    val localClassificationBackendEncoder: Encoder[LocalClassification] =
+      Encoder.forProduct2("class", "labels")(
+        backend => ("LocalClassification", backend.computed)
+      )
+    val localClassificationBackendDecoder: Decoder[LocalClassification] =
+      Decoder
+        .forProduct2[LocalClassification, String, Set[ClassificationLabel]](
+          "class",
+          "labels"
+        )((backendClass, labels) => LocalClassification(labels))
 
     val tensorFlowClassificationBackendEncoder
         : Encoder[TensorFlowClassificationBackend] =
@@ -150,7 +166,8 @@ object BackendSerializer {
           tensorFlowClassificationBackendDecoder(c)
         case TensorFlowRegressionBackend.backendClass =>
           tensorFlowRegressionBackendDecoder(c)
-        case LocalClassification.backendClass => ???
+        case LocalClassification.backendClass =>
+          localClassificationBackendDecoder(c)
         case RasaNluClassifcationBackend.backendClass =>
           rasaNluClassificationBackendDecoder(c)
 
@@ -161,7 +178,8 @@ object BackendSerializer {
       tensorFlowClassificationBackendEncoder(backend)
     case backend: TensorFlowRegressionBackend =>
       tensorFlowRegressionBackendEncoder(backend)
-    case backend: LocalClassification => ???
+    case backend: LocalClassification =>
+      localClassificationBackendEncoder(backend)
     case backend: RasaNluClassificationBackend =>
       rasaNluClassificationBackendEncoder(backend)
   }

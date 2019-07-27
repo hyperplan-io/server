@@ -7,8 +7,11 @@ import org.http4s.circe._
 import org.http4s.dsl.io._
 import org.http4s.implicits._
 import org.scalatest.FlatSpec
+
 import scalacache._
 import scalacache.caffeine._
+import scalacache.CatsEffect.modes._
+
 import org.scalatest.Matchers
 import org.scalatest._
 import com.hyperplan.test.TestDatabase
@@ -33,6 +36,7 @@ import com.hyperplan.application.controllers.requests.{
 }
 import com.hyperplan.domain.errors.ProjectError._
 import com.hyperplan.domain.models
+import com.hyperplan.domain.models.backends.LocalClassification
 
 class ProjectsControllerSpec()
     extends FlatSpec
@@ -98,6 +102,8 @@ class ProjectsControllerSpec()
 
   val projectRepository = new ProjectsRepository()(xa)
   val domainRepository = new DomainRepository()(xa)
+  val algorithmsRepository = new AlgorithmsRepository()(xa)
+
   val domainService = new DomainService(domainRepository)
 
   val projectCache: Cache[Project] = CaffeineCache[Project]
@@ -105,6 +111,11 @@ class ProjectsControllerSpec()
     projectRepository,
     domainService,
     projectCache
+  )
+  val algorithmsService = new AlgorithmsService(
+    projectsService,
+    algorithmsRepository,
+    projectRepository
   )
 
   val featuresController = new FeaturesController(
@@ -1065,5 +1076,126 @@ class ProjectsControllerSpec()
       )
     )
   }
+  // TODO uncomment when algorithm service is refactored
+  /*
+  it should "successfully update a project policy to default algorithm" in {
 
+    val id = "test"
+    val name = "my regression project"
+    val problem = Regression
+    val featuresId = "my-feature-id"
+    val topic = "my-topic".some
+
+    val algorithmId = "my-algorithm1"
+
+    val entityBodyFeatures = FeatureVectorDescriptor(
+      id = featuresId,
+      data = List(
+        FeatureDescriptor(
+          name = "feature-1",
+          featuresType = StringFeatureType,
+          dimension = Scalar,
+          description = "my description"
+        )
+      )
+    )
+
+    featuresController.service
+      .run(
+        Request[IO](
+          method = Method.POST,
+          uri = uri"/"
+        ).withEntity(entityBodyFeatures)
+      )
+      .value
+      .map(_.get)
+      .unsafeRunSync()
+
+    val entityBody = PostProjectRequest(
+      id = id,
+      name = name,
+      problem = problem,
+      featuresId = featuresId,
+      labelsId = none[String],
+      topic = topic
+    )
+
+    val response = projectsController.service
+      .run(
+        Request[IO](
+          method = Method.POST,
+          uri = uri"/"
+        ).withEntity(entityBody)
+      )
+      .value
+      .map(_.get)
+
+    assert(
+      ControllerTestUtils.check[Project](
+        response,
+        Status.Created,
+        Some(
+          models.RegressionProject(
+            id,
+            name,
+            RegressionConfiguration(
+              entityBodyFeatures,
+              StreamConfiguration(topic.get).some
+            ),
+            Nil,
+            NoAlgorithm()
+          )
+        )
+      )
+    )
+
+    algorithmsService.createAlgorithm(
+      algorithmId,
+      LocalClassification(
+        Set.empty
+      ),
+      id,
+      PlainSecurityConfiguration(Nil)
+    ).unsafeRunSync()
+
+    projectCache.remove[IO]("test").unsafeRunSync()
+    val response2 = projectsController.service
+      .run(
+        Request(
+          method = Method.PATCH,
+          uri = uri"/test"
+        ).withEntity(
+          PatchProjectRequest(
+            none[String],
+            models
+              .DefaultAlgorithm(
+                algorithmId
+              )
+              .some
+          )
+        )
+      )
+      .value
+      .map(_.get)
+
+    assert(
+      ControllerTestUtils.check[Project](
+        response2,
+        Status.Ok,
+        Some(
+          models.RegressionProject(
+            id,
+            name,
+            RegressionConfiguration(
+              entityBodyFeatures,
+              StreamConfiguration(topic.get).some
+            ),
+            Nil,
+            DefaultAlgorithm(algorithmId)
+          )
+        )
+      )
+    )
+  }
+ */
 }
