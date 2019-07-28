@@ -52,6 +52,12 @@ object ProjectError {
     def message(projectId: String) = s"The project $projectId already exists"
   }
 
+  case class AlgorithmDataIsIncorrectError(message: String) extends ProjectError
+  object AlgorithmDataIsIncorrectError {
+    def message(algorithmId: String) =
+      s"The algorithm $algorithmId data is incorrect"
+  }
+
   case class ProjectDoesNotExistError(message: String) extends ProjectError
   object ProjectDoesNotExistError {
     def message(projectId: String): String =

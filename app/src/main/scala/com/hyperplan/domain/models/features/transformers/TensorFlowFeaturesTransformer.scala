@@ -36,27 +36,27 @@ case class TensorFlowFeaturesTransformer(
                 tfFeatures.copy(
                   examples = TensorFlowStringFeature(field, value) :: tfFeatures.examples
                 )
-              case (FloatVectorFeature(key, value), field) =>
+              case (FloatArrayFeature(key, value), field) =>
                 tfFeatures.copy(
                   examples = TensorFlowFloatVectorFeature(field, value) :: tfFeatures.examples
                 )
-              case (IntVectorFeature(key, value), field) =>
+              case (IntArrayFeature(key, value), field) =>
                 tfFeatures.copy(
                   examples = TensorFlowIntVectorFeature(field, value) :: tfFeatures.examples
                 )
-              case (StringVectorFeature(key, value), field) =>
+              case (StringArrayFeature(key, value), field) =>
                 tfFeatures.copy(
                   examples = TensorFlowStringVectorFeature(field, value) :: tfFeatures.examples
                 )
-              case (IntVector2dFeature(key, values), field) =>
+              case (IntMatrixFeature(key, values), field) =>
                 tfFeatures.copy(
                   examples = TensorFlowIntVector2dFeature(field, values) :: tfFeatures.examples
                 )
-              case (FloatVector2dFeature(key, values), field) =>
+              case (FloatMatrixFeature(key, values), field) =>
                 tfFeatures.copy(
                   examples = TensorFlowFloatVector2dFeature(field, values) :: tfFeatures.examples
                 )
-              case (StringVector2dFeature(key, values), field) =>
+              case (StringMatrixFeature(key, values), field) =>
                 tfFeatures.copy(
                   examples = TensorFlowStringVector2dFeature(field, values) :: tfFeatures.examples
                 )

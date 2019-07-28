@@ -118,6 +118,7 @@ object Main extends IOApp with IOLogging {
       )
       algorithmsService = new AlgorithmsService(
         projectsService,
+        predictionsService,
         algorithmsRepository,
         projectsRepository
       )

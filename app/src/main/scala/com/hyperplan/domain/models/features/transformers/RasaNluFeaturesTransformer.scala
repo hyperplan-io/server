@@ -24,9 +24,9 @@ case class RasaNluFeaturesTransformer(
       .collectFirst {
         case StringFeature(key, value) if key == classes.head =>
           RasaNluFeatures(value, project, model).asRight
-        case StringVectorFeature(key, values) if key == classes.head =>
+        case StringArrayFeature(key, values) if key == classes.head =>
           RasaNluFeatures(values.mkString(joinCharacter), project, model).asRight
-        case StringVector2dFeature(key, values) if key == classes.head =>
+        case StringMatrixFeature(key, values) if key == classes.head =>
           RasaNluFeatures(
             values.flatten.mkString(joinCharacter),
             project,

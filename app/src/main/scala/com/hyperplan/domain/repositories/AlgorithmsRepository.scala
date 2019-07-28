@@ -9,7 +9,8 @@ import cats.effect.IO
 import com.hyperplan.domain.models.Algorithm
 import com.hyperplan.domain.models.SecurityConfiguration
 import com.hyperplan.domain.models.backends._
-import com.hyperplan.domain.errors._
+import com.hyperplan.domain.errors.AlgorithmError
+import com.hyperplan.domain.errors.AlgorithmError._
 import com.hyperplan.domain.repositories.AlgorithmsRepository.AlgorithmData
 import com.hyperplan.infrastructure.logging.IOLogging
 import com.hyperplan.infrastructure.serialization._
@@ -42,13 +43,15 @@ class AlgorithmsRepository(implicit xa: Transactor[IO]) extends IOLogging {
       ${algorithm.security}
     )""".update
 
-  def insert(algorithm: Algorithm) =
+  def insert(algorithm: Algorithm): IO[Either[AlgorithmError, Algorithm]] =
     insertQuery(algorithm).run
       .attemptSomeSqlState {
         case sqlstate.class23.UNIQUE_VIOLATION =>
-          AlgorithmAlreadyExists(algorithm.id)
+          AlgorithmAlreadyExistsError(
+            AlgorithmAlreadyExistsError.message(algorithm.id)
+          ): AlgorithmError
       }
-      .transact(xa)
+      .transact(xa) *> IO.pure(algorithm.asRight)
 
   def readQuery(algorithmId: String): doobie.Query0[AlgorithmData] =
     sql"""
@@ -58,8 +61,11 @@ class AlgorithmsRepository(implicit xa: Transactor[IO]) extends IOLogging {
       """
       .query[AlgorithmData]
 
-  def read(algorithmId: String): IO[Algorithm] =
-    readQuery(algorithmId).unique.transact(xa).flatMap(dataToAlgorithm)
+  def read(algorithmId: String): IO[Option[Algorithm]] =
+    readQuery(algorithmId).option.transact(xa).flatMap {
+      case Some(data) => dataToAlgorithm(data).map(_.some)
+      case None => IO.pure(none[Algorithm])
+    }
 
   def readForProjectQuery(projectId: String): doobie.Query0[AlgorithmData] =
     sql"""
@@ -99,7 +105,13 @@ class AlgorithmsRepository(implicit xa: Transactor[IO]) extends IOLogging {
     case algorithmData =>
       logger.warn(
         s"Could not rebuild algorithm with repository, data is $algorithmData"
-      ) *> IO.raiseError(AlgorithmDataIncorrect(data._1))
+      ) *> IO.raiseError(
+        AlgorithmDataIsIncorrectError(
+          AlgorithmDataIsIncorrectError.message(
+            data._1
+          )
+        )
+      )
   }
 
   def dataListToAlgorithm(dataList: List[AlgorithmData]) =

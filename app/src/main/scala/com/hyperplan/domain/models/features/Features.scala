@@ -46,12 +46,12 @@ case class FloatFeature(key: String, value: Float) extends Feature {
   val featureType = FloatFeatureType
 }
 
-case class FloatVectorFeature(key: String, data: List[Float]) extends Feature {
+case class FloatArrayFeature(key: String, data: List[Float]) extends Feature {
   val dimension = Array
   val featureType = FloatFeatureType
 }
 
-case class FloatVector2dFeature(key: String, data: List[List[Float]])
+case class FloatMatrixFeature(key: String, data: List[List[Float]])
     extends Feature {
   val dimension = Matrix
   val featureType = FloatFeatureType
@@ -62,12 +62,12 @@ case class IntFeature(key: String, value: Int) extends Feature {
   val featureType = IntFeatureType
 }
 
-case class IntVectorFeature(key: String, data: List[Int]) extends Feature {
+case class IntArrayFeature(key: String, data: List[Int]) extends Feature {
   val dimension = Array
   val featureType = IntFeatureType
 }
 
-case class IntVector2dFeature(key: String, data: List[List[Int]])
+case class IntMatrixFeature(key: String, data: List[List[Int]])
     extends Feature {
   val dimension = Matrix
   val featureType = IntFeatureType
@@ -78,13 +78,12 @@ case class StringFeature(key: String, value: String) extends Feature {
   val featureType = StringFeatureType
 }
 
-case class StringVectorFeature(key: String, data: List[String])
-    extends Feature {
+case class StringArrayFeature(key: String, data: List[String]) extends Feature {
   val dimension = Array
   val featureType = StringFeatureType
 }
 
-case class StringVector2dFeature(key: String, data: List[List[String]])
+case class StringMatrixFeature(key: String, data: List[List[String]])
     extends Feature {
   val dimension = Matrix
   val featureType = StringFeatureType

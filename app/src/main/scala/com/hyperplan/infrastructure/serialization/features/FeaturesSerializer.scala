@@ -25,15 +25,15 @@ object FeaturesSerializer {
     implicit val stringEncoder: Encoder[StringFeature] = deriveEncoder
     implicit val stringDecoder: Decoder[StringFeature] = deriveDecoder
 
-    implicit val intVectorEncoder: Encoder[IntVectorFeature] = deriveEncoder
-    implicit val intVectorDecoder: Decoder[IntVectorFeature] = deriveDecoder
+    implicit val intVectorEncoder: Encoder[IntArrayFeature] = deriveEncoder
+    implicit val intVectorDecoder: Decoder[IntArrayFeature] = deriveDecoder
 
-    implicit val floatVectorEncoder: Encoder[FloatVectorFeature] = deriveEncoder
-    implicit val floatVectorDecoder: Decoder[FloatVectorFeature] = deriveDecoder
+    implicit val floatVectorEncoder: Encoder[FloatArrayFeature] = deriveEncoder
+    implicit val floatVectorDecoder: Decoder[FloatArrayFeature] = deriveDecoder
 
-    implicit val stringVectorEncoder: Encoder[StringVectorFeature] =
+    implicit val stringVectorEncoder: Encoder[StringArrayFeature] =
       deriveEncoder
-    implicit val stringVectorDecoder: Decoder[StringVectorFeature] =
+    implicit val stringVectorDecoder: Decoder[StringArrayFeature] =
       deriveDecoder
 
     implicit val featureTypeEncoder: Encoder[FeatureType] =
@@ -72,7 +72,7 @@ object FeaturesSerializer {
           "value" -> Json.fromString(value)
         )
 
-      case feature @ FloatVectorFeature(key, values) =>
+      case feature @ FloatArrayFeature(key, values) =>
         Json.obj(
           "key" -> Json.fromString(key),
           "type" -> (feature.featureType: FeatureType).asJson,
@@ -80,7 +80,7 @@ object FeaturesSerializer {
           "value" -> Json.fromValues(values.flatMap(Json.fromFloat))
         )
 
-      case feature @ IntVectorFeature(key, values) =>
+      case feature @ IntArrayFeature(key, values) =>
         Json.obj(
           "key" -> Json.fromString(key),
           "type" -> (feature.featureType: FeatureType).asJson,
@@ -88,7 +88,7 @@ object FeaturesSerializer {
           "value" -> Json.fromValues(values.map(Json.fromInt))
         )
 
-      case feature @ StringVectorFeature(key, values) =>
+      case feature @ StringArrayFeature(key, values) =>
         Json.obj(
           "key" -> Json.fromString(key),
           "type" -> (feature.featureType: FeatureType).asJson,
@@ -96,7 +96,7 @@ object FeaturesSerializer {
           "value" -> Json.fromValues(values.map(Json.fromString))
         )
 
-      case feature @ FloatVector2dFeature(key, values2d) =>
+      case feature @ FloatMatrixFeature(key, values2d) =>
         Json.obj(
           "key" -> Json.fromString(key),
           "type" -> (feature.featureType: FeatureType).asJson,
@@ -106,7 +106,7 @@ object FeaturesSerializer {
           })
         )
 
-      case feature @ IntVector2dFeature(key, values2d) =>
+      case feature @ IntMatrixFeature(key, values2d) =>
         Json.obj(
           "key" -> Json.fromString(key),
           "type" -> (feature.featureType: FeatureType).asJson,
@@ -116,7 +116,7 @@ object FeaturesSerializer {
           })
         )
 
-      case feature @ StringVector2dFeature(key, values2d) =>
+      case feature @ StringMatrixFeature(key, values2d) =>
         Json.obj(
           "key" -> Json.fromString(key),
           "type" -> (feature.featureType: FeatureType).asJson,
@@ -153,7 +153,7 @@ object FeaturesSerializer {
 
             case (FloatFeatureType, Array) =>
               c.downField("value").as[List[Float]].map[Feature] { value =>
-                FloatVectorFeature(
+                FloatArrayFeature(
                   featureKey,
                   value
                 )
@@ -161,7 +161,7 @@ object FeaturesSerializer {
 
             case (FloatFeatureType, Matrix) =>
               c.downField("value").as[List[List[Float]]].map[Feature] { value =>
-                FloatVector2dFeature(
+                FloatMatrixFeature(
                   featureKey,
                   value
                 )
@@ -176,7 +176,7 @@ object FeaturesSerializer {
               }
             case (IntFeatureType, Array) =>
               c.downField("value").as[List[Int]].map[Feature] { value =>
-                IntVectorFeature(
+                IntArrayFeature(
                   featureKey,
                   value
                 )
@@ -184,7 +184,7 @@ object FeaturesSerializer {
 
             case (IntFeatureType, Matrix) =>
               c.downField("value").as[List[List[Int]]].map[Feature] { value =>
-                IntVector2dFeature(
+                IntMatrixFeature(
                   featureKey,
                   value
                 )
@@ -200,7 +200,7 @@ object FeaturesSerializer {
 
             case (StringFeatureType, Array) =>
               c.downField("value").as[List[String]].map[Feature] { value =>
-                StringVectorFeature(
+                StringArrayFeature(
                   featureKey,
                   value
                 )
@@ -209,7 +209,7 @@ object FeaturesSerializer {
             case (StringFeatureType, Matrix) =>
               c.downField("value").as[List[List[String]]].map[Feature] {
                 value =>
-                  StringVector2dFeature(
+                  StringMatrixFeature(
                     featureKey,
                     value
                   )

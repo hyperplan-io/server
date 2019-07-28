@@ -9,9 +9,9 @@ import com.hyperplan.infrastructure.serialization._
 import com.hyperplan.domain.models.backends.Backend
 import doobie.postgres.sqlstate
 import com.hyperplan.domain.errors.ProjectError
+import com.hyperplan.domain.errors.ProjectError._
 
 import com.hyperplan.domain.models._
-import com.hyperplan.domain.errors.AlgorithmDataIncorrect
 
 class ProjectsRepository(implicit xa: Transactor[IO]) {
 
@@ -246,7 +246,11 @@ object ProjectsRepository {
           ) =>
         Algorithm(id, backend, projectId, security).pure[ConnectionIO]
       case algorithmData =>
-        AsyncConnectionIO.raiseError(AlgorithmDataIncorrect(data._1))
+        AsyncConnectionIO.raiseError(
+          AlgorithmDataIsIncorrectError(
+            AlgorithmDataIsIncorrectError.message(data._1)
+          )
+        )
     }
 
   def dataListToAlgorithm(

@@ -112,11 +112,6 @@ class ProjectsControllerSpec()
     domainService,
     projectCache
   )
-  val algorithmsService = new AlgorithmsService(
-    projectsService,
-    algorithmsRepository,
-    projectRepository
-  )
 
   val featuresController = new FeaturesController(
     domainService
