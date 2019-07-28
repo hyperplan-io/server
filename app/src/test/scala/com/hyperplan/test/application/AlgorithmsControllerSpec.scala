@@ -277,11 +277,15 @@ class AlgorithmsControllerSpec()
       .map(_.get)
 
     assert(
-      ControllerTestUtils.check[Algorithm](
+      ControllerTestUtils.check[List[AlgorithmError]](
         response,
-        Status.Created,
+        Status.BadRequest,
         Some(
-          expectedAlgorithm
+          List(
+            AlgorithmError.PredictionDryRunFailed(
+              "The prediction dry run failed because Unkown error: Connection refused"
+            )
+          )
         )
       )
     )
@@ -389,8 +393,8 @@ class AlgorithmsControllerSpec()
         Status.BadRequest,
         Some(
           List(
-            AlgorithmError.PredictionDryRunFailed(
-              "An error occurred with backend, please check the server logs"
+            AlgorithmError.UnsupportedProtocolError(
+              AlgorithmError.UnsupportedProtocolError.message(Grpc)
             )
           )
         )

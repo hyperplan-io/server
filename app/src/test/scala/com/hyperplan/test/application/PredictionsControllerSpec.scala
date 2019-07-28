@@ -336,44 +336,4 @@ class PredictionsControllerSpec()
     )
   }
 
-  it should "fail to execute a backend that is unavailablie" in {
-    val featureVectorDescriptor =
-      ProjectUtils.createFeatures(featuresController)
-    val labelVectorDescriptor =
-      ProjectUtils.createDynamicLabels(labelsController)
-    val project = ProjectUtils.createClassificationProject(
-      projectsController,
-      featureVectorDescriptor,
-      labelVectorDescriptor
-    )
-    val algorithm1 = ProjectUtils.createAlgorithmTensorFlowClassification(
-      algorithmsController,
-      project
-    )
-    val requestEntity1 = ProjectUtils.genPredictionRequest(project.id)
-    val response1 = predictionsController.service
-      .run(
-        Request[IO](
-          method = Method.POST,
-          uri = uri"/"
-        ).withEntity(requestEntity1)
-      )
-      .value
-      .map(_.get)
-
-    assert(
-      ControllerTestUtils.check[List[PredictionError]](
-        response1,
-        Status.BadGateway,
-        Some(
-          List(
-            PredictionError.BackendExecutionError(
-              ""
-            )
-          )
-        )
-      )
-    )
-  }
-
 }
