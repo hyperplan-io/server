@@ -1,11 +1,14 @@
 package com.hyperplan.application.controllers
 
+import cats.effect.IO
+import cats.implicits._
 import cats.Functor
+import cats.MonadError
+
 import org.http4s.{HttpRoutes, HttpService}
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
-import cats.effect.IO
-import cats.implicits._
+
 import com.hyperplan.application.controllers.requests._
 import com.hyperplan.domain.errors.AlgorithmError
 import com.hyperplan.domain.errors.AlgorithmError._
@@ -19,7 +22,8 @@ class AlgorithmsController(
 ) extends Http4sDsl[IO]
     with IOLogging {
 
-  import cats.MonadError
+val unhandledErrorMessage =
+    s"""Unhandled server error, please check the logs or contact support"""
   val service: HttpRoutes[IO] = {
     HttpRoutes.of[IO] {
       case req @ POST -> Root =>
@@ -43,26 +47,14 @@ class AlgorithmsController(
                 s"Algorithm created with id ${algorithm.id} on project ${algorithm.projectId}"
               ) *> Created(AlgorithmsSerializer.encodeJson(algorithm))
             case Left(errors) =>
-              BadRequest(
-                AlgorithmErrorsSerializer.encodeJson(errors.toList: _*)
+              val errorList = errors.toList
+              logger.warn(s"Failed to create algorithm: ${errorList.mkString(",")}") *> BadRequest(
+                AlgorithmErrorsSerializer.encodeJson(errorList: _*)
               )
           }
           .handleErrorWith {
-            case AlgorithmAlreadyExistsError(algorithmId) =>
-              logger.warn(s"The algorithm $algorithmId already exists") *> Conflict(
-                s"Algorithm $algorithmId already exists"
-              )
-            case IncompatibleFeaturesError(message) =>
-              logger.warn(
-                s"The features of this algorithm are not compatible with the project"
-              ) *> BadRequest(message)
-            case IncompatibleLabelsError(message) =>
-              logger.warn(
-                s"The labels of this algorithm are not compatible with the project"
-              ) *> BadRequest(message)
-            case err =>
-              logger.error(s"Unhandled error", err) *> InternalServerError(
-                "Unhandled error"
+            err => logger.warn(s"Unhandled error in AlgorithmsController", err) *> InternalServerError(
+                "An unknown error occurred"
               )
           }
     }
