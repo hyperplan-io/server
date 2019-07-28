@@ -1,9 +1,11 @@
 package com.hyperplan.domain.services
 
-import cats.data.{EitherT, NonEmptyChain, Validated, ValidatedNec}
+import cats.data._
 import cats.effect.IO
 import cats.implicits._
+
 import io.lemonlabs.uri.{AbsoluteUrl, Url}
+
 import com.hyperplan.domain.models._
 import com.hyperplan.domain.models.backends.{
   Backend,
@@ -284,7 +286,7 @@ class AlgorithmsService(
       _ <- EitherT.fromEither[IO](
         validateAlgorithmCreate(algorithm, project).toEither
       )
-      _ <- EitherT.liftF[IO, NonEmptyChain[AlgorithmError], Prediction](
+      _ <- EitherT[IO, NonEmptyChain[AlgorithmError], Prediction](
         predictionsService.predictWithBackend(
           ju.UUID.randomUUID().toString,
           project,
@@ -295,7 +297,13 @@ class AlgorithmsService(
             case RegressionConfiguration(features, dataStream) =>
               FeatureVectorDescriptor.generateRandomFeatureVector(features)
           }
-        )
+        ).flatMap {
+          case Right(prediction) => IO.pure(prediction.asRight)
+          case Left(err) =>
+            logger.warn(s"The prediction dry run failed when creating algorithm ${algorithm.id} because ${err.message}") *> IO(
+              NonEmptyChain(PredictionDryRunFailed(PredictionDryRunFailed.message(err))).asLeft
+            )
+        }
       )
       _ <- EitherT[IO, NonEmptyChain[AlgorithmError], Algorithm](
         algorithmsRepository.insert(algorithm).map {

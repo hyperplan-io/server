@@ -14,27 +14,26 @@ import io.circe.Json
 import io.circe.ACursor
 
 object FeaturesParserService {
-  def parseFeatures(configuration: ProjectConfiguration, hcursor: Json)(
-      implicit domainService: DomainService
-  ): IO[Features] = configuration match {
+  def parseFeatures(domainService: DomainService)(configuration: ProjectConfiguration, hcursor: Json): IO[Features] = configuration match {
     case ClassificationConfiguration(featuresConfiguration, _, _) =>
       parseFeatures(
+        domainService,
         featuresConfiguration,
         hcursor.hcursor.downField("features")
       )
     case RegressionConfiguration(featuresConfiguration, _) =>
       parseFeatures(
+        domainService,
         featuresConfiguration,
         hcursor.hcursor.downField("features")
       )
   }
 
   def parseFeatures(
+      domainService: DomainService,
       configuration: FeatureVectorDescriptor,
       hcursor: ACursor,
       prefix: String = ""
-  )(
-      implicit domainService: DomainService
   ): IO[Features] = {
     configuration.data
       .map { featuresConfiguration =>
@@ -72,7 +71,7 @@ object FeaturesParserService {
             domainService.readFeatures(reference).flatMap {
               case Some(featuresConfig) =>
                 FeaturesParserService
-                  .parseFeatures(featuresConfig, jsonField, prefix = s"${key}_")
+                  .parseFeatures(domainService, featuresConfig, jsonField, prefix = s"${key}_")
               case None =>
                 ???
             }

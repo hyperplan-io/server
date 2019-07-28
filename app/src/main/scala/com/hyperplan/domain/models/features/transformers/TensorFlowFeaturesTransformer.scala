@@ -12,7 +12,7 @@ case class TensorFlowFeaturesTransformer(
       features: Features,
       signatureName: String = signatureName,
       fields: Map[String, String] = fields
-  ): Either[Throwable, TensorFlowFeatures] = {
+  ): TensorFlowFeatures = {
 
     val tensorFlowFeatures =
       features
@@ -65,12 +65,12 @@ case class TensorFlowFeaturesTransformer(
                   feature.key -> s"$field\_$feature"
                 }.toMap
                 tfFeatures.copy(
-                  examples = transform(values, signatureName, newFields).toOption.get.examples ::: tfFeatures.examples
+                  examples = transform(values, signatureName, newFields).examples ::: tfFeatures.examples
                 )
             }
 
         }
-    Right(tensorFlowFeatures)
+    tensorFlowFeatures
   }
 
 }

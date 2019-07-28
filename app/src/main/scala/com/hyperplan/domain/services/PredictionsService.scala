@@ -1,44 +1,32 @@
 package com.hyperplan.domain.services
 
-import java.util.UUID
+import java.{util => ju}
 
-import cats.effect.{Async, Effect}
-import cats.effect.IO
+import cats.effect.{ Effect, IO }
 import cats.implicits._
 import cats.effect.ContextShift
-import doobie.free.connection._
+import cats.effect.Timer
+import cats.effect.Resource
+
+import doobie.free.connection.{ AsyncConnectionIO, ConnectionIO }
+
+import org.http4s.client.Client
 
 import com.hyperplan.application.ApplicationConfig
 
 import com.hyperplan.domain.models._
-import com.hyperplan.domain.models.backends._
-import com.hyperplan.domain.errors._
-import com.hyperplan.domain.models.events.{
-  ClassificationPredictionEvent,
-  PredictionEvent,
-  RegressionPredictionEvent
-}
+import com.hyperplan.domain.errors.PredictionError
+import com.hyperplan.domain.errors.PredictionError._
+import com.hyperplan.domain.models.events._
 import com.hyperplan.domain.models.features.Features.Features
-import com.hyperplan.domain.models.features._
 import com.hyperplan.domain.models.labels._
-import com.hyperplan.domain.repositories.{
-  PredictionsRepository,
-  ProjectsRepository
-}
-import com.hyperplan.infrastructure.logging.IOLogging
-import com.hyperplan.infrastructure.serialization.PredictionSerializer
-import com.hyperplan.infrastructure.serialization.events.PredictionEventSerializer
-import com.hyperplan.infrastructure.streaming.{
-  KinesisService,
-  PubSubService,
-  KafkaService
-}
-import doobie.free.connection.{AsyncConnectionIO, ConnectionIO}
-import cats.effect.ContextShift
+import com.hyperplan.domain.repositories.PredictionsRepository
 
-import cats.effect.Timer
-import cats.effect.Resource
-import org.http4s.client.Client
+import com.hyperplan.infrastructure.logging.IOLogging
+import com.hyperplan.infrastructure.serialization.events.PredictionEventSerializer
+import com.hyperplan.infrastructure.streaming.{KafkaService, KinesisService, PubSubService}
+
+
 
 class PredictionsService(
     predictionsRepository: PredictionsRepository,
@@ -101,20 +89,11 @@ class PredictionsService(
         )
       )
     } yield ()).handleErrorWith {
-      case err =>
+      err =>
         logger.warn(
           s"An occurred occurred when publishing data, ${err.getMessage}"
         ) *> IO.unit
     }
-
-  def noAlgorithm(): IO[Prediction] = {
-    val message = "No algorithms are setup"
-    logger.info(message).flatMap { _ =>
-      IO.raiseError(
-        NoAlgorithmAvailable(message)
-      )
-    }
-  }
 
   def validateClassificationLabels(
       labelsConfiguration: LabelVectorDescriptor,
@@ -130,72 +109,89 @@ class PredictionsService(
       features: Features,
       entityLinks: List[EntityLink],
       optionalAlgorithmId: Option[String]
-  ): IO[Prediction] = projectsService.readProject(projectId).flatMap {
-    case Some(project) =>
-      val maybeAlgorithmId = optionalAlgorithmId.fold(
-        (project.policy.take)
-      )(algorithmId => algorithmId.some)
-      maybeAlgorithmId
-        .fold[IO[Prediction]] {
+  ): IO[Either[PredictionError, Prediction]] =
+    projectsService.readProject(projectId).flatMap {
+      case Some(project) =>
+
+        val maybeAlgorithmId = optionalAlgorithmId.fold(
+          project.policy.take()
+        )(algorithmId => algorithmId.some)
+
+        maybeAlgorithmId
+          .fold[IO[Either[PredictionError, Prediction]]] {
           val errorMessage =
             s"There is no algorithm in project $projectId, prediction failed"
-          logger.warn(errorMessage) *> IO
-            .raiseError(NoAlgorithmAvailable(errorMessage))
+          logger.warn(errorMessage) *> IO.pure(
+            NoAlgorithmAvailableError().asLeft
+          )
         } { algorithmId =>
-          for {
-            algorithm <- project.algorithmsMap
-              .get(algorithmId)
-              .fold[IO[Algorithm]] {
-                val errorMessage = s"The algorithm $algorithmId does not exist"
-                logger.warn(errorMessage) >> IO
-                  .raiseError(AlgorithmDoesNotExist(errorMessage))
-              }(
-                algorithm => IO.pure(algorithm)
+          project.algorithmsMap
+            .get(algorithmId)
+            .fold[IO[Either[PredictionError, Prediction]]] {
+            val errorMessage = s"The algorithm $algorithmId does not exist"
+            logger.warn(errorMessage) >> IO
+              .pure(
+                AlgorithmDoesNotExistError(AlgorithmDoesNotExistError.message(algorithmId)).asLeft
               )
-            predictionId <- IO(UUID.randomUUID.toString)
-            prediction <- predictWithBackend(
-              predictionId,
-              project,
-              algorithm,
-              features
-            )
-            _ <- if (config.prediction.storeInPostgresql) {
-              logger.debug(
-                s"storing prediction ${prediction.id} in postgresql"
-              ) *> persistPrediction(prediction, entityLinks) *> IO
-                .pure(
-                  prediction
+          }(
+            algorithm =>
+              IO(ju.UUID.randomUUID.toString).flatMap { predictionId =>
+                predictWithBackend(
+                  predictionId,
+                  project,
+                  algorithm,
+                  features
                 )
-            } else {
-              logger.debug(
-                s"storing predictions in postgresql in disabled, ignoring ${prediction.id}"
-              ) *> IO.pure(prediction)
-            }
-          } yield prediction
+              }.flatMap {
+                case Right(prediction) =>
+                  if (config.prediction.storeInPostgresql) {
+                    logger.debug(
+                      s"storing prediction ${prediction.id} in postgresql"
+                    ) *> persistPrediction(prediction, entityLinks) *> IO
+                      .pure(
+                        prediction.asRight
+                      )
+                  } else {
+                    logger.debug(
+                      s"storing predictions in postgresql in disabled, ignoring ${prediction.id}"
+                    ) *> IO.pure(prediction.asRight)
+                  }
+                case Left(err) =>
+                  IO.pure(err.asLeft)
+              }
+          )
         }
-    case None =>
-      ???
-  }
+      case None =>
+        IO.pure(
+          ProjectDoesNotExistError(ProjectDoesNotExistError.message(projectId)).asLeft
+        )
+    }
+
 
   def addClassificationExample(
       labels: Option[String],
       predictionId: String,
       prediction: ClassificationPrediction
-  ): ConnectionIO[ClassificationPredictionEvent] =
-    labels.fold[ConnectionIO[ClassificationPredictionEvent]](
-      AsyncConnectionIO.raiseError(IncorrectExample(Classification))
+  ): ConnectionIO[Either[PredictionError, PredictionEvent]] =
+    labels.fold[ConnectionIO[Either[PredictionError, PredictionEvent]]](
+      (ClassificationExampleCannotBeEmptyError(): PredictionError).asLeft.pure[ConnectionIO]
     )(
       label =>
         prediction.labels
           .find(_.label == label)
-          .fold[ConnectionIO[ClassificationPredictionEvent]](
-            AsyncConnectionIO.raiseError(LabelNotFound(label))
+          .fold[ConnectionIO[Either[PredictionError, PredictionEvent]]](
+          (ClassificationExampleDoesNotExist(
+              ClassificationExampleDoesNotExist.message(
+                label,
+                prediction.labels
+              )
+            ): PredictionError).asLeft.pure[ConnectionIO]
           )(
-            label => {
-              val example = label.label
+            _ => {
+              val example = label
               val examples = prediction.examples :+ example
-              val predictionEvent = ClassificationPredictionEvent(
-                UUID.randomUUID().toString,
+              val predictionEvent: PredictionEvent = ClassificationPredictionEvent(
+                ju.UUID.randomUUID().toString,
                 predictionId,
                 prediction.projectId,
                 prediction.algorithmId,
@@ -206,7 +202,7 @@ class PredictionsService(
 
               predictionsRepository
                 .updateClassificationExamples(predictionId, examples)
-                .map(_ => predictionEvent)
+                .map(_ => predictionEvent.asRight)
             }
           )
     )
@@ -215,16 +211,18 @@ class PredictionsService(
       valueOpt: Option[Float],
       predictionId: String,
       prediction: RegressionPrediction
-  ) =
-    valueOpt.fold[ConnectionIO[RegressionPredictionEvent]](
-      AsyncConnectionIO.raiseError(IncorrectExample(Regression))
+  ): ConnectionIO[Either[PredictionError, PredictionEvent]] =
+    valueOpt.fold[ConnectionIO[Either[PredictionError, PredictionEvent]]](
+      AsyncConnectionIO.pure(
+        RegressionExampleShouldBeFloatError().asLeft
+      )
     )(
       value => {
         val example = value
         val examples = prediction.examples :+ example
 
         val predictionEvent = RegressionPredictionEvent(
-          UUID.randomUUID().toString,
+          ju.UUID.randomUUID().toString,
           predictionId,
           prediction.projectId,
           prediction.algorithmId,
@@ -234,7 +232,7 @@ class PredictionsService(
         )
         predictionsRepository
           .updateRegressionExamples(predictionId, examples)
-          .map(_ => predictionEvent)
+          .map(_ => predictionEvent.asRight)
       }
     )
 
@@ -242,33 +240,47 @@ class PredictionsService(
       predictionId: String,
       labelOpt: Option[String],
       valueOpt: Option[Float]
-  ): IO[PredictionEvent] = {
-    val transaction = for {
-      prediction <- predictionsRepository.read(predictionId)
-      optProject <- AsyncConnectionIO.liftIO(
-        Effect[IO].toIO(
-          projectsService.readProject(prediction.projectId)
-        )
-      )
-      project <- optProject.fold[ConnectionIO[Project]](
-        AsyncConnectionIO.raiseError(new Exception("project does not exist"))
-      )(project => project.pure[ConnectionIO])
-      event: PredictionEvent <- prediction match {
-        case prediction: ClassificationPrediction =>
-          addClassificationExample(labelOpt, predictionId, prediction)
-        case prediction: RegressionPrediction =>
-          addRegressionExample(valueOpt, predictionId, prediction)
-      }
-      _ <- AsyncConnectionIO.liftIO(
-        Effect[IO].toIO(
-          publishToStream(
-            event,
-            project.configuration.dataStream
+  ): IO[Either[PredictionError, PredictionEvent]] = {
+
+    val transaction: ConnectionIO[Either[PredictionError, (Project, PredictionEvent)]] = predictionsRepository.read(predictionId).flatMap {
+
+      case Some(prediction) =>
+        AsyncConnectionIO.liftIO(
+          Effect[IO].toIO(
+            projectsService.readProject(prediction.projectId)
           )
-        )
-      )
-    } yield event
-    predictionsRepository.transact(transaction)
+        ).flatMap {
+          case Some(project) =>
+            val exampleIO: ConnectionIO[Either[PredictionError, PredictionEvent]] = prediction match {
+              case prediction: ClassificationPrediction =>
+                addClassificationExample(labelOpt, predictionId, prediction)
+              case prediction: RegressionPrediction =>
+                addRegressionExample(valueOpt, predictionId, prediction)
+            }
+            exampleIO.map {
+              case Right(event) => (project, event).asRight[PredictionError]
+              case Left(err) => err.asLeft[(Project, PredictionEvent)]
+            }
+          case None =>
+            (ProjectDoesNotExistError(
+              ProjectDoesNotExistError.message(prediction.projectId)
+            ): PredictionError).asLeft.pure[ConnectionIO]
+        }
+      case None =>
+        (PredictionDoesNotExistError(
+          PredictionDoesNotExistError.message(predictionId)
+        ): PredictionError).asLeft.pure[ConnectionIO]
+    }
+    predictionsRepository.transact(transaction).flatMap {
+      case Right(projectEvent) =>
+        val (project, event) = projectEvent
+        publishToStream(
+          event,
+          project.configuration.dataStream
+        ).map(_ => event.asRight)
+      case Left(err) =>
+        IO.pure(err.asLeft)
+    }
   }
 
 }

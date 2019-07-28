@@ -57,4 +57,9 @@ object AlgorithmError {
     def message(protocol: Protocol) = s"The protocol $protocol is not supported"
   }
 
+  case class PredictionDryRunFailed(message: String) extends AlgorithmError
+  object PredictionDryRunFailed {
+    def message(err: PredictionError) = s"The prediction dry run failed because ${err.message}"
+  }
+
 }

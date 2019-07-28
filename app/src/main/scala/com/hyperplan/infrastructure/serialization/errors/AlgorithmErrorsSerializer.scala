@@ -38,6 +38,8 @@ object AlgorithmErrorsSerializer {
       "UnsupportedProtocolError"
     case AlgorithmIdIsNotAlphaNumerical(_) =>
       "AlgorithmIdIsNotAlphaNumerical"
+    case PredictionDryRunFailed(_) =>
+      "PredictionDryRunFailed"
   }
 
   def classToAlgorithmError(
@@ -64,6 +66,8 @@ object AlgorithmErrorsSerializer {
       UnsupportedProtocolError(message).asRight
     case "AlgorithmIdIsNotAlphaNumerical" =>
       AlgorithmIdIsNotAlphaNumerical(message).asRight
+    case "PredictionDryRunFailed" =>
+      PredictionDryRunFailed(message).asRight
     case _ => DecodingFailure("Unknown error class", Nil).asLeft
   }
 
