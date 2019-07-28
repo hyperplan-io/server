@@ -17,10 +17,10 @@ case class TensorFlowLabelsTransformer(fields: Map[String, String]) {
       predictionId: String,
       tfLabels: TensorFlowClassificationLabels
   ) = {
-    val labelsString = tfLabels.result.flatten.map(_._1).toSet
+    val labelsString = tfLabels.result.map(_.label).toSet
     if (labelsString == fields.keys) {
-      val labels: Set[ClassificationLabel] = tfLabels.result.flatten.flatMap {
-        case (label, probability) =>
+      val labels: Set[ClassificationLabel] = tfLabels.result.flatMap {
+        case TensorFlowClassificationLabel(label, probability) =>
           fields
             .get(label)
             .map { label =>
@@ -66,8 +66,8 @@ case class TensorFlowLabelsTransformer(fields: Map[String, String]) {
       predictionId: String,
       tfLabels: TensorFlowClassificationLabels
   ) = {
-    val labels = tfLabels.result.flatten.map {
-      case (label, probability) =>
+    val labels = tfLabels.result.map {
+      case TensorFlowClassificationLabel(label, probability) =>
         val correctUrl =
           ExampleUrlService.correctClassificationExampleUrl(
             predictionId,

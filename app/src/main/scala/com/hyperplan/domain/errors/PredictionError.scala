@@ -3,6 +3,7 @@ package com.hyperplan.domain.errors
 import com.hyperplan.domain.models.Project
 import com.hyperplan.domain.models.backends.Backend
 import com.hyperplan.domain.models.labels.ClassificationLabel
+import org.http4s.MalformedMessageBodyFailure
 
 sealed trait PredictionError extends Exception {
   val message: String
@@ -24,9 +25,14 @@ object PredictionError {
       s"The algorithm $algorithmId that you or the policy chose does not exist"
   }
 
-  case class BackendExecutionError() extends PredictionError {
-    val message: String =
-      s"An error occurred with backend, please check the server logs"
+  case class BackendExecutionError(message: String) extends PredictionError
+  object BackendExecutionError {
+    def message(err: Throwable): String = err match {
+      case MalformedMessageBodyFailure(details, cause) =>
+        s"The backend replied data that could not be parsed, verify that you chose the right backend class."
+      case err =>
+        s"Unkown error: ${err.getMessage}"
+    }
   }
 
   case class FeaturesTransformerError() extends PredictionError {
@@ -87,7 +93,7 @@ object PredictionError {
   case class IncompatibleBackendError(message: String) extends PredictionError
   object IncompatibleBackendError {
     def message(backend: Backend, project: Project): String =
-      s"Project ${project.getClass.getSimpleName} is not compatible with backend ${backend.getClass.getSimpleName}"
+      s"Project ${project.getClass.getSimpleName} of type ${project.problem} is not compatible with backend ${backend.getClass.getSimpleName}"
   }
 
 }

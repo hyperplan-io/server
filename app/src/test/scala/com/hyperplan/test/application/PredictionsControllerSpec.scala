@@ -177,7 +177,8 @@ class PredictionsControllerSpec()
   it should "fail to execute a prediction if no algorithms are available" in {
     val featureVectorDescriptor =
       ProjectUtils.createFeatures(featuresController)
-    val labelVectorDescriptor = ProjectUtils.createLabels(labelsController)
+    val labelVectorDescriptor =
+      ProjectUtils.createDynamicLabels(labelsController)
     val project = ProjectUtils.createClassificationProject(
       projectsController,
       featureVectorDescriptor,
@@ -211,7 +212,8 @@ class PredictionsControllerSpec()
   it should "fail to execute a prediction when selecting an algorithm that does not exist" in {
     val featureVectorDescriptor =
       ProjectUtils.createFeatures(featuresController)
-    val labelVectorDescriptor = ProjectUtils.createLabels(labelsController)
+    val labelVectorDescriptor =
+      ProjectUtils.createDynamicLabels(labelsController)
     val project = ProjectUtils.createClassificationProject(
       projectsController,
       featureVectorDescriptor,
@@ -248,13 +250,17 @@ class PredictionsControllerSpec()
   it should "execute first algorithm by default" in {
     val featureVectorDescriptor =
       ProjectUtils.createFeatures(featuresController)
-    val labelVectorDescriptor = ProjectUtils.createLabels(labelsController)
+    val labelVectorDescriptor =
+      ProjectUtils.createDynamicLabels(labelsController)
     val project = ProjectUtils.createClassificationProject(
       projectsController,
       featureVectorDescriptor,
       labelVectorDescriptor
     )
-    val algorithm1 = ProjectUtils.createAlgorithm(algorithmsController, project)
+    val algorithm1 = ProjectUtils.createAlgorithmLocalClassification(
+      algorithmsController,
+      project
+    )
     val requestEntity1 = ProjectUtils.genPredictionRequest(project.id)
     val response1 = predictionsController.service
       .run(
@@ -290,7 +296,10 @@ class PredictionsControllerSpec()
       )
     )
 
-    val algorithm2 = ProjectUtils.createAlgorithm(algorithmsController, project)
+    val algorithm2 = ProjectUtils.createAlgorithmLocalClassification(
+      algorithmsController,
+      project
+    )
     val requestEntity2 = ProjectUtils.genPredictionRequest(project.id)
     val response2 = predictionsController.service
       .run(
@@ -323,6 +332,46 @@ class PredictionsControllerSpec()
               assert(labels.isEmpty)
           }
         }
+      )
+    )
+  }
+
+  it should "fail to execute a backend that is unavailablie" in {
+    val featureVectorDescriptor =
+      ProjectUtils.createFeatures(featuresController)
+    val labelVectorDescriptor =
+      ProjectUtils.createDynamicLabels(labelsController)
+    val project = ProjectUtils.createClassificationProject(
+      projectsController,
+      featureVectorDescriptor,
+      labelVectorDescriptor
+    )
+    val algorithm1 = ProjectUtils.createAlgorithmTensorFlowClassification(
+      algorithmsController,
+      project
+    )
+    val requestEntity1 = ProjectUtils.genPredictionRequest(project.id)
+    val response1 = predictionsController.service
+      .run(
+        Request[IO](
+          method = Method.POST,
+          uri = uri"/"
+        ).withEntity(requestEntity1)
+      )
+      .value
+      .map(_.get)
+
+    assert(
+      ControllerTestUtils.check[List[PredictionError]](
+        response1,
+        Status.BadGateway,
+        Some(
+          List(
+            PredictionError.BackendExecutionError(
+              ""
+            )
+          )
+        )
       )
     )
   }

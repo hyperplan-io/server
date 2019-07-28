@@ -59,7 +59,7 @@ case class RasaNluClassificationBackend(
     labelsTransformer: RasaNluLabelsTransformer
 ) extends Backend
 
-object RasaNluClassifcationBackend {
+object RasaNluClassificationBackend {
   val backendClass = "RasaNluClassificationBackend"
 }
 

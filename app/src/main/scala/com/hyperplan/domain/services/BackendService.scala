@@ -5,12 +5,16 @@ import cats.effect.IO
 import cats.effect.ContextShift
 import cats.implicits._
 import org.http4s.client.Client
-import org.http4s.{Header, Headers}
-import org.http4s.Request
-import org.http4s.EntityDecoder
-import org.http4s.Method
-import org.http4s.Uri
-import org.http4s.EntityEncoder
+import org.http4s.{
+  EntityDecoder,
+  EntityEncoder,
+  Header,
+  Headers,
+  MalformedMessageBodyFailure,
+  Method,
+  Request,
+  Uri
+}
 import java.{util => ju}
 
 import com.hyperplan.domain.models.features._
@@ -86,13 +90,20 @@ trait BackendService extends IOLogging {
                       ).asRight
                     )
                   case Left(err) =>
-                    IO.raiseError(err)
+                    logger.warn(
+                      "An error occurred with labels transformer",
+                      err
+                    ) *> IO.raiseError(err)
                 }
-                .handleErrorWith { err =>
-                  val error = BackendExecutionError().asLeft
-                  IO.pure(
-                    error
-                  )
+                .handleErrorWith {
+                  case err =>
+                    val error = BackendExecutionError(
+                      BackendExecutionError.message(err)
+                    ).asLeft
+                    logger.warn("An error occurred with backend", err) *> IO
+                      .pure(
+                        error
+                      )
                 }
           )
 
@@ -140,13 +151,19 @@ trait BackendService extends IOLogging {
                             ).asRight
                           )
                         case Left(err) =>
-                          IO.raiseError(err)
+                          logger.warn(
+                            "An error occurred with labels transformer",
+                            err
+                          ) *> IO.raiseError(err)
                       }
                       .handleErrorWith { err =>
-                        val error = BackendExecutionError().asLeft
-                        IO.pure(
-                          error
-                        )
+                        val error = BackendExecutionError(
+                          BackendExecutionError.message(err)
+                        ).asLeft
+                        logger.warn("An error occurred with backend", err) *> IO
+                          .pure(
+                            error
+                          )
                       }
                 )
           )
@@ -190,11 +207,16 @@ trait BackendService extends IOLogging {
                       ).asRight
                     )
                   case Left(err) =>
-                    IO.raiseError(err)
+                    logger.warn(
+                      "An error occurred with labels transformer",
+                      err
+                    ) *> IO.raiseError(err)
                 }
                 .handleErrorWith { err =>
-                  val error = BackendExecutionError().asLeft
-                  IO.pure(
+                  val error = BackendExecutionError(
+                    BackendExecutionError.message(err)
+                  ).asLeft
+                  logger.warn("An error occurred with backend", err) *> IO.pure(
                     error
                   )
                 }

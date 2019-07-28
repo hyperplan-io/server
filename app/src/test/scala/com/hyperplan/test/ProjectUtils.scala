@@ -16,6 +16,9 @@ import com.hyperplan.domain.models.backends.LocalClassification
 import io.circe.{Encoder, Json}
 
 import scala.util.Random
+import com.hyperplan.domain.models.backends.TensorFlowClassificationBackend
+import com.hyperplan.domain.models.features.transformers.TensorFlowFeaturesTransformer
+import com.hyperplan.domain.models.labels.transformers.TensorFlowLabelsTransformer
 
 object ProjectUtils {
 
@@ -167,7 +170,7 @@ object ProjectUtils {
     response.attemptAs[FeatureVectorDescriptor].value.unsafeRunSync().right.get
   }
 
-  def createLabels(
+  def createDynamicLabels(
       labelsController: LabelsController
   ): LabelVectorDescriptor = {
 
@@ -192,6 +195,7 @@ object ProjectUtils {
     response.attemptAs[LabelVectorDescriptor].value.unsafeRunSync().right.get
 
   }
+
   def createClassificationProject(
       projectsController: ProjectsController,
       featureVectorDescriptor: FeatureVectorDescriptor,
@@ -227,7 +231,41 @@ object ProjectUtils {
       .asInstanceOf[ClassificationProject]
   }
 
-  def createAlgorithm(
+  def createRegressionProject(
+      projectsController: ProjectsController,
+      featureVectorDescriptor: FeatureVectorDescriptor
+  ): RegressionProject = {
+
+    val entityBody = PostProjectRequest(
+      id = "testregression",
+      name = "regressionproject",
+      problem = Regression,
+      featuresId = featureVectorDescriptor.id,
+      labelsId = None,
+      topic = none[String]
+    )
+
+    val response = projectsController.service
+      .run(
+        Request[IO](
+          method = Method.POST,
+          uri = uri"/"
+        ).withEntity(entityBody)
+      )
+      .value
+      .map(_.get)
+      .unsafeRunSync()
+
+    response
+      .attemptAs[Project]
+      .value
+      .unsafeRunSync()
+      .right
+      .get
+      .asInstanceOf[RegressionProject]
+  }
+
+  def createAlgorithmLocalClassification(
       algorithmsController: AlgorithmsController,
       project: Project
   ): Algorithm = {
@@ -236,6 +274,63 @@ object ProjectUtils {
       Random.alphanumeric.take(10).mkString(""),
       project.id,
       LocalClassification(Set.empty),
+      PlainSecurityConfiguration(
+        Nil
+      )
+    )
+
+    val response = algorithmsController.service
+      .run(
+        Request[IO](
+          method = Method.POST,
+          uri = uri"/"
+        ).withEntity(entityBody)
+      )
+      .value
+      .map(_.get)
+      .unsafeRunSync()
+
+    response
+      .attemptAs[Algorithm]
+      .value
+      .unsafeRunSync()
+      .right
+      .get
+  }
+
+  def createAlgorithmTensorFlowClassification(
+      algorithmsController: AlgorithmsController,
+      project: Project
+  ): Algorithm = {
+
+    val entityBody = PostAlgorithmRequest(
+      Random.alphanumeric.take(10).mkString(""),
+      project.id,
+      TensorFlowClassificationBackend(
+        "0.0.0.0",
+        7089,
+        TensorFlowFeaturesTransformer(
+          "signature",
+          project.configuration
+            .asInstanceOf[ClassificationConfiguration]
+            .features
+            .data
+            .map { featureDescriptor =>
+              featureDescriptor.name -> featureDescriptor.name
+            }
+            .toMap
+        ),
+        TensorFlowLabelsTransformer(
+          project.configuration
+            .asInstanceOf[ClassificationConfiguration]
+            .labels
+            .data match {
+            case DynamicLabelsDescriptor(description) => Map.empty
+            case OneOfLabelsDescriptor(oneOf, description) =>
+              oneOf.map(one => one -> one).toMap
+          }
+        )
+      ),
       PlainSecurityConfiguration(
         Nil
       )

@@ -72,9 +72,9 @@ class AlgorithmsService(
 
   def validateProtocol(url: String): AlgorithmValidationResult[Protocol] =
     AbsoluteUrl.parse(url).scheme match {
-      case "http://" =>
+      case "http" =>
         Validated.valid[AlgorithmError, Protocol](Http).toValidatedNec
-      case "grpc://" =>
+      case "grpc" =>
         Validated.valid[AlgorithmError, Protocol](Grpc).toValidatedNec
       case scheme =>
         Validated
@@ -168,7 +168,11 @@ class AlgorithmsService(
           .invalid(
             AlgorithmError.IncompatibleAlgorithmError(
               AlgorithmError.IncompatibleAlgorithmError
-                .message(algorithm.id, backend.getClass.getSimpleName)
+                .message(
+                  algorithm.id,
+                  backend.getClass.getSimpleName,
+                  project.problem
+                )
             )
           )
           .toValidatedNec
@@ -188,7 +192,11 @@ class AlgorithmsService(
           .invalid(
             AlgorithmError.IncompatibleAlgorithmError(
               AlgorithmError.IncompatibleAlgorithmError
-                .message(algorithm.id, backend.getClass.getSimpleName)
+                .message(
+                  algorithm.id,
+                  backend.getClass.getSimpleName,
+                  project.problem
+                )
             )
           )
           .toValidatedNec
@@ -214,7 +222,11 @@ class AlgorithmsService(
           .invalid(
             AlgorithmError.IncompatibleAlgorithmError(
               AlgorithmError.IncompatibleAlgorithmError
-                .message(algorithm.id, backend.getClass.getSimpleName)
+                .message(
+                  algorithm.id,
+                  backend.getClass.getSimpleName,
+                  project.problem
+                )
             )
           )
           .toValidatedNec
@@ -224,7 +236,11 @@ class AlgorithmsService(
           .invalid(
             AlgorithmError.IncompatibleAlgorithmError(
               AlgorithmError.IncompatibleAlgorithmError
-                .message(algorithm.id, backend.getClass.getSimpleName)
+                .message(
+                  algorithm.id,
+                  backend.getClass.getSimpleName,
+                  project.problem
+                )
             )
           )
           .toValidatedNec

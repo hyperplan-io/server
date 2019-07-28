@@ -26,7 +26,7 @@ object PredictionErrorsSerializer {
       "FeaturesTransformerError"
     case LabelsTransformerError() =>
       "LabelsTransformerError"
-    case BackendExecutionError() =>
+    case BackendExecutionError(_) =>
       "BackendExecutionError"
     case CouldNotDecodeExamplesError(_) =>
       "CouldNotDecodeExamplesError"
@@ -61,7 +61,7 @@ object PredictionErrorsSerializer {
     case "LabelsTransformerError" =>
       LabelsTransformerError().asRight
     case "BackendExecutionError" =>
-      BackendExecutionError().asRight
+      BackendExecutionError(message).asRight
     case "CouldNotDecodeExamplesError" =>
       CouldNotDecodeExamplesError(message).asRight
     case "CouldNotDecodeLabelsError" =>
