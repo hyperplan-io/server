@@ -47,7 +47,9 @@ class AlgorithmsRepository(implicit xa: Transactor[IO]) extends IOLogging {
     insertQuery(algorithm).run
       .attemptSomeSqlState {
         case sqlstate.class23.UNIQUE_VIOLATION =>
-          AlgorithmAlreadyExistsError(algorithm.id): AlgorithmError
+          AlgorithmAlreadyExistsError(
+            AlgorithmAlreadyExistsError.message(algorithm.id)
+          ): AlgorithmError
       }
       .transact(xa) *> IO.pure(algorithm.asRight)
 

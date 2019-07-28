@@ -22,7 +22,7 @@ class AlgorithmsController(
 ) extends Http4sDsl[IO]
     with IOLogging {
 
-val unhandledErrorMessage =
+  val unhandledErrorMessage =
     s"""Unhandled server error, please check the logs or contact support"""
   val service: HttpRoutes[IO] = {
     HttpRoutes.of[IO] {
@@ -48,14 +48,16 @@ val unhandledErrorMessage =
               ) *> Created(AlgorithmsSerializer.encodeJson(algorithm))
             case Left(errors) =>
               val errorList = errors.toList
-              logger.warn(s"Failed to create algorithm: ${errorList.mkString(",")}") *> BadRequest(
+              logger.warn(
+                s"Failed to create algorithm: ${errorList.mkString(",")}"
+              ) *> BadRequest(
                 AlgorithmErrorsSerializer.encodeJson(errorList: _*)
               )
           }
-          .handleErrorWith {
-            err => logger.warn(s"Unhandled error in AlgorithmsController", err) *> InternalServerError(
-                "An unknown error occurred"
-              )
+          .handleErrorWith { err =>
+            logger.warn(s"Unhandled error in AlgorithmsController", err) *> InternalServerError(
+              "An unknown error occurred"
+            )
           }
     }
   }

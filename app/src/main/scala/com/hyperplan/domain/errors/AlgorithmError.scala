@@ -33,9 +33,10 @@ object AlgorithmError {
   }
   case class IncompatibleFeaturesError(message: String) extends AlgorithmError
   case class IncompatibleLabelsError(message: String) extends AlgorithmError
-  case class AlgorithmAlreadyExistsError(algorithmId: String)
-      extends AlgorithmError {
-    val message = s"The algorithm $algorithmId already exists"
+  case class AlgorithmAlreadyExistsError(message: String) extends AlgorithmError
+  object AlgorithmAlreadyExistsError {
+    def message(algorithmId: String) =
+      s"The algorithm $algorithmId already exists"
   }
   case class IncompatibleAlgorithmError(message: String) extends AlgorithmError
   object IncompatibleAlgorithmError {
