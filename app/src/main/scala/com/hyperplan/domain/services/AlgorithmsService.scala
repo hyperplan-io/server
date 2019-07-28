@@ -287,23 +287,29 @@ class AlgorithmsService(
         validateAlgorithmCreate(algorithm, project).toEither
       )
       _ <- EitherT[IO, NonEmptyChain[AlgorithmError], Prediction](
-        predictionsService.predictWithBackend(
-          ju.UUID.randomUUID().toString,
-          project,
-          algorithm,
-          project.configuration match {
-            case ClassificationConfiguration(features, labels, dataStream) =>
-              FeatureVectorDescriptor.generateRandomFeatureVector(features)
-            case RegressionConfiguration(features, dataStream) =>
-              FeatureVectorDescriptor.generateRandomFeatureVector(features)
+        predictionsService
+          .predictWithBackend(
+            ju.UUID.randomUUID().toString,
+            project,
+            algorithm,
+            project.configuration match {
+              case ClassificationConfiguration(features, labels, dataStream) =>
+                FeatureVectorDescriptor.generateRandomFeatureVector(features)
+              case RegressionConfiguration(features, dataStream) =>
+                FeatureVectorDescriptor.generateRandomFeatureVector(features)
+            }
+          )
+          .flatMap {
+            case Right(prediction) => IO.pure(prediction.asRight)
+            case Left(err) =>
+              logger.warn(
+                s"The prediction dry run failed when creating algorithm ${algorithm.id} because ${err.message}"
+              ) *> IO(
+                NonEmptyChain(
+                  PredictionDryRunFailed(PredictionDryRunFailed.message(err))
+                ).asLeft
+              )
           }
-        ).flatMap {
-          case Right(prediction) => IO.pure(prediction.asRight)
-          case Left(err) =>
-            logger.warn(s"The prediction dry run failed when creating algorithm ${algorithm.id} because ${err.message}") *> IO(
-              NonEmptyChain(PredictionDryRunFailed(PredictionDryRunFailed.message(err))).asLeft
-            )
-        }
       )
       _ <- EitherT[IO, NonEmptyChain[AlgorithmError], Algorithm](
         algorithmsRepository.insert(algorithm).map {

@@ -59,7 +59,8 @@ object AlgorithmError {
 
   case class PredictionDryRunFailed(message: String) extends AlgorithmError
   object PredictionDryRunFailed {
-    def message(err: PredictionError) = s"The prediction dry run failed because ${err.message}"
+    def message(err: PredictionError) =
+      s"The prediction dry run failed because ${err.message}"
   }
 
 }

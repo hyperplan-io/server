@@ -2,13 +2,13 @@ package com.hyperplan.domain.services
 
 import java.{util => ju}
 
-import cats.effect.{ Effect, IO }
+import cats.effect.{Effect, IO}
 import cats.implicits._
 import cats.effect.ContextShift
 import cats.effect.Timer
 import cats.effect.Resource
 
-import doobie.free.connection.{ AsyncConnectionIO, ConnectionIO }
+import doobie.free.connection.{AsyncConnectionIO, ConnectionIO}
 
 import org.http4s.client.Client
 
@@ -24,9 +24,11 @@ import com.hyperplan.domain.repositories.PredictionsRepository
 
 import com.hyperplan.infrastructure.logging.IOLogging
 import com.hyperplan.infrastructure.serialization.events.PredictionEventSerializer
-import com.hyperplan.infrastructure.streaming.{KafkaService, KinesisService, PubSubService}
-
-
+import com.hyperplan.infrastructure.streaming.{
+  KafkaService,
+  KinesisService,
+  PubSubService
+}
 
 class PredictionsService(
     predictionsRepository: PredictionsRepository,
@@ -88,11 +90,10 @@ class PredictionsService(
           prediction.projectId
         )
       )
-    } yield ()).handleErrorWith {
-      err =>
-        logger.warn(
-          s"An occurred occurred when publishing data, ${err.getMessage}"
-        ) *> IO.unit
+    } yield ()).handleErrorWith { err =>
+      logger.warn(
+        s"An occurred occurred when publishing data, ${err.getMessage}"
+      ) *> IO.unit
     }
 
   def validateClassificationLabels(
@@ -112,61 +113,65 @@ class PredictionsService(
   ): IO[Either[PredictionError, Prediction]] =
     projectsService.readProject(projectId).flatMap {
       case Some(project) =>
-
         val maybeAlgorithmId = optionalAlgorithmId.fold(
           project.policy.take()
         )(algorithmId => algorithmId.some)
 
         maybeAlgorithmId
           .fold[IO[Either[PredictionError, Prediction]]] {
-          val errorMessage =
-            s"There is no algorithm in project $projectId, prediction failed"
-          logger.warn(errorMessage) *> IO.pure(
-            NoAlgorithmAvailableError().asLeft
-          )
-        } { algorithmId =>
-          project.algorithmsMap
-            .get(algorithmId)
-            .fold[IO[Either[PredictionError, Prediction]]] {
-            val errorMessage = s"The algorithm $algorithmId does not exist"
-            logger.warn(errorMessage) >> IO
-              .pure(
-                AlgorithmDoesNotExistError(AlgorithmDoesNotExistError.message(algorithmId)).asLeft
-              )
-          }(
-            algorithm =>
-              IO(ju.UUID.randomUUID.toString).flatMap { predictionId =>
-                predictWithBackend(
-                  predictionId,
-                  project,
-                  algorithm,
-                  features
-                )
-              }.flatMap {
-                case Right(prediction) =>
-                  if (config.prediction.storeInPostgresql) {
-                    logger.debug(
-                      s"storing prediction ${prediction.id} in postgresql"
-                    ) *> persistPrediction(prediction, entityLinks) *> IO
-                      .pure(
-                        prediction.asRight
+            val errorMessage =
+              s"There is no algorithm in project $projectId, prediction failed"
+            logger.warn(errorMessage) *> IO.pure(
+              NoAlgorithmAvailableError().asLeft
+            )
+          } { algorithmId =>
+            project.algorithmsMap
+              .get(algorithmId)
+              .fold[IO[Either[PredictionError, Prediction]]] {
+                val errorMessage = s"The algorithm $algorithmId does not exist"
+                logger.warn(errorMessage) >> IO
+                  .pure(
+                    AlgorithmDoesNotExistError(
+                      AlgorithmDoesNotExistError.message(algorithmId)
+                    ).asLeft
+                  )
+              }(
+                algorithm =>
+                  IO(ju.UUID.randomUUID.toString)
+                    .flatMap { predictionId =>
+                      predictWithBackend(
+                        predictionId,
+                        project,
+                        algorithm,
+                        features
                       )
-                  } else {
-                    logger.debug(
-                      s"storing predictions in postgresql in disabled, ignoring ${prediction.id}"
-                    ) *> IO.pure(prediction.asRight)
-                  }
-                case Left(err) =>
-                  IO.pure(err.asLeft)
-              }
-          )
-        }
+                    }
+                    .flatMap {
+                      case Right(prediction) =>
+                        if (config.prediction.storeInPostgresql) {
+                          logger.debug(
+                            s"storing prediction ${prediction.id} in postgresql"
+                          ) *> persistPrediction(prediction, entityLinks) *> IO
+                            .pure(
+                              prediction.asRight
+                            )
+                        } else {
+                          logger.debug(
+                            s"storing predictions in postgresql in disabled, ignoring ${prediction.id}"
+                          ) *> IO.pure(prediction.asRight)
+                        }
+                      case Left(err) =>
+                        IO.pure(err.asLeft)
+                    }
+              )
+          }
       case None =>
         IO.pure(
-          ProjectDoesNotExistError(ProjectDoesNotExistError.message(projectId)).asLeft
+          ProjectDoesNotExistError(
+            ProjectDoesNotExistError.message(projectId)
+          ).asLeft
         )
     }
-
 
   def addClassificationExample(
       labels: Option[String],
@@ -174,13 +179,14 @@ class PredictionsService(
       prediction: ClassificationPrediction
   ): ConnectionIO[Either[PredictionError, PredictionEvent]] =
     labels.fold[ConnectionIO[Either[PredictionError, PredictionEvent]]](
-      (ClassificationExampleCannotBeEmptyError(): PredictionError).asLeft.pure[ConnectionIO]
+      (ClassificationExampleCannotBeEmptyError(): PredictionError).asLeft
+        .pure[ConnectionIO]
     )(
       label =>
         prediction.labels
           .find(_.label == label)
           .fold[ConnectionIO[Either[PredictionError, PredictionEvent]]](
-          (ClassificationExampleDoesNotExist(
+            (ClassificationExampleDoesNotExist(
               ClassificationExampleDoesNotExist.message(
                 label,
                 prediction.labels
@@ -190,15 +196,16 @@ class PredictionsService(
             _ => {
               val example = label
               val examples = prediction.examples :+ example
-              val predictionEvent: PredictionEvent = ClassificationPredictionEvent(
-                ju.UUID.randomUUID().toString,
-                predictionId,
-                prediction.projectId,
-                prediction.algorithmId,
-                prediction.features,
-                prediction.labels,
-                example
-              )
+              val predictionEvent: PredictionEvent =
+                ClassificationPredictionEvent(
+                  ju.UUID.randomUUID().toString,
+                  predictionId,
+                  prediction.projectId,
+                  prediction.algorithmId,
+                  prediction.features,
+                  prediction.labels,
+                  example
+                )
 
               predictionsRepository
                 .updateClassificationExamples(predictionId, examples)
@@ -242,35 +249,45 @@ class PredictionsService(
       valueOpt: Option[Float]
   ): IO[Either[PredictionError, PredictionEvent]] = {
 
-    val transaction: ConnectionIO[Either[PredictionError, (Project, PredictionEvent)]] = predictionsRepository.read(predictionId).flatMap {
+    val transaction
+        : ConnectionIO[Either[PredictionError, (Project, PredictionEvent)]] =
+      predictionsRepository.read(predictionId).flatMap {
 
-      case Some(prediction) =>
-        AsyncConnectionIO.liftIO(
-          Effect[IO].toIO(
-            projectsService.readProject(prediction.projectId)
-          )
-        ).flatMap {
-          case Some(project) =>
-            val exampleIO: ConnectionIO[Either[PredictionError, PredictionEvent]] = prediction match {
-              case prediction: ClassificationPrediction =>
-                addClassificationExample(labelOpt, predictionId, prediction)
-              case prediction: RegressionPrediction =>
-                addRegressionExample(valueOpt, predictionId, prediction)
+        case Some(prediction) =>
+          AsyncConnectionIO
+            .liftIO(
+              Effect[IO].toIO(
+                projectsService.readProject(prediction.projectId)
+              )
+            )
+            .flatMap {
+              case Some(project) =>
+                val exampleIO
+                    : ConnectionIO[Either[PredictionError, PredictionEvent]] =
+                  prediction match {
+                    case prediction: ClassificationPrediction =>
+                      addClassificationExample(
+                        labelOpt,
+                        predictionId,
+                        prediction
+                      )
+                    case prediction: RegressionPrediction =>
+                      addRegressionExample(valueOpt, predictionId, prediction)
+                  }
+                exampleIO.map {
+                  case Right(event) => (project, event).asRight[PredictionError]
+                  case Left(err) => err.asLeft[(Project, PredictionEvent)]
+                }
+              case None =>
+                (ProjectDoesNotExistError(
+                  ProjectDoesNotExistError.message(prediction.projectId)
+                ): PredictionError).asLeft.pure[ConnectionIO]
             }
-            exampleIO.map {
-              case Right(event) => (project, event).asRight[PredictionError]
-              case Left(err) => err.asLeft[(Project, PredictionEvent)]
-            }
-          case None =>
-            (ProjectDoesNotExistError(
-              ProjectDoesNotExistError.message(prediction.projectId)
-            ): PredictionError).asLeft.pure[ConnectionIO]
-        }
-      case None =>
-        (PredictionDoesNotExistError(
-          PredictionDoesNotExistError.message(predictionId)
-        ): PredictionError).asLeft.pure[ConnectionIO]
-    }
+        case None =>
+          (PredictionDoesNotExistError(
+            PredictionDoesNotExistError.message(predictionId)
+          ): PredictionError).asLeft.pure[ConnectionIO]
+      }
     predictionsRepository.transact(transaction).flatMap {
       case Right(projectEvent) =>
         val (project, event) = projectEvent

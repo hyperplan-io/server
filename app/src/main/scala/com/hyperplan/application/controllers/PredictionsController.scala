@@ -1,28 +1,35 @@
 package com.hyperplan.application.controllers
 
-import cats.Functor
-import org.http4s.{HttpRoutes, HttpService}
-import org.http4s._
-import org.http4s.circe._
-import org.http4s.dsl.Http4sDsl
 import cats.effect.IO
 import cats.implicits._
 import cats.MonadError
-import com.hyperplan.application.AuthenticationMiddleware
-import com.hyperplan.application.controllers.requests._
-import com.hyperplan.domain.errors._
-import com.hyperplan.domain.services.{DomainService, PredictionsService, ProjectsService}
-import com.hyperplan.infrastructure.logging.IOLogging
-import com.hyperplan.infrastructure.serialization.{PredictionRequestEntitySerializer, PredictionSerializer}
-import com.hyperplan.domain.services.FeaturesParserService
-import java.nio.charset.StandardCharsets
-
-import com.hyperplan.domain.models.features.Features.Features
-import com.hyperplan.domain.models.{Project, ProjectConfiguration}
-import com.hyperplan.infrastructure.serialization.errors.PredictionErrorsSerializer
+import cats.Functor
 import io.circe.Json
 import io.circe._
 import io.circe.parser._
+import org.http4s._
+import org.http4s.circe._
+import org.http4s.dsl.Http4sDsl
+import com.hyperplan.application.AuthenticationMiddleware
+import com.hyperplan.application.controllers.requests._
+import com.hyperplan.domain.errors._
+import com.hyperplan.domain.services.{
+  DomainService,
+  PredictionsService,
+  ProjectsService
+}
+import com.hyperplan.infrastructure.logging.IOLogging
+import com.hyperplan.infrastructure.serialization.{
+  PredictionRequestEntitySerializer,
+  PredictionSerializer
+}
+import com.hyperplan.domain.services.FeaturesParserService
+import java.nio.charset.StandardCharsets
+
+import com.hyperplan.domain.errors.PredictionError.BackendExecutionError
+import com.hyperplan.domain.models.features.Features.Features
+import com.hyperplan.domain.models.{Project, ProjectConfiguration}
+import com.hyperplan.infrastructure.serialization.errors.PredictionErrorsSerializer
 
 class PredictionsController(
     projectsService: ProjectsService,
@@ -34,7 +41,8 @@ class PredictionsController(
   val unhandledErrorMessage =
     s"""Unhandled server error, please check the logs or contact support"""
 
-  val parseFeatures: (ProjectConfiguration, Json) => IO[Features] = FeaturesParserService.parseFeatures(domainService)
+  val parseFeatures: (ProjectConfiguration, Json) => IO[Features] =
+    FeaturesParserService.parseFeatures(domainService)
 
   val service: HttpRoutes[IO] = {
     HttpRoutes.of[IO] {
@@ -65,20 +73,26 @@ class PredictionsController(
           _ <- logger.debug(
             s"Prediction computed for project ${predictionRequest.projectId} using algorithm ${predictionRequest.algorithmId}"
           )
-        } yield prediction).flatMap {
+        } yield prediction)
+          .flatMap {
             case Right(prediction) =>
               Created(
                 PredictionSerializer.encodeJson(prediction)
+              )
+            case Left(error: BackendExecutionError) =>
+              BadGateway(
+                PredictionErrorsSerializer.encodeJson(error)
               )
             case Left(error) =>
               BadRequest(
                 PredictionErrorsSerializer.encodeJson(error)
               )
-        }.handleErrorWith { err =>
-          logger.warn("Unhandled error in PredictionsController", err) >> InternalServerError(
-            unhandledErrorMessage
-          )
-        }
+          }
+          .handleErrorWith { err =>
+            logger.warn("Unhandled error in PredictionsController", err) >> InternalServerError(
+              unhandledErrorMessage
+            )
+          }
 
     }
   }

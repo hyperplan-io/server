@@ -61,38 +61,40 @@ trait BackendService extends IOLogging {
           uriString,
           algorithm.security.headers,
           transformedFeatures
-        )(TensorFlowFeaturesSerializer.entityEncoder).fold[IO[Either[PredictionError, Prediction]]](
-          err => IO.raiseError(err),
-          request =>
-            callHttpBackend(
-              request,
-              labelsTransformer.transform(
-                classificationProject.configuration.labels,
-                predictionId,
-                _: TensorFlowClassificationLabels
-              )
-            )(TensorFlowClassificationLabelsSerializer.entityDecoder).flatMap {
-              case Right(labels) =>
-                IO.pure(
-                  ClassificationPrediction(
-                    predictionId,
-                    project.id,
-                    algorithm.id,
-                    features,
-                    Nil,
-                    labels
-                  ).asRight
+        )(TensorFlowFeaturesSerializer.entityEncoder)
+          .fold[IO[Either[PredictionError, Prediction]]](
+            err => IO.raiseError(err),
+            request =>
+              callHttpBackend(
+                request,
+                labelsTransformer.transform(
+                  classificationProject.configuration.labels,
+                  predictionId,
+                  _: TensorFlowClassificationLabels
                 )
-              case Left(err) =>
-                IO.raiseError(err)
-            }.handleErrorWith { err =>
-              val error = BackendExecutionError().asLeft
-              IO.pure(
-                error
-              )
-            }
-        )
-
+              )(TensorFlowClassificationLabelsSerializer.entityDecoder)
+                .flatMap {
+                  case Right(labels) =>
+                    IO.pure(
+                      ClassificationPrediction(
+                        predictionId,
+                        project.id,
+                        algorithm.id,
+                        features,
+                        Nil,
+                        labels
+                      ).asRight
+                    )
+                  case Left(err) =>
+                    IO.raiseError(err)
+                }
+                .handleErrorWith { err =>
+                  val error = BackendExecutionError().asLeft
+                  IO.pure(
+                    error
+                  )
+                }
+          )
 
       case (
           RasaNluClassificationBackend(
@@ -104,7 +106,6 @@ trait BackendService extends IOLogging {
           ),
           classificationProject: ClassificationProject
           ) =>
-
         featuresTransformer
           .transform(features, rasaProject, rasaModel)
           .fold[IO[Either[PredictionError, Prediction]]](
@@ -114,39 +115,41 @@ trait BackendService extends IOLogging {
                 rootPath,
                 algorithm.security.headers,
                 transformedFeatures
-              )(RasaNluFeaturesSerializer.entityEncoder).fold[IO[Either[PredictionError, Prediction]]](
-                err => IO.raiseError(err),
-                request =>
-                  callHttpBackend(
-                    request,
-                    labelsTransformer.transform(
-                      classificationProject.configuration.labels,
-                      predictionId,
-                      _: RasaNluClassificationLabels
-                    )
-                  )(RasaNluLabelsSerializer.entityDecoder).flatMap {
-                    case Right(labels) =>
-                      IO.pure(
-                        ClassificationPrediction(
-                          predictionId,
-                          project.id,
-                          algorithm.id,
-                          features,
-                          Nil,
-                          labels
-                        ).asRight
+              )(RasaNluFeaturesSerializer.entityEncoder)
+                .fold[IO[Either[PredictionError, Prediction]]](
+                  err => IO.raiseError(err),
+                  request =>
+                    callHttpBackend(
+                      request,
+                      labelsTransformer.transform(
+                        classificationProject.configuration.labels,
+                        predictionId,
+                        _: RasaNluClassificationLabels
                       )
-                    case Left(err) =>
-                      IO.raiseError(err)
-                  }.handleErrorWith { err =>
-                    val error = BackendExecutionError().asLeft
-                    IO.pure(
-                      error
-                    )
-                  }
-
-            )
-        )
+                    )(RasaNluLabelsSerializer.entityDecoder)
+                      .flatMap {
+                        case Right(labels) =>
+                          IO.pure(
+                            ClassificationPrediction(
+                              predictionId,
+                              project.id,
+                              algorithm.id,
+                              features,
+                              Nil,
+                              labels
+                            ).asRight
+                          )
+                        case Left(err) =>
+                          IO.raiseError(err)
+                      }
+                      .handleErrorWith { err =>
+                        val error = BackendExecutionError().asLeft
+                        IO.pure(
+                          error
+                        )
+                      }
+                )
+          )
 
       case (
           backend @ TensorFlowRegressionBackend(
@@ -156,7 +159,6 @@ trait BackendService extends IOLogging {
           ),
           regressionProject: RegressionProject
           ) =>
-
         val transformedFeatures = featuresTransformer.transform(features)
 
         val uriString = s"http://$host:$port"
@@ -164,37 +166,39 @@ trait BackendService extends IOLogging {
           uriString,
           algorithm.security.headers,
           transformedFeatures
-        )(TensorFlowFeaturesSerializer.entityEncoder).fold[IO[Either[PredictionError, Prediction]]](
-          err => IO.raiseError(err),
-          request =>
-            callHttpBackend(
-              request,
-              backend.labelsTransformer(
-                _: TensorFlowRegressionLabels,
-                predictionId
-              )
-            )(TensorFlowRegressionLabelsSerializer.entityDecoder).flatMap {
-              case Right(labels) =>
-                IO.pure(
-                  RegressionPrediction(
-                    predictionId,
-                    project.id,
-                    algorithm.id,
-                    features,
-                    Nil,
-                    labels
-                  ).asRight
+        )(TensorFlowFeaturesSerializer.entityEncoder)
+          .fold[IO[Either[PredictionError, Prediction]]](
+            err => IO.raiseError(err),
+            request =>
+              callHttpBackend(
+                request,
+                backend.labelsTransformer(
+                  _: TensorFlowRegressionLabels,
+                  predictionId
                 )
-              case Left(err) =>
-                IO.raiseError(err)
-            }.handleErrorWith { err =>
-              val error = BackendExecutionError().asLeft
-              IO.pure(
-                error
-              )
-            }
-        )
-
+              )(TensorFlowRegressionLabelsSerializer.entityDecoder)
+                .flatMap {
+                  case Right(labels) =>
+                    IO.pure(
+                      RegressionPrediction(
+                        predictionId,
+                        project.id,
+                        algorithm.id,
+                        features,
+                        Nil,
+                        labels
+                      ).asRight
+                    )
+                  case Left(err) =>
+                    IO.raiseError(err)
+                }
+                .handleErrorWith { err =>
+                  val error = BackendExecutionError().asLeft
+                  IO.pure(
+                    error
+                  )
+                }
+          )
 
       case (backend, _) =>
         val errorMessage =

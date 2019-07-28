@@ -45,11 +45,12 @@ class ExamplesController(
                 PredictionErrorsSerializer.encodeJson(error)
               )
           }
-          .handleErrorWith {
-            err =>
-              logger.error(s"Unhandled error in ExamplesController: ${err.getMessage}") *> InternalServerError(
-                unhandledErrorMessage
-              )
+          .handleErrorWith { err =>
+            logger.error(
+              s"Unhandled error in ExamplesController: ${err.getMessage}"
+            ) *> InternalServerError(
+              unhandledErrorMessage
+            )
           }
     }
   }

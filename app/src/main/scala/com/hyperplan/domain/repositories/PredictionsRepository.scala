@@ -12,18 +12,31 @@ import io.circe.{Decoder, Encoder}
 import com.hyperplan.domain.errors.PredictionError
 import com.hyperplan.domain.errors.PredictionError._
 
-import com.hyperplan.domain.models.Examples.{ClassificationExamples, RegressionExamples}
+import com.hyperplan.domain.models.Examples.{
+  ClassificationExamples,
+  RegressionExamples
+}
 
 import com.hyperplan.domain.models.features.Features.Features
 import com.hyperplan.domain.models._
-import com.hyperplan.domain.models.labels.{ClassificationLabel, Label, Labels, RegressionLabel}
+import com.hyperplan.domain.models.labels.{
+  ClassificationLabel,
+  Label,
+  Labels,
+  RegressionLabel
+}
 import com.hyperplan.domain.repositories.PredictionsRepository.PredictionData
 import com.hyperplan.infrastructure.logging.IOLogging
 import com.hyperplan.infrastructure.serialization._
-import com.hyperplan.infrastructure.serialization.examples.{ClassificationExamplesSerializer, RegressionExamplesSerializer}
+import com.hyperplan.infrastructure.serialization.examples.{
+  ClassificationExamplesSerializer,
+  RegressionExamplesSerializer
+}
 import com.hyperplan.infrastructure.serialization.features.FeaturesSerializer
-import com.hyperplan.infrastructure.serialization.labels.{ClassificationLabelSerializer, RegressionLabelSerializer}
-
+import com.hyperplan.infrastructure.serialization.labels.{
+  ClassificationLabelSerializer,
+  RegressionLabelSerializer
+}
 
 class PredictionsRepository(implicit xa: Transactor[IO]) extends IOLogging {
 
@@ -158,7 +171,8 @@ class PredictionsRepository(implicit xa: Transactor[IO]) extends IOLogging {
 
   def read(predictionId: String): ConnectionIO[Option[Prediction]] =
     readQuery(predictionId).option.flatMap {
-      case Some(predictionData) => predictionFromData(predictionData).map(_.some)
+      case Some(predictionData) =>
+        predictionFromData(predictionData).map(_.some)
       case None => none[Prediction].pure[ConnectionIO]
     }
 

@@ -13,7 +13,6 @@ import org.http4s.circe.jsonOf
 import com.hyperplan.domain.errors.PredictionError
 import com.hyperplan.domain.errors.PredictionError._
 
-
 object PredictionErrorsSerializer {
 
   def predictionErrorToClass(error: PredictionError): String = error match {
