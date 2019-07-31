@@ -2,21 +2,18 @@
 [![Build Status](https://travis-ci.org/scoverage/sbt-scoverage.png?branch=master)](https://travis-ci.org/hyperplan/server)
 [![License](http://img.shields.io/:license-Apache%202-red.svg)](http://www.apache.org/licenses/LICENSE-2.0.txt)
 
-Hyperplan is a service that help you manage your algorithms in a production environment. It's a great way to start industrializing your machine learning projects. It comes with three principles
+Hyperplan is the interface between data scientists and developers. It is a proxy service that will help you to write machine learning pipelines. It provides:
 
-* **Focus on the problem** machine learning is one solution, not the problem. Hyperplan asks you to specify a problem first
-* **Data is the key**  Hyperplan helps you to build a pipeline to get your labeled data back from your users. You won't need to waste time hand labelling data. 
-* **Iteration is crucial** you should start with a simple heuristic before training a big neural network. Hyperplan forces you to integrate your algorithms early in the process so you can start delivering results fast. Hyperplan also comes with built in data streaming and AB testing support.
+* Projects, features and labels through its own data stores
+* Algorithm selection and execution, compatible with TensorFlow, Rasa Nlu and more to come
+* An API to execute and label data
+* Data storage and distribution through many message bus providers such as Apache Kafka, Google PubSub or AWS Kinesis.
 
 **Useful links**
 
-[Hyperplan website](https://hyperplanio.github.io/server/)
+[Hyperplan website](https://hyperplan.io
 
 [Generating data with Hyperplan](https://medium.com/@sauray.antoine/data-generation-for-machine-learning-using-foundaml-5e324e6939f5)
-
-# Backend
-Hyperplan does not execute algorithms on its own. It relies on backends for this task. Currently it is compatible with
-* TensorFlow serving API
 
 
 ## Building
