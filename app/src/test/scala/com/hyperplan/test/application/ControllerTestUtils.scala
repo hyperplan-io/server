@@ -9,6 +9,8 @@ import org.http4s._
 import org.http4s.circe._
 import org.http4s.dsl.io._
 import org.http4s.implicits._
+import org.scalatest.Assertion
+
 import scala.util.Try
 
 object ControllerTestUtils {
@@ -36,4 +38,21 @@ object ControllerTestUtils {
     }
     statusCheck && bodyCheck
   }
+
+  def checkWithFunc[A](
+      actual: IO[Response[IO]],
+      expectedStatus: Status,
+      assertionBody: A => Unit
+  )(
+      implicit ev: EntityDecoder[IO, A]
+  ): Boolean = {
+    val actualResp = actual.unsafeRunSync
+    val statusCheck = actualResp.status == expectedStatus
+    if (!statusCheck) {
+      println(s"Expected status $expectedStatus but got $actualResp.status")
+    }
+    assertionBody(actualResp.as[A].unsafeRunSync())
+    statusCheck
+  }
+
 }

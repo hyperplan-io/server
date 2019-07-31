@@ -50,15 +50,12 @@ class FeaturesTransformerServiceSpec extends FlatSpec {
         """
     ).getOrElse(Json.Null)
 
-    inside(transformedFeatures) {
-      case Right(tfFeatures) =>
-        assert(
-          Json.eqJson
-            .eqv(
-              TensorFlowFeaturesSerializer.encodeJson(tfFeatures),
-              expectedJson
-            )
+    assert(
+      Json.eqJson
+        .eqv(
+          TensorFlowFeaturesSerializer.encodeJson(transformedFeatures),
+          expectedJson
         )
-    }
+    )
   }
 }

@@ -1,9 +1,11 @@
 package com.hyperplan.domain.services
 
-import cats.data.{EitherT, NonEmptyChain, Validated, ValidatedNec}
+import cats.data._
 import cats.effect.IO
 import cats.implicits._
+
 import io.lemonlabs.uri.{AbsoluteUrl, Url}
+
 import com.hyperplan.domain.models._
 import com.hyperplan.domain.models.backends.{
   Backend,
@@ -70,9 +72,9 @@ class AlgorithmsService(
 
   def validateProtocol(url: String): AlgorithmValidationResult[Protocol] =
     AbsoluteUrl.parse(url).scheme match {
-      case "http://" =>
+      case "http" =>
         Validated.valid[AlgorithmError, Protocol](Http).toValidatedNec
-      case "grpc://" =>
+      case "grpc" =>
         Validated.valid[AlgorithmError, Protocol](Grpc).toValidatedNec
       case scheme =>
         Validated
@@ -166,7 +168,11 @@ class AlgorithmsService(
           .invalid(
             AlgorithmError.IncompatibleAlgorithmError(
               AlgorithmError.IncompatibleAlgorithmError
-                .message(algorithm.id, backend.getClass.getSimpleName)
+                .message(
+                  algorithm.id,
+                  backend.getClass.getSimpleName,
+                  project.problem
+                )
             )
           )
           .toValidatedNec
@@ -186,7 +192,11 @@ class AlgorithmsService(
           .invalid(
             AlgorithmError.IncompatibleAlgorithmError(
               AlgorithmError.IncompatibleAlgorithmError
-                .message(algorithm.id, backend.getClass.getSimpleName)
+                .message(
+                  algorithm.id,
+                  backend.getClass.getSimpleName,
+                  project.problem
+                )
             )
           )
           .toValidatedNec
@@ -212,7 +222,11 @@ class AlgorithmsService(
           .invalid(
             AlgorithmError.IncompatibleAlgorithmError(
               AlgorithmError.IncompatibleAlgorithmError
-                .message(algorithm.id, backend.getClass.getSimpleName)
+                .message(
+                  algorithm.id,
+                  backend.getClass.getSimpleName,
+                  project.problem
+                )
             )
           )
           .toValidatedNec
@@ -222,7 +236,11 @@ class AlgorithmsService(
           .invalid(
             AlgorithmError.IncompatibleAlgorithmError(
               AlgorithmError.IncompatibleAlgorithmError
-                .message(algorithm.id, backend.getClass.getSimpleName)
+                .message(
+                  algorithm.id,
+                  backend.getClass.getSimpleName,
+                  project.problem
+                )
             )
           )
           .toValidatedNec
@@ -284,18 +302,30 @@ class AlgorithmsService(
       _ <- EitherT.fromEither[IO](
         validateAlgorithmCreate(algorithm, project).toEither
       )
-      _ <- EitherT.liftF[IO, NonEmptyChain[AlgorithmError], Prediction](
-        predictionsService.predictWithBackend(
-          ju.UUID.randomUUID().toString,
-          project,
-          algorithm,
-          project.configuration match {
-            case ClassificationConfiguration(features, labels, dataStream) =>
-              FeatureVectorDescriptor.generateRandomFeatureVector(features)
-            case RegressionConfiguration(features, dataStream) =>
-              FeatureVectorDescriptor.generateRandomFeatureVector(features)
+      _ <- EitherT[IO, NonEmptyChain[AlgorithmError], Prediction](
+        predictionsService
+          .predictWithBackend(
+            ju.UUID.randomUUID().toString,
+            project,
+            algorithm,
+            project.configuration match {
+              case ClassificationConfiguration(features, labels, dataStream) =>
+                FeatureVectorDescriptor.generateRandomFeatureVector(features)
+              case RegressionConfiguration(features, dataStream) =>
+                FeatureVectorDescriptor.generateRandomFeatureVector(features)
+            }
+          )
+          .flatMap {
+            case Right(prediction) => IO.pure(prediction.asRight)
+            case Left(err) =>
+              logger.warn(
+                s"The prediction dry run failed when creating algorithm ${algorithm.id} because ${err.message}"
+              ) *> IO(
+                NonEmptyChain(
+                  PredictionDryRunFailed(PredictionDryRunFailed.message(err))
+                ).asLeft
+              )
           }
-        )
       )
       _ <- EitherT[IO, NonEmptyChain[AlgorithmError], Algorithm](
         algorithmsRepository.insert(algorithm).map {

@@ -1,7 +1,12 @@
 package com.hyperplan.infrastructure.serialization
 
+import cats.effect.IO
+
+import org.http4s.circe.{jsonOf, jsonEncoderOf}
+
 import io.circe.parser.decode
 import io.circe.syntax._
+
 import com.hyperplan.domain.models._
 import com.hyperplan.domain.models.features.Features.Features
 import com.hyperplan.domain.models.labels.{ClassificationLabel, RegressionLabel}
@@ -10,6 +15,7 @@ import com.hyperplan.infrastructure.serialization.labels.{
   ClassificationLabelSerializer,
   RegressionLabelSerializer
 }
+import org.http4s.{EntityDecoder, EntityEncoder}
 
 object PredictionSerializer {
 
@@ -138,6 +144,18 @@ object PredictionSerializer {
                 labels
               )
         }
+
+  implicit val entityDecoder: EntityDecoder[IO, Prediction] =
+    jsonOf[IO, Prediction]
+
+  implicit val entityListDecoder: EntityDecoder[IO, List[Prediction]] =
+    jsonOf[IO, List[Prediction]]
+
+  implicit val entityEncoder: EntityEncoder[IO, Prediction] =
+    jsonEncoderOf[IO, Prediction]
+
+  implicit val entityListEncoder: EntityEncoder[IO, List[Prediction]] =
+    jsonEncoderOf[IO, List[Prediction]]
 
   def encodeJson(request: Prediction): Json = {
     request.asJson

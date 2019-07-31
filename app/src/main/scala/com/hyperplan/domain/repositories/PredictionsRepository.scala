@@ -1,10 +1,22 @@
 package com.hyperplan.domain.repositories
 
+import cats.effect.IO
+import cats.implicits._
+
+import doobie._
+import doobie.implicits._
+import doobie.postgres.sqlstate
+
+import io.circe.{Decoder, Encoder}
+
+import com.hyperplan.domain.errors.PredictionError
+import com.hyperplan.domain.errors.PredictionError._
+
 import com.hyperplan.domain.models.Examples.{
   ClassificationExamples,
   RegressionExamples
 }
-import com.hyperplan.domain.errors._
+
 import com.hyperplan.domain.models.features.Features.Features
 import com.hyperplan.domain.models._
 import com.hyperplan.domain.models.labels.{
@@ -25,12 +37,6 @@ import com.hyperplan.infrastructure.serialization.labels.{
   ClassificationLabelSerializer,
   RegressionLabelSerializer
 }
-import doobie._
-import doobie.implicits._
-import doobie.postgres.sqlstate
-import io.circe.{Decoder, Encoder}
-import cats.effect.IO
-import cats.implicits._
 
 class PredictionsRepository(implicit xa: Transactor[IO]) extends IOLogging {
 
@@ -102,7 +108,9 @@ class PredictionsRepository(implicit xa: Transactor[IO]) extends IOLogging {
     insertClassificationPredictionQuery(prediction).run
       .attemptSomeSqlState {
         case sqlstate.class23.UNIQUE_VIOLATION =>
-          PredictionAlreadyExist(prediction.id)
+          PredictionAlreadyExistsError(
+            PredictionAlreadyExistsError.message(prediction.id)
+          )
       }
 
   def insertRegressionPredictionQuery(
@@ -132,7 +140,9 @@ class PredictionsRepository(implicit xa: Transactor[IO]) extends IOLogging {
     insertRegressionPredictionQuery(prediction).run
       .attemptSomeSqlState {
         case sqlstate.class23.UNIQUE_VIOLATION =>
-          PredictionAlreadyExist(prediction.id)
+          PredictionAlreadyExistsError(
+            PredictionAlreadyExistsError.message(prediction.id)
+          )
       }
 
   def insertEntityLink(
@@ -159,8 +169,12 @@ class PredictionsRepository(implicit xa: Transactor[IO]) extends IOLogging {
       """
       .query[PredictionData]
 
-  def read(predictionId: String): ConnectionIO[Prediction] =
-    readQuery(predictionId).unique.flatMap(predictionFromData)
+  def read(predictionId: String): ConnectionIO[Option[Prediction]] =
+    readQuery(predictionId).option.flatMap {
+      case Some(predictionData) =>
+        predictionFromData(predictionData).map(_.some)
+      case None => none[Prediction].pure[ConnectionIO]
+    }
 
   def updateClassificationExamplesQuery(
       predictionId: String,
@@ -228,14 +242,20 @@ class PredictionsRepository(implicit xa: Transactor[IO]) extends IOLogging {
           .fold(
             err =>
               AsyncConnectionIO
-                .raiseError(CouldNotDecodeLabels(predictionId, Classification)),
+                .raiseError(
+                  CouldNotDecodeLabelsError(
+                    CouldNotDecodeLabelsError.message(predictionId)
+                  )
+                ),
             classificationLabels => {
               ClassificationExamplesSerializer
                 .decodeJson(examplesRaw)
                 .fold(
                   err =>
                     AsyncConnectionIO.raiseError(
-                      CouldNotDecodeExamples(predictionId, Classification)
+                      CouldNotDecodeExamplesError(
+                        CouldNotDecodeExamplesError.message(predictionId)
+                      )
                     ),
                   classificationExamples => {
                     val prediction = ClassificationPrediction(
@@ -266,14 +286,20 @@ class PredictionsRepository(implicit xa: Transactor[IO]) extends IOLogging {
           .fold(
             err =>
               AsyncConnectionIO
-                .raiseError(CouldNotDecodeLabels(predictionId, Regression)),
+                .raiseError(
+                  CouldNotDecodeLabelsError(
+                    CouldNotDecodeLabelsError.message(predictionId)
+                  )
+                ),
             classificationLabels => {
               RegressionExamplesSerializer
                 .decodeJson(examplesRaw)
                 .fold(
                   err =>
                     AsyncConnectionIO.raiseError(
-                      CouldNotDecodeExamples(predictionId, Classification)
+                      CouldNotDecodeExamplesError(
+                        CouldNotDecodeExamplesError.message(predictionId)
+                      )
                     ),
                   regressionExamples => {
                     val prediction = RegressionPrediction(
@@ -291,7 +317,7 @@ class PredictionsRepository(implicit xa: Transactor[IO]) extends IOLogging {
           )
       case _ =>
         AsyncConnectionIO.raiseError(
-          PredictionDataInconsistent(
+          new Exception(
             s"The prediction ${predictionData._1} cannot be restored"
           )
         )

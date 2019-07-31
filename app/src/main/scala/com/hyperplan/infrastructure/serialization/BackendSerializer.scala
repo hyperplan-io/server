@@ -126,7 +126,7 @@ object BackendSerializer {
         Json.obj(
           (
             "class",
-            Json.fromString(RasaNluClassifcationBackend.backendClass)
+            Json.fromString(RasaNluClassificationBackend.backendClass)
           ),
           ("rootPath", Json.fromString(backend.rootPath)),
           ("project", Json.fromString(backend.project)),
@@ -168,7 +168,7 @@ object BackendSerializer {
           tensorFlowRegressionBackendDecoder(c)
         case LocalClassification.backendClass =>
           localClassificationBackendDecoder(c)
-        case RasaNluClassifcationBackend.backendClass =>
+        case RasaNluClassificationBackend.backendClass =>
           rasaNluClassificationBackendDecoder(c)
 
       }

@@ -1,25 +1,28 @@
 package com.hyperplan.domain.services
 
 import cats.effect.Resource
-import org.http4s.client.Client
 import cats.effect.IO
-import cats.implicits._
 import cats.effect.ContextShift
-
-import org.http4s.{Header, Headers}
-import org.http4s.Request
-import org.http4s.EntityDecoder
-import org.http4s.Method
-import org.http4s.Uri
-import org.http4s.EntityEncoder
+import cats.implicits._
+import org.http4s.client.Client
+import org.http4s.{
+  EntityDecoder,
+  EntityEncoder,
+  Header,
+  Headers,
+  MalformedMessageBodyFailure,
+  Method,
+  Request,
+  Uri
+}
 import java.{util => ju}
 
 import com.hyperplan.domain.models.features._
 import com.hyperplan.domain.models.backends._
 import com.hyperplan.domain.models._
 import com.hyperplan.domain.models.labels._
-import com.hyperplan.domain.errors._
-
+import com.hyperplan.domain.errors.PredictionError
+import com.hyperplan.domain.errors.PredictionError._
 import com.hyperplan.infrastructure.serialization.tensorflow._
 import com.hyperplan.infrastructure.serialization.rasa._
 import com.hyperplan.infrastructure.logging.IOLogging
@@ -33,7 +36,7 @@ trait BackendService extends IOLogging {
       project: Project,
       algorithm: Algorithm,
       features: Features.Features
-  )(implicit cs: ContextShift[IO]): IO[Prediction] =
+  )(implicit cs: ContextShift[IO]): IO[Either[PredictionError, Prediction]] =
     (algorithm.backend, project) match {
       case (LocalClassification(preComputedLabels), _: ClassificationProject) =>
         IO.pure(
@@ -44,7 +47,7 @@ trait BackendService extends IOLogging {
             features,
             Nil,
             preComputedLabels
-          )
+          ).asRight
         )
       case (
           TensorFlowClassificationBackend(
@@ -55,45 +58,55 @@ trait BackendService extends IOLogging {
           ),
           classificationProject: ClassificationProject
           ) =>
-        featuresTransformer
-          .transform(features)
-          .fold(
+        val transformedFeatures = featuresTransformer.transform(features)
+
+        val uriString = s"http://$host:$port"
+        buildRequestWithFeatures(
+          uriString,
+          algorithm.security.headers,
+          transformedFeatures
+        )(TensorFlowFeaturesSerializer.entityEncoder)
+          .fold[IO[Either[PredictionError, Prediction]]](
             err => IO.raiseError(err),
-            transformedFeatures => {
-              val uriString = s"http://${host}:${port}"
-              buildRequestWithFeatures(
-                uriString,
-                algorithm.security.headers,
-                transformedFeatures
-              )(TensorFlowFeaturesSerializer.entityEncoder).fold(
-                err => IO.raiseError(err),
-                request =>
-                  callHttpBackend(
-                    request,
-                    labelsTransformer.transform(
-                      classificationProject.configuration.labels,
-                      predictionId,
-                      _: TensorFlowClassificationLabels
+            request =>
+              callHttpBackend(
+                request,
+                labelsTransformer.transform(
+                  classificationProject.configuration.labels,
+                  predictionId,
+                  _: TensorFlowClassificationLabels
+                )
+              )(TensorFlowClassificationLabelsSerializer.entityDecoder)
+                .flatMap {
+                  case Right(labels) =>
+                    IO.pure(
+                      ClassificationPrediction(
+                        predictionId,
+                        project.id,
+                        algorithm.id,
+                        features,
+                        Nil,
+                        labels
+                      ).asRight
                     )
-                  )(TensorFlowClassificationLabelsSerializer.entityDecoder)
-                    .flatMap {
-                      case Right(labels) =>
-                        IO.pure(
-                          ClassificationPrediction(
-                            predictionId,
-                            project.id,
-                            algorithm.id,
-                            features,
-                            Nil,
-                            labels
-                          )
-                        )
-                      case Left(err) =>
-                        IO.raiseError(err)
-                    }
-              )
-            }
+                  case Left(err) =>
+                    logger.warn(
+                      "An error occurred with labels transformer",
+                      err
+                    ) *> IO.raiseError(err)
+                }
+                .handleErrorWith {
+                  case err =>
+                    val error = BackendExecutionError(
+                      BackendExecutionError.message(err)
+                    ).asLeft
+                    logger.warn("An error occurred with backend", err) *> IO
+                      .pure(
+                        error
+                      )
+                }
           )
+
       case (
           RasaNluClassificationBackend(
             rootPath,
@@ -106,24 +119,17 @@ trait BackendService extends IOLogging {
           ) =>
         featuresTransformer
           .transform(features, rasaProject, rasaModel)
-          .fold(
-            err => IO.raiseError(err),
-            transformedFeatures => {
-              val uriString = s"${rootPath.replaceAll("/$", "")}/parse"
-              logger
-                .debug(s"Calling Rasa Nlu backend with url $uriString") *> buildRequestWithFeatures(
-                uriString,
+          .fold[IO[Either[PredictionError, Prediction]]](
+            err => IO(FeaturesTransformerError().asLeft),
+            transformedFeatures =>
+              buildRequestWithFeatures(
+                rootPath,
                 algorithm.security.headers,
                 transformedFeatures
-              )(RasaNluFeaturesSerializer.entityEncoder).fold(
-                err => IO.raiseError(err),
-                request =>
-                  logger.debug(
-                    RasaNluFeaturesSerializer
-                      .encodeJson(transformedFeatures)
-                      .noSpaces
-                  ) *>
-
+              )(RasaNluFeaturesSerializer.entityEncoder)
+                .fold[IO[Either[PredictionError, Prediction]]](
+                  err => IO.raiseError(err),
+                  request =>
                     callHttpBackend(
                       request,
                       labelsTransformer.transform(
@@ -131,24 +137,37 @@ trait BackendService extends IOLogging {
                         predictionId,
                         _: RasaNluClassificationLabels
                       )
-                    )(RasaNluLabelsSerializer.entityDecoder).flatMap {
-                      case Right(labels) =>
-                        IO.pure(
-                          ClassificationPrediction(
-                            predictionId,
-                            project.id,
-                            algorithm.id,
-                            features,
-                            Nil,
-                            labels
+                    )(RasaNluLabelsSerializer.entityDecoder)
+                      .flatMap {
+                        case Right(labels) =>
+                          IO.pure(
+                            ClassificationPrediction(
+                              predictionId,
+                              project.id,
+                              algorithm.id,
+                              features,
+                              Nil,
+                              labels
+                            ).asRight
                           )
-                        )
-                      case Left(err) =>
-                        IO.raiseError(err)
-                    }
-              )
-            }
+                        case Left(err) =>
+                          logger.warn(
+                            "An error occurred with labels transformer",
+                            err
+                          ) *> IO.raiseError(err)
+                      }
+                      .handleErrorWith { err =>
+                        val error = BackendExecutionError(
+                          BackendExecutionError.message(err)
+                        ).asLeft
+                        logger.warn("An error occurred with backend", err) *> IO
+                          .pure(
+                            error
+                          )
+                      }
+                )
           )
+
       case (
           backend @ TensorFlowRegressionBackend(
             host,
@@ -157,49 +176,64 @@ trait BackendService extends IOLogging {
           ),
           regressionProject: RegressionProject
           ) =>
-        featuresTransformer
-          .transform(features)
-          .fold(
+        val transformedFeatures = featuresTransformer.transform(features)
+
+        val uriString = s"http://$host:$port"
+        buildRequestWithFeatures(
+          uriString,
+          algorithm.security.headers,
+          transformedFeatures
+        )(TensorFlowFeaturesSerializer.entityEncoder)
+          .fold[IO[Either[PredictionError, Prediction]]](
             err => IO.raiseError(err),
-            transformedFeatures => {
-              val uriString = s"http://${host}:${port}"
-              buildRequestWithFeatures(
-                uriString,
-                algorithm.security.headers,
-                transformedFeatures
-              )(TensorFlowFeaturesSerializer.entityEncoder).fold(
-                err => IO.raiseError(err),
-                request =>
-                  callHttpBackend(
-                    request,
-                    backend.labelsTransformer(
-                      _: TensorFlowRegressionLabels,
-                      predictionId
+            request =>
+              callHttpBackend(
+                request,
+                backend.labelsTransformer(
+                  _: TensorFlowRegressionLabels,
+                  predictionId
+                )
+              )(TensorFlowRegressionLabelsSerializer.entityDecoder)
+                .flatMap {
+                  case Right(labels) =>
+                    IO.pure(
+                      RegressionPrediction(
+                        predictionId,
+                        project.id,
+                        algorithm.id,
+                        features,
+                        Nil,
+                        labels
+                      ).asRight
                     )
-                  )(TensorFlowRegressionLabelsSerializer.entityDecoder)
-                    .flatMap {
-                      case Right(labels) =>
-                        IO.pure(
-                          RegressionPrediction(
-                            predictionId,
-                            project.id,
-                            algorithm.id,
-                            features,
-                            Nil,
-                            labels
-                          )
-                        )
-                      case Left(err) =>
-                        logger.warn("An error occurred with the backend") >> IO
-                          .raiseError(err)
-                    }
-              )
-            }
+                  case Left(err) =>
+                    logger.warn(
+                      "An error occurred with labels transformer",
+                      err
+                    ) *> IO.raiseError(err)
+                }
+                .handleErrorWith { err =>
+                  val error = BackendExecutionError(
+                    BackendExecutionError.message(err)
+                  ).asLeft
+                  logger.warn("An error occurred with backend", err) *> IO.pure(
+                    error
+                  )
+                }
           )
-      case (backend, project) =>
+
+      case (backend, _) =>
         val errorMessage =
           s"Backend ${backend.getClass.getSimpleName} is not compatible with project ${project.getClass.getSimpleName}"
-        logger.warn(errorMessage) >> IO.raiseError(new Exception(errorMessage))
+        logger.warn(errorMessage) >> IO(
+          IncompatibleBackendError(
+            IncompatibleBackendError.message(
+              backend,
+              project
+            )
+          ).asLeft
+        )
+
     }
 
   def buildRequestWithFeatures[F, L](

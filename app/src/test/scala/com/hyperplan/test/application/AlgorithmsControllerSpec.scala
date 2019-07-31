@@ -46,6 +46,8 @@ import scala.concurrent.ExecutionContext
 import org.http4s.client.blaze.BlazeClientBuilder
 import cats.effect.ContextShift
 import com.hyperplan.application.ApplicationConfig
+import com.hyperplan.domain.models.features.transformers.TensorFlowFeaturesTransformer
+import com.hyperplan.domain.models.labels.transformers.TensorFlowLabelsTransformer
 
 class AlgorithmsControllerSpec()
     extends FlatSpec
@@ -165,11 +167,12 @@ class AlgorithmsControllerSpec()
     )
   }
 
-  it should "successfully create an algorithm" in {
+  it should "successfully create an algorithm with local classification backend" in {
 
     val featureVectorDescriptor =
       ProjectUtils.createFeatures(featuresController)
-    val labelVectorDescriptor = ProjectUtils.createLabels(labelsController)
+    val labelVectorDescriptor =
+      ProjectUtils.createDynamicLabels(labelsController)
     val project = ProjectUtils.createClassificationProject(
       projectsController,
       featureVectorDescriptor,
@@ -212,11 +215,88 @@ class AlgorithmsControllerSpec()
     )
   }
 
+  it should "fail to create an algorithm with Tensorflow classification backend because of dry run" in {
+
+    val featureVectorDescriptor =
+      ProjectUtils.createFeatures(featuresController)
+    val labelVectorDescriptor =
+      ProjectUtils.createDynamicLabels(labelsController)
+    val project = ProjectUtils.createClassificationProject(
+      projectsController,
+      featureVectorDescriptor,
+      labelVectorDescriptor
+    )
+
+    val id = "test"
+    val projectId = project.id
+    val backend = TensorFlowClassificationBackend(
+      "0.0.0.0",
+      7089,
+      TensorFlowFeaturesTransformer(
+        "signature",
+        project.configuration
+          .asInstanceOf[ClassificationConfiguration]
+          .features
+          .data
+          .map { featureDescriptor =>
+            featureDescriptor.name -> featureDescriptor.name
+          }
+          .toMap
+      ),
+      TensorFlowLabelsTransformer(
+        project.configuration
+          .asInstanceOf[ClassificationConfiguration]
+          .labels
+          .data match {
+          case DynamicLabelsDescriptor(description) => Map.empty
+          case OneOfLabelsDescriptor(oneOf, description) =>
+            oneOf.map(one => one -> one).toMap
+        }
+      )
+    )
+    val security = PlainSecurityConfiguration(
+      Nil
+    )
+
+    val entityRequest = PostAlgorithmRequest(
+      id,
+      projectId,
+      backend,
+      security
+    )
+
+    val expectedAlgorithm = Algorithm(id, backend, projectId, security)
+    val response = algorithmsController.service
+      .run(
+        Request(
+          method = Method.POST,
+          uri = uri"/"
+        ).withEntity(entityRequest)
+      )
+      .value
+      .map(_.get)
+
+    assert(
+      ControllerTestUtils.check[List[AlgorithmError]](
+        response,
+        Status.BadRequest,
+        Some(
+          List(
+            AlgorithmError.PredictionDryRunFailed(
+              "The prediction dry run failed because Unkown error: Connection refused"
+            )
+          )
+        )
+      )
+    )
+  }
+
   it should "fail to create an algorithm because the id is not alpha numerical" in {
 
     val featureVectorDescriptor =
       ProjectUtils.createFeatures(featuresController)
-    val labelVectorDescriptor = ProjectUtils.createLabels(labelsController)
+    val labelVectorDescriptor =
+      ProjectUtils.createDynamicLabels(labelsController)
     val project = ProjectUtils.createClassificationProject(
       projectsController,
       featureVectorDescriptor,
@@ -266,7 +346,8 @@ class AlgorithmsControllerSpec()
 
     val featureVectorDescriptor =
       ProjectUtils.createFeatures(featuresController)
-    val labelVectorDescriptor = ProjectUtils.createLabels(labelsController)
+    val labelVectorDescriptor =
+      ProjectUtils.createDynamicLabels(labelsController)
     val project = ProjectUtils.createClassificationProject(
       projectsController,
       featureVectorDescriptor,
@@ -313,7 +394,7 @@ class AlgorithmsControllerSpec()
         Some(
           List(
             AlgorithmError.UnsupportedProtocolError(
-              AlgorithmError.UnsupportedProtocolError.message("grpc")
+              AlgorithmError.UnsupportedProtocolError.message(Grpc)
             )
           )
         )

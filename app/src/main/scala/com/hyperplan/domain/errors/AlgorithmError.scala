@@ -1,6 +1,6 @@
 package com.hyperplan.domain.errors
 
-import com.hyperplan.domain.models.Protocol
+import com.hyperplan.domain.models.{ProblemType, Protocol}
 
 sealed trait AlgorithmError extends Exception {
   val message: String
@@ -40,8 +40,12 @@ object AlgorithmError {
   }
   case class IncompatibleAlgorithmError(message: String) extends AlgorithmError
   object IncompatibleAlgorithmError {
-    def message(algorithmId: String, backendClass: String): String =
-      s"The algorithm $algorithmId is not compatible. Class is $backendClass"
+    def message(
+        algorithmId: String,
+        backendClass: String,
+        problemType: ProblemType
+    ): String =
+      s"The algorithm $algorithmId is not compatible. Class is $backendClass and type is ${problemType.problemType}"
   }
 
   case class AlgorithmDataIsIncorrectError(message: String)
@@ -55,6 +59,12 @@ object AlgorithmError {
   object UnsupportedProtocolError {
     def message(protocol: String) = s"The protocol $protocol is not supported"
     def message(protocol: Protocol) = s"The protocol $protocol is not supported"
+  }
+
+  case class PredictionDryRunFailed(message: String) extends AlgorithmError
+  object PredictionDryRunFailed {
+    def message(err: PredictionError) =
+      s"The prediction dry run failed because ${err.message}"
   }
 
 }

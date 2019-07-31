@@ -5,7 +5,8 @@ import java.util.UUID
 import com.hyperplan.domain.models.OneOfLabelsDescriptor
 import com.hyperplan.domain.models.labels.{
   ClassificationLabel,
-  TensorFlowClassificationLabels
+  TensorFlowClassificationLabels,
+  TensorFlowClassificationLabel
 }
 import org.scalatest.Inside.inside
 import org.scalatest._
@@ -16,8 +17,9 @@ class LabelsTransformerServiceSpec extends FlatSpec with Matchers {
   it should "not accept a label transformer with a different number of arguments than the labels" in {
     val labels1 = TensorFlowClassificationLabels(
       List(
-        List(
-          "tf_toto" -> 0.5f
+        TensorFlowClassificationLabel(
+          "tf_toto",
+          0.5f
         )
       )
     )
@@ -51,11 +53,13 @@ class LabelsTransformerServiceSpec extends FlatSpec with Matchers {
 
     val labels2 = TensorFlowClassificationLabels(
       List(
-        List(
-          "tf_toto" -> 0.5f
+        TensorFlowClassificationLabel(
+          "tf_toto",
+          0.5f
         ),
-        List(
-          "tf_toto2" -> 0.3f
+        TensorFlowClassificationLabel(
+          "tf_toto2",
+          0.3f
         )
       )
     )
@@ -90,11 +94,13 @@ class LabelsTransformerServiceSpec extends FlatSpec with Matchers {
 
     val labels = TensorFlowClassificationLabels(
       List(
-        List(
-          "tf_toto" -> 0.5f
+        TensorFlowClassificationLabel(
+          "tf_toto",
+          0.5f
         ),
-        List(
-          "tf_titi" -> 0.3f
+        TensorFlowClassificationLabel(
+          "tf_titi",
+          0.3f
         )
       )
     )

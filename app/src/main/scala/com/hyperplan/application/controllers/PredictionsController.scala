@@ -1,13 +1,15 @@
 package com.hyperplan.application.controllers
 
-import cats.Functor
-import org.http4s.{HttpRoutes, HttpService}
-import org.http4s._
-import org.http4s.circe._
-import org.http4s.dsl.Http4sDsl
 import cats.effect.IO
 import cats.implicits._
 import cats.MonadError
+import cats.Functor
+import io.circe.Json
+import io.circe._
+import io.circe.parser._
+import org.http4s._
+import org.http4s.circe._
+import org.http4s.dsl.Http4sDsl
 import com.hyperplan.application.AuthenticationMiddleware
 import com.hyperplan.application.controllers.requests._
 import com.hyperplan.domain.errors._
@@ -24,10 +26,10 @@ import com.hyperplan.infrastructure.serialization.{
 import com.hyperplan.domain.services.FeaturesParserService
 import java.nio.charset.StandardCharsets
 
-import com.hyperplan.domain.models.Project
-import io.circe.Json
-import io.circe._
-import io.circe.parser._
+import com.hyperplan.domain.errors.PredictionError.BackendExecutionError
+import com.hyperplan.domain.models.features.Features.Features
+import com.hyperplan.domain.models.{Project, ProjectConfiguration}
+import com.hyperplan.infrastructure.serialization.errors.PredictionErrorsSerializer
 
 class PredictionsController(
     projectsService: ProjectsService,
@@ -36,7 +38,12 @@ class PredictionsController(
 ) extends Http4sDsl[IO]
     with IOLogging {
 
-  implicit val implicitDomainService = domainService
+  val unhandledErrorMessage =
+    s"""Unhandled server error, please check the logs or contact support"""
+
+  val parseFeatures: (ProjectConfiguration, Json) => IO[Features] =
+    FeaturesParserService.parseFeatures(domainService)
+
   val service: HttpRoutes[IO] = {
     HttpRoutes.of[IO] {
       case req @ POST -> Root =>
@@ -53,7 +60,7 @@ class PredictionsController(
           jsonBody <- IO.fromEither(
             parse(new String(body.toArray, StandardCharsets.UTF_8))
           )
-          features <- FeaturesParserService.parseFeatures(
+          features <- parseFeatures(
             project.configuration,
             jsonBody
           )
@@ -64,52 +71,29 @@ class PredictionsController(
             predictionRequest.algorithmId
           )
           _ <- logger.debug(
-            s"Prediction computed for project ${prediction.projectId} using algorithm ${prediction.algorithmId}"
+            s"Prediction computed for project ${predictionRequest.projectId} using algorithm ${predictionRequest.algorithmId}"
           )
         } yield prediction)
-          .flatMap { prediction =>
-            Created(
-              PredictionSerializer.encodeJson(prediction)
+          .flatMap {
+            case Right(prediction) =>
+              Created(
+                PredictionSerializer.encodeJson(prediction)
+              )
+            case Left(error: BackendExecutionError) =>
+              BadGateway(
+                PredictionErrorsSerializer.encodeJson(error)
+              )
+            case Left(error) =>
+              BadRequest(
+                PredictionErrorsSerializer.encodeJson(error)
+              )
+          }
+          .handleErrorWith { err =>
+            logger.warn("Unhandled error in PredictionsController", err) >> InternalServerError(
+              unhandledErrorMessage
             )
           }
-          .handleErrorWith {
-            case AlgorithmDoesNotExist(algorithmId) =>
-              NotFound(s"the algorithm $algorithmId does not exist")
-            case PredictionAlreadyExist(predictionId) =>
-              Conflict(s"The prediction $predictionId already exists")
-            case BackendError(message) =>
-              logger.warn(s"An error occurred in prediction: $message") *> InternalServerError(
-                message
-              )
-            case FeaturesValidationFailed(message) =>
-              logger.warn(s"The features could not be validated") *> FailedDependency(
-                message
-              )
-            case LabelsValidationFailed(message) =>
-              logger.warn(s"The labels could not be validated") *> FailedDependency(
-                message
-              )
-            case NoAlgorithmAvailable(message) =>
-              logger.warn(s"No algorithms are available") *> FailedDependency(
-                message
-              )
-            case FeaturesTransformerError(message) =>
-              logger.warn(
-                s"The features could not be transformed to a backend api compatible format"
-              ) *> FailedDependency(message)
-            case LabelsTransformerError(message) =>
-              logger.warn(
-                s"The labels could not be transformed to a backend api compatible format"
-              ) *> FailedDependency(message)
-            case err: InvalidMessageBodyFailure =>
-              logger.warn("An error occured with json body", err) *> BadRequest(
-                "Json payload is not correct"
-              )
-            case err =>
-              logger.error(s"Unhandled error", err) *> InternalServerError(
-                "unknown error"
-              )
-          }
+
     }
   }
 
