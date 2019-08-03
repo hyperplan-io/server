@@ -6,14 +6,14 @@ services:
      - "8080:8080"    
     restart: always    
     environment:
-      APP_SECRET=replacewithrandomsecret
-      ADMIN_USERNAME=admin
-      ADMIN_PASSWORD=admin
-      POSTGRESQL_HOST=postgres
-      POSTGRESQL_PORT=5432
-      POSTGRESQL_DATABASE=postgres
-      POSTGRESQL_USERNAME=postgres
-      POSTGRESQL_PASSWORD=postgres
+      - APP_SECRET=replacewithrandomsecret
+      - ADMIN_USERNAME=admin
+      - ADMIN_PASSWORD=admin
+      - POSTGRESQL_HOST=postgres
+      - POSTGRESQL_PORT=5432
+      - POSTGRESQL_DATABASE=postgres
+      - POSTGRESQL_USERNAME=postgres
+      - POSTGRESQL_PASSWORD=postgres
   proxy:    
     image: shakyshane/nginx-cors-plus    
     ports:    
