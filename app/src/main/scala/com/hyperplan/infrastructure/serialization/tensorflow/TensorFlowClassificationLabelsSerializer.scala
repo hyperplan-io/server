@@ -3,8 +3,8 @@ package com.hyperplan.infrastructure.serialization.tensorflow
 import cats.effect.IO
 import cats.implicits._
 
-import org.http4s.EntityDecoder
-import org.http4s.circe.jsonOf
+import org.http4s.{EntityDecoder, EntityEncoder}
+import org.http4s.circe.{jsonOf, jsonEncoderOf}
 
 import io.circe.parser._
 import io.circe.syntax._
@@ -17,7 +17,6 @@ import com.hyperplan.domain.models.labels.{
 object TensorFlowClassificationLabelsSerializer {
 
   import io.circe._
-  import io.circe.generic.semiauto._
 
   implicit val tfClassificationLabelEncoder
       : Encoder[TensorFlowClassificationLabel] =
@@ -26,16 +25,36 @@ object TensorFlowClassificationLabelsSerializer {
         Json.fromString(tfLabel.label),
         Json.fromFloatOrNull(tfLabel.score)
       )
+
   implicit val tfClassificationLabelDecoder
       : Decoder[TensorFlowClassificationLabel] =
-    (c: HCursor) =>
+    (c: HCursor) => {
+      println("BEFORE VALUES")
+      println(c.toString())
+      c.downArray.values.foreach(println)
+      val values = c.downArray
+      println("VALUES BELOW")
+      println(values)
       for {
-        values <- c.as[List[String]]
-        label = values.head
-        score = values.tail.head.toFloat
+        label <- values.first.as[String]
+        score <- values.last.as[Float]
       } yield TensorFlowClassificationLabel(label, score)
+    }
 
-  implicit val encoder: Encoder[TensorFlowClassificationLabels] = deriveEncoder
+  implicit val encoder: Encoder[TensorFlowClassificationLabels] =
+    (labels: TensorFlowClassificationLabels) =>
+      Json.obj(
+        (
+          "result",
+          Json.arr(
+            labels.result.map(
+              l =>
+                Json
+                  .arr(Json.fromString(l.label), Json.fromFloatOrNull(l.score))
+            ): _*
+          )
+        )
+      )
   implicit val decoder: Decoder[TensorFlowClassificationLabels] =
     (cursor: HCursor) =>
       cursor.downField("result").as[List[TensorFlowClassificationLabel]].map {
@@ -46,6 +65,10 @@ object TensorFlowClassificationLabelsSerializer {
   implicit val entityDecoder
       : EntityDecoder[IO, TensorFlowClassificationLabels] =
     jsonOf[IO, TensorFlowClassificationLabels]
+
+  implicit val entityEncoder
+      : EntityEncoder[IO, TensorFlowClassificationLabels] =
+    jsonEncoderOf[IO, TensorFlowClassificationLabels]
 
   def encodeJson(project: TensorFlowClassificationLabels): Json = {
     project.asJson

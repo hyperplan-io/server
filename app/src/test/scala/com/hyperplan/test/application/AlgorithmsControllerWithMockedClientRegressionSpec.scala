@@ -31,6 +31,8 @@ import com.hyperplan.test
 import com.hyperplan.test._
 
 import scala.concurrent.ExecutionContext
+import com.hyperplan.domain.models.labels.TensorFlowRegressionLabels
+import com.hyperplan.infrastructure.serialization.tensorflow.TensorFlowRegressionLabelsSerializer
 
 class AlgorithmsControllerWithMockedClientRegressionSpec()
     extends FlatSpec
@@ -49,6 +51,9 @@ class AlgorithmsControllerWithMockedClientRegressionSpec()
     AlgorithmsSerializer.entityEncoder
   implicit val algorithmEntityDecoder: EntityDecoder[IO, Algorithm] =
     AlgorithmsSerializer.entityDecoder
+
+  implicit val tfLabelsEncoder: EntityEncoder[IO, TensorFlowRegressionLabels] =
+    TensorFlowRegressionLabelsSerializer.entityEncoder
 
   implicit val errorDecoder: EntityDecoder[IO, List[AlgorithmError]] =
     AlgorithmErrorsSerializer.algorithmErrorEntityDecoder
@@ -74,9 +79,9 @@ class AlgorithmsControllerWithMockedClientRegressionSpec()
 
   val app = HttpApp.pure(
     Response[IO](Status.Ok).withEntity(
-      TensorFlowRegressionEntityResponse(
+      TensorFlowRegressionLabels(
         List(
-          test.TensorFlowRegressionResult(
+          List(
             0.5f
           )
         )

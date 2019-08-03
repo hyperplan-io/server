@@ -33,6 +33,9 @@ import com.hyperplan.infrastructure.serialization.errors.AlgorithmErrorsSerializ
 import com.hyperplan.test._
 
 import scala.concurrent.ExecutionContext
+import com.hyperplan.domain.models.labels.TensorFlowClassificationLabels
+import com.hyperplan.domain.models.labels.TensorFlowClassificationLabel
+import com.hyperplan.infrastructure.serialization.tensorflow.TensorFlowClassificationLabelsSerializer
 
 class AlgorithmsControllerWithMockedClientClassificationSpec()
     extends FlatSpec
@@ -55,6 +58,10 @@ class AlgorithmsControllerWithMockedClientClassificationSpec()
   implicit val errorDecoder: EntityDecoder[IO, List[AlgorithmError]] =
     AlgorithmErrorsSerializer.algorithmErrorEntityDecoder
 
+  implicit val tfLabelsEncoder
+      : EntityEncoder[IO, TensorFlowClassificationLabels] =
+    TensorFlowClassificationLabelsSerializer.entityEncoder
+
   implicit val requestEntityEncoder: EntityEncoder[IO, PostAlgorithmRequest] =
     PostAlgorithmRequestEntitySerializer.entityEncoder
   implicit val requestEntityDecoder: EntityDecoder[IO, PostAlgorithmRequest] =
@@ -76,11 +83,11 @@ class AlgorithmsControllerWithMockedClientClassificationSpec()
 
   val app = HttpApp.pure(
     Response[IO](Status.Ok).withEntity(
-      TensorFlowClassificationEntityResponse(
+      TensorFlowClassificationLabels(
         List(
-          TensorFlowClassificationResult(
+          TensorFlowClassificationLabel(
             "feature-1",
-            "0.5f"
+            0.5f
           )
         )
       )

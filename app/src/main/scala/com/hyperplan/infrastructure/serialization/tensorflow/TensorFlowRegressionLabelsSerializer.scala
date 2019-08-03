@@ -1,8 +1,8 @@
 package com.hyperplan.infrastructure.serialization.tensorflow
 
 import com.hyperplan.domain.models.labels.TensorFlowRegressionLabels
-import org.http4s.EntityDecoder
-import org.http4s.circe.jsonOf
+import org.http4s.{EntityDecoder, EntityEncoder}
+import org.http4s.circe.{jsonOf, jsonEncoderOf}
 import io.circe.parser._
 import io.circe.syntax._
 import cats.effect.IO
@@ -18,6 +18,9 @@ object TensorFlowRegressionLabelsSerializer {
 
   implicit val entityDecoder: EntityDecoder[IO, TensorFlowRegressionLabels] =
     jsonOf[IO, TensorFlowRegressionLabels]
+
+  implicit val entityEncoder: EntityEncoder[IO, TensorFlowRegressionLabels] =
+    jsonEncoderOf[IO, TensorFlowRegressionLabels]
 
   def encodeJson(project: TensorFlowRegressionLabels): Json = {
     project.asJson
