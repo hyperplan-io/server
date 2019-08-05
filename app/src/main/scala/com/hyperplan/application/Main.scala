@@ -104,7 +104,9 @@ object Main extends IOApp with IOLogging {
       )
       projectsService = new ProjectsService(
         projectsRepository,
+        algorithmsRepository,
         domainService,
+        blazeClient,
         projectCache
       )
       predictionsService = new PredictionsService(
@@ -115,12 +117,6 @@ object Main extends IOApp with IOLogging {
         kafkaService,
         blazeClient,
         config
-      )
-      algorithmsService = new AlgorithmsService(
-        projectsService,
-        predictionsService,
-        algorithmsRepository,
-        projectsRepository
       )
       privacyService = new PrivacyService(predictionsRepository)
       port = 8080
@@ -145,7 +141,6 @@ object Main extends IOApp with IOLogging {
           .stream(
             predictionsService,
             projectsService,
-            algorithmsService,
             domainService,
             privacyService,
             kafkaService,

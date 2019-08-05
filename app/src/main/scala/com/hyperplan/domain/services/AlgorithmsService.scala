@@ -27,13 +27,11 @@ import com.hyperplan.domain.models.backends.RasaNluClassificationBackend
 import java.{util => ju}
 import cats.effect.ContextShift
 
-class AlgorithmsService(
-    projectsService: ProjectsService,
-    predictionsService: PredictionsService,
-    algorithmsRepository: AlgorithmsRepository,
-    projectsRepository: ProjectsRepository
-)(implicit cs: ContextShift[IO])
-    extends IOLogging {
+trait AlgorithmsService extends BackendService with IOLogging { this: ProjectsService =>
+
+    val algorithmsRepository: AlgorithmsRepository
+    val projectsRepository: ProjectsRepository
+    implicit val cs: ContextShift[IO]
 
   type AlgorithmValidationResult[A] = ValidatedNec[AlgorithmError, A]
 
@@ -292,7 +290,7 @@ class AlgorithmsService(
       )
       project <- EitherT
         .fromOptionF[IO, NonEmptyChain[AlgorithmError], Project](
-          projectsService.readProject(projectId),
+          readProject(projectId),
           NonEmptyChain(
             AlgorithmError.ProjectDoesNotExistError(
               AlgorithmError.ProjectDoesNotExistError.message(projectId)
@@ -303,8 +301,7 @@ class AlgorithmsService(
         validateAlgorithmCreate(algorithm, project).toEither
       )
       _ <- EitherT[IO, NonEmptyChain[AlgorithmError], Prediction](
-        predictionsService
-          .predictWithBackend(
+          predictWithBackend(
             ju.UUID.randomUUID().toString,
             project,
             algorithm,
@@ -336,15 +333,13 @@ class AlgorithmsService(
       _ <- if (project.algorithms.isEmpty) {
         (project match {
           case _: ClassificationProject =>
-            projectsService
-              .updateProject(
+            updateProject(
                 projectId,
                 None,
                 Some(DefaultAlgorithm(id))
               )
           case _: RegressionProject =>
-            projectsService
-              .updateProject(
+            updateProject(
                 projectId,
                 None,
                 Some(DefaultAlgorithm(id))

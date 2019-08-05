@@ -33,7 +33,6 @@ object Server {
   def stream(
       predictionsService: PredictionsService,
       projectsService: ProjectsService,
-      algorithmsService: AlgorithmsService,
       domainService: DomainService,
       privacyService: PrivacyService,
       kafkaService: Option[KafkaService],
@@ -57,7 +56,7 @@ object Server {
       projectsService
     )
     val algorithmsController = new AlgorithmsController(
-      algorithmsService
+      projectsService 
     )
     val examplesController = new ExamplesController(
       predictionsService

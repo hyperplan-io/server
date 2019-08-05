@@ -18,7 +18,7 @@ sealed trait Backend
   * @param computed The labels that are returned.
   */
 case class LocalClassification(
-    computed: Set[ClassificationLabel]
+    computed: Set[String]
 ) extends Backend
 
 object LocalClassification {

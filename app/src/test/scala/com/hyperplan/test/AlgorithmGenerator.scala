@@ -9,24 +9,9 @@ object AlgorithmGenerator {
 
   val computed =
     Set(
-      labels.ClassificationLabel(
         "class1",
-        0.1f,
-        "correct_url",
-        "incorrect_url"
-      ),
-      labels.ClassificationLabel(
         "class2",
-        0.2f,
-        "correct_url",
-        "incorrect_url"
-      ),
-      labels.ClassificationLabel(
-        "class3",
-        0.3f,
-        "correct_url",
-        "incorrect_url"
-      )
+        "class3"
     )
 
   val defaultSecurityConfig = PlainSecurityConfiguration(

@@ -75,6 +75,11 @@ class AlgorithmsControllerSpec()
   implicit val requestEntityDecoder: EntityDecoder[IO, PostAlgorithmRequest] =
     PostAlgorithmRequestEntitySerializer.entityDecoder
 
+  val blazeClient: Resource[IO, Client[IO]] = BlazeClientBuilder[IO](
+    ExecutionContext.global
+  ).resource
+
+
   val projectRepository = new ProjectsRepository()(xa)
   val domainRepository = new DomainRepository()(xa)
   val algorithmsRepository = new AlgorithmsRepository()(xa)
@@ -85,13 +90,13 @@ class AlgorithmsControllerSpec()
   val projectCache: Cache[Project] = CaffeineCache[Project]
   val projectsService = new ProjectsService(
     projectRepository,
+    algorithmsRepository,
     domainService,
+    blazeClient,
     projectCache
   )
 
-  val blazeClient: Resource[IO, Client[IO]] = BlazeClientBuilder[IO](
-    ExecutionContext.global
-  ).resource
+  
 
   val config = pureconfig.loadConfig[ApplicationConfig].right.get
 
@@ -103,12 +108,6 @@ class AlgorithmsControllerSpec()
     None,
     blazeClient,
     config
-  )
-  val algorithmsService = new AlgorithmsService(
-    projectsService,
-    predictionsService,
-    algorithmsRepository,
-    projectRepository
   )
 
   val featuresController = new FeaturesController(
@@ -124,7 +123,7 @@ class AlgorithmsControllerSpec()
   )
 
   val algorithmsController = new AlgorithmsController(
-    algorithmsService
+    projectsService 
   )
 
   it should "fail to create an algorithm for a project that does not exist" in {

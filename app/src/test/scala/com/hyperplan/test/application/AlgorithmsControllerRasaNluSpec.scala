@@ -61,20 +61,6 @@ class AlgorithmsControllerRasaNluSpec()
   implicit val requestEntityDecoder: EntityDecoder[IO, PostAlgorithmRequest] =
     PostAlgorithmRequestEntitySerializer.entityDecoder
 
-  val projectRepository = new ProjectsRepository()(xa)
-  val domainRepository = new DomainRepository()(xa)
-  val algorithmsRepository = new AlgorithmsRepository()(xa)
-  val predictionsRepository = new PredictionsRepository()(xa)
-
-  val domainService = new DomainService(domainRepository)
-
-  val projectCache: Cache[Project] = CaffeineCache[Project]
-  val projectsService = new ProjectsService(
-    projectRepository,
-    domainService,
-    projectCache
-  )
-
   val app = HttpApp.pure(
     Response[IO](Status.Ok).withEntity(
       RasaNluEntityResponse(
@@ -94,6 +80,22 @@ class AlgorithmsControllerRasaNluSpec()
   val client = Client.fromHttpApp(app)
   val blazeClient = Resource.make(IO(client))(_ => IO.unit)
 
+  val projectRepository = new ProjectsRepository()(xa)
+  val domainRepository = new DomainRepository()(xa)
+  val algorithmsRepository = new AlgorithmsRepository()(xa)
+  val predictionsRepository = new PredictionsRepository()(xa)
+
+  val domainService = new DomainService(domainRepository)
+
+  val projectCache: Cache[Project] = CaffeineCache[Project]
+  val projectsService = new ProjectsService(
+    projectRepository,
+    algorithmsRepository,
+    domainService,
+    blazeClient,
+    projectCache
+  )
+
   val config = pureconfig.loadConfig[ApplicationConfig].right.get
 
   val predictionsService = new PredictionsService(
@@ -105,12 +107,7 @@ class AlgorithmsControllerRasaNluSpec()
     blazeClient,
     config
   )
-  val algorithmsService = new AlgorithmsService(
-    projectsService,
-    predictionsService,
-    algorithmsRepository,
-    projectRepository
-  )
+  
 
   val featuresController = new FeaturesController(
     domainService
@@ -125,7 +122,7 @@ class AlgorithmsControllerRasaNluSpec()
   )
 
   val algorithmsController = new AlgorithmsController(
-    algorithmsService
+    projectsService 
   )
 
   it should "successfully to create an algorithm with Rasa Nlu classification" in {

@@ -116,6 +116,10 @@ class PredictionsControllerSpec()
   implicit val labelsConfigurationEncoder =
     LabelsConfigurationSerializer.entityEncoder
 
+  val blazeClient: Resource[IO, Client[IO]] = BlazeClientBuilder[IO](
+    ExecutionContext.global
+  ).resource
+
   val projectRepository = new ProjectsRepository()(xa)
   val domainRepository = new DomainRepository()(xa)
   val algorithmsRepository = new AlgorithmsRepository()(xa)
@@ -126,13 +130,11 @@ class PredictionsControllerSpec()
   val projectCache: Cache[Project] = CaffeineCache[Project]
   val projectsService = new ProjectsService(
     projectRepository,
+    algorithmsRepository,
     domainService,
+    blazeClient,
     projectCache
   )
-
-  val blazeClient: Resource[IO, Client[IO]] = BlazeClientBuilder[IO](
-    ExecutionContext.global
-  ).resource
 
   val config = pureconfig.loadConfig[ApplicationConfig].right.get
 
@@ -144,12 +146,6 @@ class PredictionsControllerSpec()
     None,
     blazeClient,
     config
-  )
-  val algorithmsService = new AlgorithmsService(
-    projectsService,
-    predictionsService,
-    algorithmsRepository,
-    projectRepository
   )
 
   val featuresController = new FeaturesController(
@@ -165,7 +161,7 @@ class PredictionsControllerSpec()
   )
 
   val algorithmsController = new AlgorithmsController(
-    algorithmsService
+    projectsService 
   )
 
   val predictionsController = new PredictionsController(

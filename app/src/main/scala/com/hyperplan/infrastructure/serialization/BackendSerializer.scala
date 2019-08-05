@@ -29,7 +29,7 @@ object BackendSerializer {
       )
     val localClassificationBackendDecoder: Decoder[LocalClassification] =
       Decoder
-        .forProduct2[LocalClassification, String, Set[ClassificationLabel]](
+        .forProduct2[LocalClassification, String, Set[String]](
           "class",
           "labels"
         )((backendClass, labels) => LocalClassification(labels))

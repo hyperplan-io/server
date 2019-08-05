@@ -6,21 +6,31 @@ import cats.data._
 import com.hyperplan.domain.repositories.DomainRepository
 import com.hyperplan.application.controllers.requests.PostProjectRequest
 import com.hyperplan.domain.models._
-import com.hyperplan.domain.errors.ProjectError
+import com.hyperplan.domain.errors.{AlgorithmError, ProjectError}
 import com.hyperplan.domain.errors.ProjectError._
 import com.hyperplan.domain.models.features._
 import com.hyperplan.domain.repositories.ProjectsRepository
 import com.hyperplan.infrastructure.logging.IOLogging
-import doobie.free.connection.{ConnectionIO, AsyncConnectionIO}
+import doobie.free.connection.{AsyncConnectionIO, ConnectionIO}
 import doobie.util.invariant.UnexpectedEnd
 import scalacache.Cache
 import scalacache.CatsEffect.modes._
+import com.hyperplan.domain.models.backends.LocalClassification
+import com.hyperplan.domain.models.labels.ClassificationLabel
+import com.hyperplan.domain.repositories._
+import cats.effect.Resource
+import org.http4s.client.Client
+import cats.effect.ContextShift
+import com.hyperplan.domain.models
 
 class ProjectsService(
-    projectsRepository: ProjectsRepository,
-    domainService: DomainService,
-    cache: Cache[Project]
-) extends IOLogging {
+    val projectsRepository: ProjectsRepository,
+    val algorithmsRepository: AlgorithmsRepository,
+    val domainService: DomainService,
+    val blazeClient: Resource[IO, Client[IO]],
+    val cache: Cache[Project]
+)(implicit val cs: ContextShift[IO]) extends AlgorithmsService with IOLogging {
+
 
   type ProjectValidationResult[A] = ValidatedNec[ProjectError, A]
 
@@ -56,6 +66,18 @@ class ProjectsService(
             )
           )
         )
+      (algorithm, policy) = labels.data match {
+          case DynamicLabelsDescriptor(description) =>
+            none[Algorithm] -> NoAlgorithm()
+          case OneOfLabelsDescriptor(oneOf, description) =>
+            val algorithmId = s"${projectRequest.id}Random"
+            Algorithm(
+              algorithmId,
+              LocalClassification(oneOf),
+              projectRequest.id,
+              PlainSecurityConfiguration(Nil)
+            ).some -> DefaultAlgorithm(algorithmId)
+        }
     } yield
       ClassificationProject(
         projectRequest.id,
@@ -65,8 +87,8 @@ class ProjectsService(
           labels,
           streamConfiguration
         ),
-        Nil,
-        NoAlgorithm()
+        List(algorithm).flatten,
+        policy
       )
 
   def validateAlphanumericalProjectId(
@@ -182,6 +204,19 @@ class ProjectsService(
             )
           )
       }
+    }.flatMap { project =>
+      project.algorithms.headOption.fold(
+        EitherT.rightT[IO, NonEmptyChain[ProjectError]](project)
+      )(algorithm =>
+        EitherT.liftF[IO, NonEmptyChain[ProjectError], Project](
+          algorithmsRepository.insert(algorithm).flatMap {
+            case Left(err) =>
+              logger.warn("Failed to add a default algorithm", err) *> IO.pure(project)
+            case Right(_) =>
+              IO.pure(project)
+          }
+        )
+      )
     }
 
   def updateProject(

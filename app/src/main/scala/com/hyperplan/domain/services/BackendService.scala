@@ -39,6 +39,7 @@ trait BackendService extends IOLogging {
   )(implicit cs: ContextShift[IO]): IO[Either[PredictionError, Prediction]] =
     (algorithm.backend, project) match {
       case (LocalClassification(preComputedLabels), _: ClassificationProject) =>
+        val labelsSize = preComputedLabels.size
         IO.pure(
           ClassificationPrediction(
             predictionId,
@@ -46,7 +47,14 @@ trait BackendService extends IOLogging {
             algorithm.id,
             features,
             Nil,
-            preComputedLabels
+            preComputedLabels.map { label =>
+              ClassificationLabel(
+                label,
+                1f/labelsSize.toFloat,
+                ExampleUrlService.correctClassificationExampleUrl(predictionId, label),
+                ExampleUrlService.incorrectClassificationExampleUrl(predictionId, label)
+              )
+            }
           ).asRight
         )
       case (

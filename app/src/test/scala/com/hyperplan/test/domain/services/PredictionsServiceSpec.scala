@@ -51,6 +51,10 @@ class PredictionsServiceSpec()
   implicit val mat = ActorMaterializer()
   implicit val timer: Timer[IO] = IO.timer(ExecutionContext.global)
 
+  val blazeClient = BlazeClientBuilder[IO](
+    ExecutionContext.global
+  ).resource
+
   val config = ApplicationConfig(
     KinesisConfig(
       enabled = false,
@@ -120,13 +124,13 @@ class PredictionsServiceSpec()
   val projectCache: Cache[Project] = CaffeineCache[Project]
   val projectsService = new ProjectsService(
     projectsRepository,
+    algorithmsRepository,
     domainService,
+    blazeClient,
     projectCache
   )
 
-  val blazeClient = BlazeClientBuilder[IO](
-    ExecutionContext.global
-  ).resource
+  
 
   val predictionsService: PredictionsService =
     new PredictionsService(
