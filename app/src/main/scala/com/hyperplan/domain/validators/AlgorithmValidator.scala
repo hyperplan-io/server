@@ -1,45 +1,27 @@
-package com.hyperplan.domain.services
+package com.hyperplan.domain.validators
 
 import cats.data._
 import cats.effect.IO
 import cats.implicits._
 
-import io.lemonlabs.uri.{AbsoluteUrl, Url}
-
-import com.hyperplan.domain.models._
-import com.hyperplan.domain.models.backends.{
-  Backend,
-  LocalClassification,
-  TensorFlowClassificationBackend,
-  TensorFlowRegressionBackend
-}
 import com.hyperplan.domain.errors.AlgorithmError
 import com.hyperplan.domain.errors.AlgorithmError._
+
+import com.hyperplan.domain.models._
+import com.hyperplan.domain.models.backends._
 import com.hyperplan.domain.models.features.transformers.TensorFlowFeaturesTransformer
 import com.hyperplan.domain.models.labels.transformers.TensorFlowLabelsTransformer
-import com.hyperplan.domain.repositories.{
-  AlgorithmsRepository,
-  ProjectsRepository
-}
-import com.hyperplan.domain.services._
-import com.hyperplan.infrastructure.logging.IOLogging
-import com.hyperplan.domain.models.backends.RasaNluClassificationBackend
-import java.{util => ju}
-import cats.effect.ContextShift
+import io.lemonlabs.uri.AbsoluteUrl
 
-trait AlgorithmsService extends BackendService with IOLogging { this: ProjectsService =>
-
-    val algorithmsRepository: AlgorithmsRepository
-    val projectsRepository: ProjectsRepository
-    implicit val cs: ContextShift[IO]
+object AlgorithmValidator {
 
   type AlgorithmValidationResult[A] = ValidatedNec[AlgorithmError, A]
 
   def validateFeaturesConfiguration(
-      expectedSize: Int,
-      actualSize: Int,
-      featureName: String
-  ) =
+                                     expectedSize: Int,
+                                     actualSize: Int,
+                                     featureName: String
+                                   ) =
     if (expectedSize != actualSize) {
       Some(
         AlgorithmError.IncompatibleFeaturesError(
@@ -51,9 +33,9 @@ trait AlgorithmsService extends BackendService with IOLogging { this: ProjectsSe
     }
 
   def validateLabelsConfiguration(
-      labels: Map[String, String],
-      labelsConfiguration: LabelVectorDescriptor
-  ) = labelsConfiguration.data match {
+                                   labels: Map[String, String],
+                                   labelsConfiguration: LabelVectorDescriptor
+                                 ) = labelsConfiguration.data match {
     case OneOfLabelsDescriptor(oneOf, _) =>
       if (labels.size != oneOf.size) {
         Some(
@@ -77,16 +59,16 @@ trait AlgorithmsService extends BackendService with IOLogging { this: ProjectsSe
       case scheme =>
         Validated
           .invalid[AlgorithmError, Protocol](
-            UnsupportedProtocolError(
-              UnsupportedProtocolError.message(scheme)
-            )
+          UnsupportedProtocolError(
+            UnsupportedProtocolError.message(scheme)
           )
+        )
           .toValidatedNec
     }
 
   def validateProtocolAndVerifyCompatibility(
-      backend: Backend
-  ): AlgorithmValidationResult[Protocol] = backend match {
+                                              backend: Backend
+                                            ): AlgorithmValidationResult[Protocol] = backend match {
     case LocalClassification(_) =>
       Validated.valid[AlgorithmError, Protocol](LocalCompute).toValidatedNec
     case TensorFlowClassificationBackend(_, _, _, _) =>
@@ -100,35 +82,35 @@ trait AlgorithmsService extends BackendService with IOLogging { this: ProjectsSe
         case protocol @ Grpc =>
           Validated
             .invalid[AlgorithmError, Protocol](
-              UnsupportedProtocolError(
-                UnsupportedProtocolError.message(protocol)
-              )
+            UnsupportedProtocolError(
+              UnsupportedProtocolError.message(protocol)
             )
+          )
             .toValidatedNec
         case protocol @ LocalCompute =>
           Validated
             .invalid[AlgorithmError, Protocol](
-              UnsupportedProtocolError(
-                UnsupportedProtocolError.message(protocol)
-              )
+            UnsupportedProtocolError(
+              UnsupportedProtocolError.message(protocol)
             )
+          )
             .toValidatedNec
       }
   }
 
   def validateClassificationAlgorithm(
-      algorithm: Algorithm,
-      project: ClassificationProject
-  ): AlgorithmValidationResult[Unit] = {
+                                       algorithm: Algorithm,
+                                       project: ClassificationProject
+                                     ): AlgorithmValidationResult[Unit] = {
     algorithm.backend match {
       case LocalClassification(computed) =>
         Validated.valid[AlgorithmError, Unit](Unit).toValidatedNec
       case TensorFlowClassificationBackend(
-          _,
-          _,
-          TensorFlowFeaturesTransformer(signatureName, fields),
-          TensorFlowLabelsTransformer(labels)
-          ) =>
+      _,
+      _,
+      TensorFlowFeaturesTransformer(signatureName, fields),
+      TensorFlowLabelsTransformer(labels)
+      ) =>
         val validatedlabels = project.configuration.labels.data match {
           case OneOfLabelsDescriptor(oneOf, _) =>
             Either
@@ -181,9 +163,9 @@ trait AlgorithmsService extends BackendService with IOLogging { this: ProjectsSe
   }
 
   def validateRegressionAlgorithm(
-      algorithm: Algorithm,
-      project: RegressionProject
-  ): AlgorithmValidationResult[Unit] = {
+                                   algorithm: Algorithm,
+                                   project: RegressionProject
+                                 ): AlgorithmValidationResult[Unit] = {
     algorithm.backend match {
       case backend: LocalClassification =>
         Validated
@@ -199,10 +181,10 @@ trait AlgorithmsService extends BackendService with IOLogging { this: ProjectsSe
           )
           .toValidatedNec
       case TensorFlowRegressionBackend(
-          _,
-          _,
-          TensorFlowFeaturesTransformer(signatureName, fields)
-          ) =>
+      _,
+      _,
+      TensorFlowFeaturesTransformer(signatureName, fields)
+      ) =>
         Either
           .cond(
             project.configuration.features.data.size == fields.size,
@@ -246,8 +228,8 @@ trait AlgorithmsService extends BackendService with IOLogging { this: ProjectsSe
   }
 
   def validateAlphanumericalAlgorithmId(
-      id: String
-  ): AlgorithmValidationResult[String] =
+                                         id: String
+                                       ): AlgorithmValidationResult[String] =
     Either
       .cond(
         id.matches("^[a-zA-Z0-9]*$"),
@@ -259,9 +241,9 @@ trait AlgorithmsService extends BackendService with IOLogging { this: ProjectsSe
       .toValidatedNec
 
   def validateAlgorithmCreate(
-      algorithm: Algorithm,
-      project: Project
-  ): AlgorithmValidationResult[Protocol] =
+                               algorithm: Algorithm,
+                               project: Project
+                             ): AlgorithmValidationResult[Protocol] =
     (project match {
       case classificationProject: ClassificationProject =>
         validateClassificationAlgorithm(
@@ -273,83 +255,5 @@ trait AlgorithmsService extends BackendService with IOLogging { this: ProjectsSe
     }).andThen(_ => validateAlphanumericalAlgorithmId(algorithm.id))
       .andThen(_ => validateProtocolAndVerifyCompatibility(algorithm.backend))
 
-  def createAlgorithm(
-      id: String,
-      backend: Backend,
-      projectId: String,
-      security: SecurityConfiguration
-  ): EitherT[IO, NonEmptyChain[AlgorithmError], Algorithm] = {
-    for {
-      algorithm <- EitherT.rightT[IO, NonEmptyChain[AlgorithmError]](
-        Algorithm(
-          id,
-          backend,
-          projectId,
-          security
-        )
-      )
-      project <- EitherT
-        .fromOptionF[IO, NonEmptyChain[AlgorithmError], Project](
-          readProject(projectId),
-          NonEmptyChain(
-            AlgorithmError.ProjectDoesNotExistError(
-              AlgorithmError.ProjectDoesNotExistError.message(projectId)
-            ): AlgorithmError
-          )
-        )
-      _ <- EitherT.fromEither[IO](
-        validateAlgorithmCreate(algorithm, project).toEither
-      )
-      _ <- EitherT[IO, NonEmptyChain[AlgorithmError], Prediction](
-          predictWithBackend(
-            ju.UUID.randomUUID().toString,
-            project,
-            algorithm,
-            project.configuration match {
-              case ClassificationConfiguration(features, labels, dataStream) =>
-                FeatureVectorDescriptor.generateRandomFeatureVector(features)
-              case RegressionConfiguration(features, dataStream) =>
-                FeatureVectorDescriptor.generateRandomFeatureVector(features)
-            }
-          )
-          .flatMap {
-            case Right(prediction) => IO.pure(prediction.asRight)
-            case Left(err) =>
-              logger.warn(
-                s"The prediction dry run failed when creating algorithm ${algorithm.id} because ${err.message}"
-              ) *> IO(
-                NonEmptyChain(
-                  PredictionDryRunFailed(PredictionDryRunFailed.message(err))
-                ).asLeft
-              )
-          }
-      )
-      _ <- EitherT[IO, NonEmptyChain[AlgorithmError], Algorithm](
-        algorithmsRepository.insert(algorithm).map {
-          case Right(alg) => alg.asRight
-          case Left(error) => NonEmptyChain(error).asLeft
-        }
-      )
-      _ <- if (project.algorithms.isEmpty) {
-        (project match {
-          case _: ClassificationProject =>
-            updateProject(
-                projectId,
-                None,
-                Some(DefaultAlgorithm(id))
-              )
-          case _: RegressionProject =>
-            updateProject(
-                projectId,
-                None,
-                Some(DefaultAlgorithm(id))
-              )
-        }).leftFlatMap[Project, NonEmptyChain[AlgorithmError]](
-          _ => EitherT.rightT[IO, NonEmptyChain[AlgorithmError]](project)
-        )
-      } else {
-        EitherT.rightT[IO, NonEmptyChain[AlgorithmError]](project)
-      }
-    } yield algorithm
-  }
+
 }

@@ -86,13 +86,14 @@ class AlgorithmsControllerSpec()
   val predictionsRepository = new PredictionsRepository()(xa)
 
   val domainService = new DomainService(domainRepository)
+  val backendService = new BackendService(blazeClient)
 
   val projectCache: Cache[Project] = CaffeineCache[Project]
   val projectsService = new ProjectsService(
     projectRepository,
     algorithmsRepository,
     domainService,
-    blazeClient,
+    backendService,
     projectCache
   )
 
@@ -103,10 +104,10 @@ class AlgorithmsControllerSpec()
   val predictionsService = new PredictionsService(
     predictionsRepository,
     projectsService,
+    backendService,
     None,
     None,
     None,
-    blazeClient,
     config
   )
 

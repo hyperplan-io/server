@@ -111,13 +111,14 @@ class ProjectsControllerSpec()
   val algorithmsRepository = new AlgorithmsRepository()(xa)
 
   val domainService = new DomainService(domainRepository)
+  val backendService = new BackendService(blazeClient)
 
   val projectCache: Cache[Project] = CaffeineCache[Project]
   val projectsService = new ProjectsService(
     projectRepository,
     algorithmsRepository,
     domainService,
-    blazeClient,
+    backendService,
     projectCache
   )
 

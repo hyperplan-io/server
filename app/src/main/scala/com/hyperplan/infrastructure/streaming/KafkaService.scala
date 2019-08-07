@@ -1,7 +1,7 @@
 package com.hyperplan.infrastructure.streaming
 
-import com.hyperplan.infrastructure.logging.IOLogging
 import cats.effect.IO
+import cats.implicits._
 import io.circe.Encoder
 
 import fs2.kafka._
@@ -9,6 +9,7 @@ import cats.effect.Timer
 import cats.effect.ContextShift
 import cats.effect.concurrent.Ref
 
+import com.hyperplan.infrastructure.logging.IOLogging
 import com.hyperplan.domain.errors._
 
 import scala.concurrent.duration.Duration
@@ -43,16 +44,16 @@ class KafkaService(
       .compile
       .drain
     IO.race(
-        produceIO,
-        timer.sleep(producerTimeout)
+        timer.sleep(producerTimeout),
+        produceIO
       )
       .flatMap {
-        case Left(_) => IO.unit
-        case Right(_) =>
+        case Right(_) => logger.debug("published message in kafka")
+        case Left(_) =>
           health
             .modify(h => false -> h)
             .flatMap(
-              _ => IO.raiseError(DataStreamTimedOut("Kafka producer timed out"))
+              _ => logger.warn("failed to publish in kafka, timeout") *> IO.raiseError(DataStreamTimedOut("Kafka producer timed out"))
             )
       }
   }

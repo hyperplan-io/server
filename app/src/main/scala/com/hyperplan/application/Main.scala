@@ -102,20 +102,21 @@ object Main extends IOApp with IOLogging {
       domainService = new DomainService(
         domainRepository
       )
+      backendService = new BackendService(blazeClient)
       projectsService = new ProjectsService(
         projectsRepository,
         algorithmsRepository,
         domainService,
-        blazeClient,
+        backendService,
         projectCache
       )
       predictionsService = new PredictionsService(
         predictionsRepository,
         projectsService,
+        backendService,
         kinesisService,
         pubSubService,
         kafkaService,
-        blazeClient,
         config
       )
       privacyService = new PrivacyService(predictionsRepository)

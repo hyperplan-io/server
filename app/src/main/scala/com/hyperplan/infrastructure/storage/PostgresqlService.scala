@@ -89,10 +89,11 @@ object PostgresqlService {
 
   val createAlgorithmsTable: doobie.ConnectionIO[Int] = sql"""
       CREATE TABLE IF NOT EXISTS algorithms(
-        id VARCHAR(36) PRIMARY KEY,
-        backend VARCHAR NOT NULL ,
+        id VARCHAR NOT NULL,
+        backend VARCHAR NOT NULL,
         project_id VARCHAR(36) NOT NULL,
         security VARCHAR NOT NULL,
+        PRIMARY KEY (id, project_id),
         FOREIGN KEY (project_id) references projects(id)
       );
     """.update.run

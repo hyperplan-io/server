@@ -33,14 +33,13 @@ import com.hyperplan.infrastructure.streaming.{
 class PredictionsService(
     predictionsRepository: PredictionsRepository,
     projectsService: ProjectsService,
+    backendService: BackendService,
     kinesisService: Option[KinesisService],
     pubSubService: Option[PubSubService],
     kafkaService: Option[KafkaService],
-    val blazeClient: Resource[IO, Client[IO]],
     config: ApplicationConfig
 )(implicit cs: ContextShift[IO], timer: Timer[IO])
-    extends IOLogging
-    with BackendService {
+    extends IOLogging{
 
   implicit val predictionEventEncoder = PredictionEventSerializer.encoder
 
@@ -67,6 +66,7 @@ class PredictionsService(
       streamConfiguration: Option[StreamConfiguration]
   ): IO[Unit] =
     (for {
+      _ <- logger.info("publishing in stream")
       _ <- pubSubService.fold[IO[Seq[String]]](IO.pure(Seq.empty))(
         _.publish(
           prediction,
@@ -139,7 +139,7 @@ class PredictionsService(
                 algorithm =>
                   IO(ju.UUID.randomUUID.toString)
                     .flatMap { predictionId =>
-                      predictWithBackend(
+                      backendService.predictWithBackend(
                         predictionId,
                         project,
                         algorithm,
@@ -291,7 +291,7 @@ class PredictionsService(
     predictionsRepository.transact(transaction).flatMap {
       case Right(projectEvent) =>
         val (project, event) = projectEvent
-        publishToStream(
+        logger.info("gonna publish") *> publishToStream(
           event,
           project.configuration.dataStream
         ).map(_ => event.asRight)

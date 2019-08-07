@@ -1,9 +1,10 @@
 package com.hyperplan.domain.services
 
+import java.util.UUID
+
 import cats.effect.IO
 import cats.implicits._
 import cats.data._
-import com.hyperplan.domain.repositories.DomainRepository
 import com.hyperplan.application.controllers.requests.PostProjectRequest
 import com.hyperplan.domain.models._
 import com.hyperplan.domain.errors.{AlgorithmError, ProjectError}
@@ -15,21 +16,23 @@ import doobie.free.connection.{AsyncConnectionIO, ConnectionIO}
 import doobie.util.invariant.UnexpectedEnd
 import scalacache.Cache
 import scalacache.CatsEffect.modes._
-import com.hyperplan.domain.models.backends.LocalClassification
+import com.hyperplan.domain.models.backends.{Backend, LocalClassification}
 import com.hyperplan.domain.models.labels.ClassificationLabel
 import com.hyperplan.domain.repositories._
 import cats.effect.Resource
 import org.http4s.client.Client
 import cats.effect.ContextShift
+import com.hyperplan.domain.errors.AlgorithmError.PredictionDryRunFailed
 import com.hyperplan.domain.models
+import com.hyperplan.domain.validators.AlgorithmValidator
 
 class ProjectsService(
     val projectsRepository: ProjectsRepository,
     val algorithmsRepository: AlgorithmsRepository,
     val domainService: DomainService,
-    val blazeClient: Resource[IO, Client[IO]],
+    val backendService: BackendService,
     val cache: Cache[Project]
-)(implicit val cs: ContextShift[IO]) extends AlgorithmsService with IOLogging {
+)(implicit val cs: ContextShift[IO]) extends IOLogging {
 
 
   type ProjectValidationResult[A] = ValidatedNec[ProjectError, A]
@@ -322,5 +325,85 @@ class ProjectsService(
         project => IO.pure(project.some)
       )
     }
+
+  def createAlgorithm(
+                       id: String,
+                       backend: Backend,
+                       projectId: String,
+                       security: SecurityConfiguration
+                     ): EitherT[IO, NonEmptyChain[AlgorithmError], Algorithm] = {
+    for {
+      algorithm <- EitherT.rightT[IO, NonEmptyChain[AlgorithmError]](
+        Algorithm(
+          id,
+          backend,
+          projectId,
+          security
+        )
+      )
+      project <- EitherT
+        .fromOptionF[IO, NonEmptyChain[AlgorithmError], Project](
+        readProject(projectId),
+        NonEmptyChain(
+          AlgorithmError.ProjectDoesNotExistError(
+            AlgorithmError.ProjectDoesNotExistError.message(projectId)
+          ): AlgorithmError
+        )
+      )
+      _ <- EitherT.fromEither[IO](
+        AlgorithmValidator.validateAlgorithmCreate(algorithm, project).toEither
+      )
+      _ <- EitherT[IO, NonEmptyChain[AlgorithmError], Prediction](
+        backendService.predictWithBackend(
+          UUID.randomUUID().toString,
+          project,
+          algorithm,
+          project.configuration match {
+            case ClassificationConfiguration(features, labels, dataStream) =>
+              FeatureVectorDescriptor.generateRandomFeatureVector(features)
+            case RegressionConfiguration(features, dataStream) =>
+              FeatureVectorDescriptor.generateRandomFeatureVector(features)
+          }
+        )
+          .flatMap {
+            case Right(prediction) => IO.pure(prediction.asRight)
+            case Left(err) =>
+              logger.warn(
+                s"The prediction dry run failed when creating algorithm ${algorithm.id} because ${err.message}"
+              ) *> IO(
+                NonEmptyChain(
+                  PredictionDryRunFailed(PredictionDryRunFailed.message(err))
+                ).asLeft
+              )
+          }
+      )
+      _ <- EitherT[IO, NonEmptyChain[AlgorithmError], Algorithm](
+        algorithmsRepository.insert(algorithm).map {
+          case Right(alg) => alg.asRight
+          case Left(error) => NonEmptyChain(error).asLeft
+        }
+      )
+      _ <- if (project.algorithms.isEmpty) {
+        (project match {
+          case _: ClassificationProject =>
+            updateProject(
+              projectId,
+              None,
+              Some(DefaultAlgorithm(id))
+            )
+          case _: RegressionProject =>
+            updateProject(
+              projectId,
+              None,
+              Some(DefaultAlgorithm(id))
+            )
+        }).leftFlatMap[Project, NonEmptyChain[AlgorithmError]](
+          _ => EitherT.rightT[IO, NonEmptyChain[AlgorithmError]](project)
+        )
+      } else {
+        EitherT.rightT[IO, NonEmptyChain[AlgorithmError]](project)
+      }
+    } yield algorithm
+  }
 
 }

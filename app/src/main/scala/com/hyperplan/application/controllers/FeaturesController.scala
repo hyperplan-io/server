@@ -9,7 +9,6 @@ import cats.implicits._
 import cats.MonadError
 import com.hyperplan.application.controllers.requests._
 import com.hyperplan.domain.models._
-import com.hyperplan.domain.services.AlgorithmsService
 import com.hyperplan.infrastructure.serialization._
 import com.hyperplan.infrastructure.serialization.errors._
 import com.hyperplan.infrastructure.logging.IOLogging

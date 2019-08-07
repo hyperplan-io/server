@@ -27,9 +27,7 @@ import com.hyperplan.infrastructure.serialization.tensorflow._
 import com.hyperplan.infrastructure.serialization.rasa._
 import com.hyperplan.infrastructure.logging.IOLogging
 
-trait BackendService extends IOLogging {
-
-  val blazeClient: Resource[IO, Client[IO]]
+class BackendService(blazeClient: Resource[IO, Client[IO]]) extends IOLogging {
 
   def predictWithBackend(
       predictionId: String,

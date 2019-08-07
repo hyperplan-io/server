@@ -1,32 +1,16 @@
 package com.hyperplan.test.domain.services
 
 import cats.effect.{IO, Timer}
-
 import scalacache.Cache
 import com.hyperplan.domain.models.Project
 import scalacache.caffeine.CaffeineCache
-
 import com.hyperplan.application._
-import com.hyperplan.domain.repositories.{
-  AlgorithmsRepository,
-  DomainRepository,
-  PredictionsRepository,
-  ProjectsRepository
-}
-import com.hyperplan.domain.services.{
-  DomainService,
-  PredictionsService,
-  ProjectsService
-}
-import com.hyperplan.infrastructure.streaming.{
-  KafkaService,
-  KinesisService,
-  PubSubService
-}
+import com.hyperplan.domain.repositories.{AlgorithmsRepository, DomainRepository, PredictionsRepository, ProjectsRepository}
+import com.hyperplan.domain.services.{BackendService, DomainService, PredictionsService, ProjectsService}
+import com.hyperplan.infrastructure.streaming.{KafkaService, KinesisService, PubSubService}
 import com.hyperplan.test.TestDatabase
 import com.hyperplan.test.TestDatabase
 import org.scalatest._
-
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.concurrent.ExecutionContext
@@ -120,13 +104,14 @@ class PredictionsServiceSpec()
   val domainService = new DomainService(
     domainRepository
   )
+  val backendService = new BackendService(blazeClient)
 
   val projectCache: Cache[Project] = CaffeineCache[Project]
   val projectsService = new ProjectsService(
     projectsRepository,
     algorithmsRepository,
     domainService,
-    blazeClient,
+    backendService,
     projectCache
   )
 
@@ -136,10 +121,10 @@ class PredictionsServiceSpec()
     new PredictionsService(
       predictionsRepository,
       projectsService,
+      backendService,
       Some(kinesisService),
       Some(pubSubService),
       Some(kafkaService),
-      blazeClient,
       config
     )
 }
