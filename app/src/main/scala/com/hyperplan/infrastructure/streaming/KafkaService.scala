@@ -53,7 +53,9 @@ class KafkaService(
           health
             .modify(h => false -> h)
             .flatMap(
-              _ => logger.warn("failed to publish in kafka, timeout") *> IO.raiseError(DataStreamTimedOut("Kafka producer timed out"))
+              _ =>
+                logger.warn("failed to publish in kafka, timeout") *> IO
+                  .raiseError(DataStreamTimedOut("Kafka producer timed out"))
             )
       }
   }

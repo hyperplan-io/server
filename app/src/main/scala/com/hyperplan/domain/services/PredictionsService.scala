@@ -39,7 +39,7 @@ class PredictionsService(
     kafkaService: Option[KafkaService],
     config: ApplicationConfig
 )(implicit cs: ContextShift[IO], timer: Timer[IO])
-    extends IOLogging{
+    extends IOLogging {
 
   implicit val predictionEventEncoder = PredictionEventSerializer.encoder
 

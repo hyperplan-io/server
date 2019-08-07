@@ -9,9 +9,9 @@ object AlgorithmGenerator {
 
   val computed =
     Set(
-        "class1",
-        "class2",
-        "class3"
+      "class1",
+      "class2",
+      "class3"
     )
 
   val defaultSecurityConfig = PlainSecurityConfiguration(

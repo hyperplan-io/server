@@ -60,7 +60,6 @@ class AlgorithmsControllerWithMockedClientClassificationSpec()
   implicit val requestEntityDecoder: EntityDecoder[IO, PostAlgorithmRequest] =
     PostAlgorithmRequestEntitySerializer.entityDecoder
 
-    
   val app = HttpApp.pure(
     Response[IO](Status.Ok).withEntity(
       TensorFlowClassificationEntityResponse(
@@ -75,7 +74,6 @@ class AlgorithmsControllerWithMockedClientClassificationSpec()
   )
   val client = Client.fromHttpApp(app)
   val blazeClient = Resource.make(IO(client))(_ => IO.unit)
-
 
   val projectRepository = new ProjectsRepository()(xa)
   val domainRepository = new DomainRepository()(xa)

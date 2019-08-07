@@ -12,10 +12,9 @@ object ProjectValidator {
 
   type ProjectValidationResult[A] = ValidatedNec[ProjectError, A]
 
-
   def validateAlphanumericalProjectId(
-                                       id: String
-                                     ): ProjectValidationResult[String] =
+      id: String
+  ): ProjectValidationResult[String] =
     Either
       .cond(
         id.matches("^[a-zA-Z0-9]*$"),
@@ -45,8 +44,8 @@ object ProjectValidator {
       .toValidatedNec
 
   def validateLabels(
-                      projectRequest: PostProjectRequest
-                    ): ProjectValidationResult[Unit] = projectRequest.problem match {
+      projectRequest: PostProjectRequest
+  ): ProjectValidationResult[Unit] = projectRequest.problem match {
     case Classification if projectRequest.labelsId.isEmpty =>
       Validated.invalid(
         NonEmptyChain(ProjectLabelsAreRequiredForClassificationError())
@@ -58,8 +57,8 @@ object ProjectValidator {
   }
 
   def validateCreateProject(
-                             projectRequest: PostProjectRequest
-                           ): ProjectValidationResult[Unit] =
+      projectRequest: PostProjectRequest
+  ): ProjectValidationResult[Unit] =
     (
       validateAlphanumericalProjectId(projectRequest.id),
       validateProjectIdNotEmpty(projectRequest.id),

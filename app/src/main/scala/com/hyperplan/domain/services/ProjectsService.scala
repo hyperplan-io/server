@@ -33,9 +33,8 @@ class ProjectsService(
     val domainService: DomainService,
     val backendService: BackendService,
     val cache: Cache[Project]
-)(implicit val cs: ContextShift[IO]) extends IOLogging {
-
-
+)(implicit val cs: ContextShift[IO])
+    extends IOLogging {
 
   def createEmptyClassificationProject(
       projectRequest: PostProjectRequest
@@ -70,17 +69,17 @@ class ProjectsService(
           )
         )
       (algorithm, policy) = labels.data match {
-          case DynamicLabelsDescriptor(description) =>
-            none[Algorithm] -> NoAlgorithm()
-          case OneOfLabelsDescriptor(oneOf, description) =>
-            val algorithmId = s"${projectRequest.id}Random"
-            Algorithm(
-              algorithmId,
-              LocalClassification(oneOf),
-              projectRequest.id,
-              PlainSecurityConfiguration(Nil)
-            ).some -> DefaultAlgorithm(algorithmId)
-        }
+        case DynamicLabelsDescriptor(description) =>
+          none[Algorithm] -> NoAlgorithm()
+        case OneOfLabelsDescriptor(oneOf, description) =>
+          val algorithmId = s"${projectRequest.id}Random"
+          Algorithm(
+            algorithmId,
+            LocalClassification(oneOf),
+            projectRequest.id,
+            PlainSecurityConfiguration(Nil)
+          ).some -> DefaultAlgorithm(algorithmId)
+      }
     } yield
       ClassificationProject(
         projectRequest.id,
@@ -93,8 +92,6 @@ class ProjectsService(
         List(algorithm).flatten,
         policy
       )
-
-
 
   def createEmptyRegressionProject(
       projectRequest: PostProjectRequest
@@ -136,39 +133,42 @@ class ProjectsService(
       case Classification => createEmptyClassificationProject(projectRequest)
       case Regression => createEmptyRegressionProject(projectRequest)
     }).flatMap { project =>
-      EitherT(projectsRepository.insert(project).map {
-        case Left(err) =>
-          // we need a NonEmptyChain of errors but insert returns a single error
-          NonEmptyChain(err).asLeft
-        case Right(count) => count.asRight
-      }).flatMap {
-        case insertedCount if insertedCount > 0 =>
-          EitherT.liftF[IO, NonEmptyChain[ProjectError], Project](
-            cache.remove[IO](project.id).map(_ => project)
-          )
-        case insertedCount if insertedCount <= 0 =>
-          EitherT.liftF[IO, NonEmptyChain[ProjectError], Project](
-            IO.raiseError(
-              new Exception(
-                "IO returned successfully but nothing was inserted in the database"
+        EitherT(projectsRepository.insert(project).map {
+          case Left(err) =>
+            // we need a NonEmptyChain of errors but insert returns a single error
+            NonEmptyChain(err).asLeft
+          case Right(count) => count.asRight
+        }).flatMap {
+          case insertedCount if insertedCount > 0 =>
+            EitherT.liftF[IO, NonEmptyChain[ProjectError], Project](
+              cache.remove[IO](project.id).map(_ => project)
+            )
+          case insertedCount if insertedCount <= 0 =>
+            EitherT.liftF[IO, NonEmptyChain[ProjectError], Project](
+              IO.raiseError(
+                new Exception(
+                  "IO returned successfully but nothing was inserted in the database"
+                )
               )
             )
-          )
+        }
       }
-    }.flatMap { project =>
-      project.algorithms.headOption.fold(
-        EitherT.rightT[IO, NonEmptyChain[ProjectError]](project)
-      )(algorithm =>
-        EitherT.liftF[IO, NonEmptyChain[ProjectError], Project](
-          algorithmsRepository.insert(algorithm).flatMap {
-            case Left(err) =>
-              logger.warn("Failed to add a default algorithm", err) *> IO.pure(project)
-            case Right(_) =>
-              IO.pure(project)
-          }
+      .flatMap { project =>
+        project.algorithms.headOption.fold(
+          EitherT.rightT[IO, NonEmptyChain[ProjectError]](project)
+        )(
+          algorithm =>
+            EitherT.liftF[IO, NonEmptyChain[ProjectError], Project](
+              algorithmsRepository.insert(algorithm).flatMap {
+                case Left(err) =>
+                  logger.warn("Failed to add a default algorithm", err) *> IO
+                    .pure(project)
+                case Right(_) =>
+                  IO.pure(project)
+              }
+            )
         )
-      )
-    }
+      }
 
   def updateProject(
       projectId: String,
@@ -275,11 +275,11 @@ class ProjectsService(
     }
 
   def createAlgorithm(
-                       id: String,
-                       backend: Backend,
-                       projectId: String,
-                       security: SecurityConfiguration
-                     ): EitherT[IO, NonEmptyChain[AlgorithmError], Algorithm] = {
+      id: String,
+      backend: Backend,
+      projectId: String,
+      security: SecurityConfiguration
+  ): EitherT[IO, NonEmptyChain[AlgorithmError], Algorithm] = {
     for {
       algorithm <- EitherT.rightT[IO, NonEmptyChain[AlgorithmError]](
         Algorithm(
@@ -291,28 +291,29 @@ class ProjectsService(
       )
       project <- EitherT
         .fromOptionF[IO, NonEmptyChain[AlgorithmError], Project](
-        readProject(projectId),
-        NonEmptyChain(
-          AlgorithmError.ProjectDoesNotExistError(
-            AlgorithmError.ProjectDoesNotExistError.message(projectId)
-          ): AlgorithmError
+          readProject(projectId),
+          NonEmptyChain(
+            AlgorithmError.ProjectDoesNotExistError(
+              AlgorithmError.ProjectDoesNotExistError.message(projectId)
+            ): AlgorithmError
+          )
         )
-      )
       _ <- EitherT.fromEither[IO](
         AlgorithmValidator.validateAlgorithmCreate(algorithm, project).toEither
       )
       _ <- EitherT[IO, NonEmptyChain[AlgorithmError], Prediction](
-        backendService.predictWithBackend(
-          UUID.randomUUID().toString,
-          project,
-          algorithm,
-          project.configuration match {
-            case ClassificationConfiguration(features, labels, dataStream) =>
-              FeatureVectorDescriptor.generateRandomFeatureVector(features)
-            case RegressionConfiguration(features, dataStream) =>
-              FeatureVectorDescriptor.generateRandomFeatureVector(features)
-          }
-        )
+        backendService
+          .predictWithBackend(
+            UUID.randomUUID().toString,
+            project,
+            algorithm,
+            project.configuration match {
+              case ClassificationConfiguration(features, labels, dataStream) =>
+                FeatureVectorDescriptor.generateRandomFeatureVector(features)
+              case RegressionConfiguration(features, dataStream) =>
+                FeatureVectorDescriptor.generateRandomFeatureVector(features)
+            }
+          )
           .flatMap {
             case Right(prediction) => IO.pure(prediction.asRight)
             case Left(err) =>

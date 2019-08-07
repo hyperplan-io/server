@@ -162,7 +162,7 @@ class PredictionsControllerSpec()
   )
 
   val algorithmsController = new AlgorithmsController(
-    projectsService 
+    projectsService
   )
 
   val predictionsController = new PredictionsController(

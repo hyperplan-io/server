@@ -18,10 +18,10 @@ object AlgorithmValidator {
   type AlgorithmValidationResult[A] = ValidatedNec[AlgorithmError, A]
 
   def validateFeaturesConfiguration(
-                                     expectedSize: Int,
-                                     actualSize: Int,
-                                     featureName: String
-                                   ) =
+      expectedSize: Int,
+      actualSize: Int,
+      featureName: String
+  ) =
     if (expectedSize != actualSize) {
       Some(
         AlgorithmError.IncompatibleFeaturesError(
@@ -33,9 +33,9 @@ object AlgorithmValidator {
     }
 
   def validateLabelsConfiguration(
-                                   labels: Map[String, String],
-                                   labelsConfiguration: LabelVectorDescriptor
-                                 ) = labelsConfiguration.data match {
+      labels: Map[String, String],
+      labelsConfiguration: LabelVectorDescriptor
+  ) = labelsConfiguration.data match {
     case OneOfLabelsDescriptor(oneOf, _) =>
       if (labels.size != oneOf.size) {
         Some(
@@ -59,16 +59,16 @@ object AlgorithmValidator {
       case scheme =>
         Validated
           .invalid[AlgorithmError, Protocol](
-          UnsupportedProtocolError(
-            UnsupportedProtocolError.message(scheme)
+            UnsupportedProtocolError(
+              UnsupportedProtocolError.message(scheme)
+            )
           )
-        )
           .toValidatedNec
     }
 
   def validateProtocolAndVerifyCompatibility(
-                                              backend: Backend
-                                            ): AlgorithmValidationResult[Protocol] = backend match {
+      backend: Backend
+  ): AlgorithmValidationResult[Protocol] = backend match {
     case LocalClassification(_) =>
       Validated.valid[AlgorithmError, Protocol](LocalCompute).toValidatedNec
     case TensorFlowClassificationBackend(_, _, _, _) =>
@@ -82,35 +82,35 @@ object AlgorithmValidator {
         case protocol @ Grpc =>
           Validated
             .invalid[AlgorithmError, Protocol](
-            UnsupportedProtocolError(
-              UnsupportedProtocolError.message(protocol)
+              UnsupportedProtocolError(
+                UnsupportedProtocolError.message(protocol)
+              )
             )
-          )
             .toValidatedNec
         case protocol @ LocalCompute =>
           Validated
             .invalid[AlgorithmError, Protocol](
-            UnsupportedProtocolError(
-              UnsupportedProtocolError.message(protocol)
+              UnsupportedProtocolError(
+                UnsupportedProtocolError.message(protocol)
+              )
             )
-          )
             .toValidatedNec
       }
   }
 
   def validateClassificationAlgorithm(
-                                       algorithm: Algorithm,
-                                       project: ClassificationProject
-                                     ): AlgorithmValidationResult[Unit] = {
+      algorithm: Algorithm,
+      project: ClassificationProject
+  ): AlgorithmValidationResult[Unit] = {
     algorithm.backend match {
       case LocalClassification(computed) =>
         Validated.valid[AlgorithmError, Unit](Unit).toValidatedNec
       case TensorFlowClassificationBackend(
-      _,
-      _,
-      TensorFlowFeaturesTransformer(signatureName, fields),
-      TensorFlowLabelsTransformer(labels)
-      ) =>
+          _,
+          _,
+          TensorFlowFeaturesTransformer(signatureName, fields),
+          TensorFlowLabelsTransformer(labels)
+          ) =>
         val validatedlabels = project.configuration.labels.data match {
           case OneOfLabelsDescriptor(oneOf, _) =>
             Either
@@ -163,9 +163,9 @@ object AlgorithmValidator {
   }
 
   def validateRegressionAlgorithm(
-                                   algorithm: Algorithm,
-                                   project: RegressionProject
-                                 ): AlgorithmValidationResult[Unit] = {
+      algorithm: Algorithm,
+      project: RegressionProject
+  ): AlgorithmValidationResult[Unit] = {
     algorithm.backend match {
       case backend: LocalClassification =>
         Validated
@@ -181,10 +181,10 @@ object AlgorithmValidator {
           )
           .toValidatedNec
       case TensorFlowRegressionBackend(
-      _,
-      _,
-      TensorFlowFeaturesTransformer(signatureName, fields)
-      ) =>
+          _,
+          _,
+          TensorFlowFeaturesTransformer(signatureName, fields)
+          ) =>
         Either
           .cond(
             project.configuration.features.data.size == fields.size,
@@ -228,8 +228,8 @@ object AlgorithmValidator {
   }
 
   def validateAlphanumericalAlgorithmId(
-                                         id: String
-                                       ): AlgorithmValidationResult[String] =
+      id: String
+  ): AlgorithmValidationResult[String] =
     Either
       .cond(
         id.matches("^[a-zA-Z0-9]*$"),
@@ -241,9 +241,9 @@ object AlgorithmValidator {
       .toValidatedNec
 
   def validateAlgorithmCreate(
-                               algorithm: Algorithm,
-                               project: Project
-                             ): AlgorithmValidationResult[Protocol] =
+      algorithm: Algorithm,
+      project: Project
+  ): AlgorithmValidationResult[Protocol] =
     (project match {
       case classificationProject: ClassificationProject =>
         validateClassificationAlgorithm(
@@ -254,6 +254,5 @@ object AlgorithmValidator {
         validateRegressionAlgorithm(algorithm, regressionProject)
     }).andThen(_ => validateAlphanumericalAlgorithmId(algorithm.id))
       .andThen(_ => validateProtocolAndVerifyCompatibility(algorithm.backend))
-
 
 }

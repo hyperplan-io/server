@@ -48,9 +48,13 @@ class BackendService(blazeClient: Resource[IO, Client[IO]]) extends IOLogging {
             preComputedLabels.map { label =>
               ClassificationLabel(
                 label,
-                1f/labelsSize.toFloat,
-                ExampleUrlService.correctClassificationExampleUrl(predictionId, label),
-                ExampleUrlService.incorrectClassificationExampleUrl(predictionId, label)
+                1f / labelsSize.toFloat,
+                ExampleUrlService
+                  .correctClassificationExampleUrl(predictionId, label),
+                ExampleUrlService.incorrectClassificationExampleUrl(
+                  predictionId,
+                  label
+                )
               )
             }
           ).asRight

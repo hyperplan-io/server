@@ -56,7 +56,7 @@ object Server {
       projectsService
     )
     val algorithmsController = new AlgorithmsController(
-      projectsService 
+      projectsService
     )
     val examplesController = new ExamplesController(
       predictionsService

@@ -9,17 +9,15 @@ import com.hyperplan.domain.errors._
 import com.hyperplan.domain.models._
 import com.hyperplan.domain.models.features._
 
-
 object DomainValidator {
 
   type FeaturesValidationResult[A] =
     ValidatedNec[FeatureVectorDescriptorError, A]
   type LabelsValidationResult[A] = ValidatedNec[LabelVectorDescriptorError, A]
 
-
   def validateLabelsDoesNotAlreadyExist(
-                                         existingLabels: Option[LabelVectorDescriptor]
-                                       ): LabelsValidationResult[Unit] =
+      existingLabels: Option[LabelVectorDescriptor]
+  ): LabelsValidationResult[Unit] =
     (existingLabels match {
       case None => Validated.valid(())
       case Some(value) =>
@@ -36,8 +34,8 @@ object DomainValidator {
     }
 
   def validateFeaturesDoesNotAlreadyExist(
-                                           existingFeatures: Option[FeatureVectorDescriptor]
-                                         ): FeaturesValidationResult[Unit] =
+      existingFeatures: Option[FeatureVectorDescriptor]
+  ): FeaturesValidationResult[Unit] =
     (existingFeatures match {
       case None => Validated.valid(())
       case Some(value) =>
@@ -45,8 +43,8 @@ object DomainValidator {
     }).toValidatedNec
 
   def validateReferenceFeaturesExist(
-                                      references: List[(String, Option[FeatureVectorDescriptor])]
-                                    ): Validated[NonEmptyChain[FeatureVectorDescriptorError], Unit] = {
+      references: List[(String, Option[FeatureVectorDescriptor])]
+  ): Validated[NonEmptyChain[FeatureVectorDescriptorError], Unit] = {
     val emptyReferences = references.collect {
       case (featureId, None) =>
         featureId
@@ -64,12 +62,12 @@ object DomainValidator {
     }
   }
   def validateReferenceFeaturesDimension(
-                                          featuresConfiguration: FeatureVectorDescriptor
-                                        ): Validated[NonEmptyChain[FeatureVectorDescriptorError], Unit] = {
+      featuresConfiguration: FeatureVectorDescriptor
+  ): Validated[NonEmptyChain[FeatureVectorDescriptorError], Unit] = {
     val dimensionErrors: List[FeatureVectorDescriptorError] =
       featuresConfiguration.data.collect {
         case featureConfiguration: FeatureDescriptor
-          if featureConfiguration.isReference && featureConfiguration.dimension != Scalar =>
+            if featureConfiguration.isReference && featureConfiguration.dimension != Scalar =>
           UnsupportedDimensionError(
             featureConfiguration.name,
             featureConfiguration.dimension
@@ -88,18 +86,18 @@ object DomainValidator {
   def validateUniqueness(names: List[String]): FeaturesValidationResult[Unit] =
     Either
       .cond[FeatureVectorDescriptorError, Unit](
-      names.distinct.length == names.length,
-      Unit,
-      DuplicateFeatureIds()
-    )
+        names.distinct.length == names.length,
+        Unit,
+        DuplicateFeatureIds()
+      )
       .toValidatedNec
 
   def validateFeatures(
-                        featuresConfiguration: FeatureVectorDescriptor,
-                        existingFeatures: Option[FeatureVectorDescriptor],
-                        references: List[(String, Option[FeatureVectorDescriptor])],
-                        names: List[String]
-                      ): FeaturesValidationResult[Unit] =
+      featuresConfiguration: FeatureVectorDescriptor,
+      existingFeatures: Option[FeatureVectorDescriptor],
+      references: List[(String, Option[FeatureVectorDescriptor])],
+      names: List[String]
+  ): FeaturesValidationResult[Unit] =
     (
       validateFeaturesDoesNotAlreadyExist(existingFeatures),
       validateReferenceFeaturesExist(references),
@@ -110,9 +108,9 @@ object DomainValidator {
     }
 
   def validateLabels(
-                      existingLabels: Option[LabelVectorDescriptor],
-                      labelsConfiguration: LabelVectorDescriptor
-                    ): LabelsValidationResult[Unit] =
+      existingLabels: Option[LabelVectorDescriptor],
+      labelsConfiguration: LabelVectorDescriptor
+  ): LabelsValidationResult[Unit] =
     (
       validateLabelsDoesNotAlreadyExist(existingLabels),
       validateLabelsNotEmpty(labelsConfiguration)

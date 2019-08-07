@@ -58,7 +58,6 @@ class AlgorithmsControllerWithMockedClientRegressionSpec()
   implicit val requestEntityDecoder: EntityDecoder[IO, PostAlgorithmRequest] =
     PostAlgorithmRequestEntitySerializer.entityDecoder
 
-
   val app = HttpApp.pure(
     Response[IO](Status.Ok).withEntity(
       TensorFlowRegressionEntityResponse(
@@ -72,7 +71,6 @@ class AlgorithmsControllerWithMockedClientRegressionSpec()
   )
   val client = Client.fromHttpApp(app)
   val blazeClient = Resource.make(IO(client))(_ => IO.unit)
-
 
   val projectRepository = new ProjectsRepository()(xa)
   val domainRepository = new DomainRepository()(xa)
@@ -90,9 +88,6 @@ class AlgorithmsControllerWithMockedClientRegressionSpec()
     backendService,
     projectCache
   )
-
-  
-  
 
   val config = pureconfig.loadConfig[ApplicationConfig].right.get
 
@@ -119,7 +114,7 @@ class AlgorithmsControllerWithMockedClientRegressionSpec()
   )
 
   val algorithmsController = new AlgorithmsController(
-    projectsService 
+    projectsService
   )
 
   it should "successfully to create an algorithm with Tensorflow regression" in {

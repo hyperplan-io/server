@@ -79,7 +79,6 @@ class AlgorithmsControllerSpec()
     ExecutionContext.global
   ).resource
 
-
   val projectRepository = new ProjectsRepository()(xa)
   val domainRepository = new DomainRepository()(xa)
   val algorithmsRepository = new AlgorithmsRepository()(xa)
@@ -96,8 +95,6 @@ class AlgorithmsControllerSpec()
     backendService,
     projectCache
   )
-
-  
 
   val config = pureconfig.loadConfig[ApplicationConfig].right.get
 
@@ -124,7 +121,7 @@ class AlgorithmsControllerSpec()
   )
 
   val algorithmsController = new AlgorithmsController(
-    projectsService 
+    projectsService
   )
 
   it should "fail to create an algorithm for a project that does not exist" in {

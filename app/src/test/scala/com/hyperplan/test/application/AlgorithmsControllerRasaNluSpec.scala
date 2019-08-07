@@ -88,7 +88,6 @@ class AlgorithmsControllerRasaNluSpec()
   val domainService = new DomainService(domainRepository)
   val backendService = new BackendService(blazeClient)
 
-
   val projectCache: Cache[Project] = CaffeineCache[Project]
   val projectsService = new ProjectsService(
     projectRepository,
@@ -109,7 +108,6 @@ class AlgorithmsControllerRasaNluSpec()
     None,
     config
   )
-  
 
   val featuresController = new FeaturesController(
     domainService
@@ -124,7 +122,7 @@ class AlgorithmsControllerRasaNluSpec()
   )
 
   val algorithmsController = new AlgorithmsController(
-    projectsService 
+    projectsService
   )
 
   it should "successfully to create an algorithm with Rasa Nlu classification" in {

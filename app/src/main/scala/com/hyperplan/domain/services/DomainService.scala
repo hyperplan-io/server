@@ -39,8 +39,6 @@ class DomainService(domainRepository: DomainRepository) extends IOLogging {
         IO.pure(none[LabelVectorDescriptor])
     }
 
-
-
   def createFeatures(
       features: FeatureVectorDescriptor
   ): EitherT[IO, NonEmptyChain[FeatureVectorDescriptorError], FeatureVectorDescriptor] =
@@ -60,19 +58,19 @@ class DomainService(domainRepository: DomainRepository) extends IOLogging {
       }
       referenceFeatures <- EitherT.liftF(referenceFeaturesIO.sequence)
       validated <- EitherT.fromEither[IO](
-        DomainValidator.validateFeatures(
-          features,
-          existingFeatures,
-          referenceFeatures,
-          featuresNames
-        ).toEither
+        DomainValidator
+          .validateFeatures(
+            features,
+            existingFeatures,
+            referenceFeatures,
+            featuresNames
+          )
+          .toEither
       )
       _ <- EitherT.liftF(
         domainRepository.insertFeatures(features)
       )
     } yield features
-
-
 
   def createLabels(
       labelsConfiguration: LabelVectorDescriptor
@@ -80,7 +78,9 @@ class DomainService(domainRepository: DomainRepository) extends IOLogging {
     for {
       existingLabels <- EitherT.liftF(readLabels(labelsConfiguration.id))
       _ <- EitherT.fromEither[IO](
-        DomainValidator.validateLabels(existingLabels, labelsConfiguration).toEither
+        DomainValidator
+          .validateLabels(existingLabels, labelsConfiguration)
+          .toEither
       )
       _ <- EitherT.liftF(
         domainRepository
