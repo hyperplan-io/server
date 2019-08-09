@@ -6,18 +6,9 @@ import doobie.implicits._
 import cats.effect.IO
 import cats.implicits._
 
-import com.hyperplan.domain.errors.AlgorithmError.{
-  AlgorithmAlreadyExistsError,
-  AlgorithmDataIsIncorrectError
-}
-import com.hyperplan.domain.models._
 import com.hyperplan.infrastructure.serialization._
 import com.hyperplan.domain.models.backends.Backend
-import doobie.postgres.sqlstate
-import com.hyperplan.domain.errors.{AlgorithmError, ProjectError}
-import com.hyperplan.domain.errors.ProjectError._
 import com.hyperplan.domain.models._
-import com.hyperplan.domain.repositories.ProjectsRepository.AlgorithmData
 import com.hyperplan.infrastructure.logging.IOLogging
 
 class ProjectsRepository(implicit xa: Transactor[IO]) extends IOLogging {
@@ -76,7 +67,6 @@ class ProjectsRepository(implicit xa: Transactor[IO]) extends IOLogging {
         String,
         String,
         String,
-        // algorithm
         String,
         String,
         String
@@ -219,32 +209,6 @@ class ProjectsRepository(implicit xa: Transactor[IO]) extends IOLogging {
     Update[Algorithm](sql).updateMany(algorithms)
   }
 
-  def dataToAlgorithm(data: AlgorithmData) = data match {
-    case (
-        id,
-        Right(backend),
-        projectId,
-        Right(security)
-        ) =>
-      IO.pure(
-        Algorithm(id, backend, projectId, security)
-      )
-
-    case algorithmData =>
-      logger.warn(
-        s"Could not rebuild algorithm with repository, data is $algorithmData"
-      ) *> IO.raiseError(
-        AlgorithmDataIsIncorrectError(
-          AlgorithmDataIsIncorrectError.message(
-            data._1
-          )
-        )
-      )
-  }
-
-  def dataListToAlgorithm(dataList: List[AlgorithmData]) =
-    (dataList.map(dataToAlgorithm)).sequence
-
 }
 
 object ProjectsRepository {
@@ -258,13 +222,6 @@ object ProjectsRepository {
       // algorithm
       String,
       Either[io.circe.Error, Backend],
-      Either[io.circe.Error, SecurityConfiguration]
-  )
-
-  type AlgorithmData = (
-      String,
-      Either[io.circe.Error, Backend],
-      String,
       Either[io.circe.Error, SecurityConfiguration]
   )
 
@@ -320,30 +277,5 @@ object ProjectsRepository {
     case _ =>
       none[Project]
   }
-
-  def dataListToProject(dataList: List[ProjectRowData]) =
-    (dataList.map(dataToProject)).sequence
-
-  def dataToAlgorithm(data: AlgorithmData): ConnectionIO[Algorithm] =
-    data match {
-      case (
-          id,
-          Right(backend),
-          projectId,
-          Right(security)
-          ) =>
-        Algorithm(id, backend, projectId, security).pure[ConnectionIO]
-      case algorithmData =>
-        AsyncConnectionIO.raiseError(
-          AlgorithmDataIsIncorrectError(
-            AlgorithmDataIsIncorrectError.message(data._1)
-          )
-        )
-    }
-
-  def dataListToAlgorithm(
-      dataList: List[AlgorithmData]
-  ): ConnectionIO[List[Algorithm]] =
-    (dataList.map(dataToAlgorithm)).sequence
 
 }
