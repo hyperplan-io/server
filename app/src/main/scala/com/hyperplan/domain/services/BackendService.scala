@@ -36,7 +36,10 @@ class BackendService(blazeClient: Resource[IO, Client[IO]]) extends IOLogging {
       features: Features.Features
   )(implicit cs: ContextShift[IO]): IO[Either[PredictionError, Prediction]] =
     (algorithm.backend, project) match {
-      case (LocalClassification(preComputedLabels), _: ClassificationProject) =>
+      case (
+          LocalRandomClassification(preComputedLabels),
+          _: ClassificationProject
+          ) =>
         val labelsSize = preComputedLabels.size
         IO.pure(
           ClassificationPrediction(

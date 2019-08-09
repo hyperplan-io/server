@@ -69,7 +69,9 @@ object AlgorithmValidator {
   def validateProtocolAndVerifyCompatibility(
       backend: Backend
   ): AlgorithmValidationResult[Protocol] = backend match {
-    case LocalClassification(_) =>
+    case LocalRandomClassification(_) =>
+      Validated.valid[AlgorithmError, Protocol](LocalCompute).toValidatedNec
+    case LocalRandomRegression() =>
       Validated.valid[AlgorithmError, Protocol](LocalCompute).toValidatedNec
     case TensorFlowClassificationBackend(_, _, _, _) =>
       Validated.valid[AlgorithmError, Protocol](Http).toValidatedNec
@@ -103,7 +105,9 @@ object AlgorithmValidator {
       project: ClassificationProject
   ): AlgorithmValidationResult[Unit] = {
     algorithm.backend match {
-      case LocalClassification(computed) =>
+      case LocalRandomClassification(computed) =>
+        Validated.valid[AlgorithmError, Unit](Unit).toValidatedNec
+      case LocalRandomRegression() =>
         Validated.valid[AlgorithmError, Unit](Unit).toValidatedNec
       case TensorFlowClassificationBackend(
           _,
@@ -167,7 +171,7 @@ object AlgorithmValidator {
       project: RegressionProject
   ): AlgorithmValidationResult[Unit] = {
     algorithm.backend match {
-      case backend: LocalClassification =>
+      case backend: LocalRandomClassification =>
         Validated
           .invalid(
             AlgorithmError.IncompatibleAlgorithmError(
@@ -180,6 +184,8 @@ object AlgorithmValidator {
             )
           )
           .toValidatedNec
+      case _: LocalRandomRegression =>
+        Validated.valid(()).toValidatedNec
       case TensorFlowRegressionBackend(
           _,
           _,

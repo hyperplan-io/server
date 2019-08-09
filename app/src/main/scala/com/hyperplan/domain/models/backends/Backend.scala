@@ -14,15 +14,15 @@ import com.hyperplan.domain.services.ExampleUrlService
 sealed trait Backend
 
 /**
-  * Describe a computation that is already available. Useful for testing purpose.
+  * Describe a classifier that returns random values. Useful for testing purpose.
   * @param computed The labels that are returned.
   */
-case class LocalClassification(
+case class LocalRandomClassification(
     computed: Set[String]
 ) extends Backend
 
-object LocalClassification {
-  val backendClass = "LocalClassification"
+object LocalRandomClassification {
+  val backendClass = "LocalRandomClassification"
 }
 
 /**
@@ -61,6 +61,15 @@ case class RasaNluClassificationBackend(
 
 object RasaNluClassificationBackend {
   val backendClass = "RasaNluClassificationBackend"
+}
+
+/**
+  * Describe a regression that returns random values. Useful for testing purpose.
+  */
+case class LocalRandomRegression() extends Backend
+
+object LocalRandomRegression {
+  val backendClass = "LocalRandomRegression"
 }
 
 /**

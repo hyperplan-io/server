@@ -6,7 +6,6 @@ import com.hyperplan.domain.models.Project
 import scalacache.caffeine.CaffeineCache
 import com.hyperplan.application._
 import com.hyperplan.domain.repositories.{
-  AlgorithmsRepository,
   DomainRepository,
   PredictionsRepository,
   ProjectsRepository
@@ -104,7 +103,6 @@ class PredictionsServiceSpec()
   )
 
   val projectsRepository = new ProjectsRepository()(xa)
-  val algorithmsRepository = new AlgorithmsRepository()(xa)
   val predictionsRepository = new PredictionsRepository()(xa)
   val domainRepository = new DomainRepository()(xa)
 
@@ -123,7 +121,6 @@ class PredictionsServiceSpec()
   val projectCache: Cache[Project] = CaffeineCache[Project]
   val projectsService = new ProjectsService(
     projectsRepository,
-    algorithmsRepository,
     domainService,
     backendService,
     projectCache

@@ -36,7 +36,7 @@ import com.hyperplan.application.controllers.requests.{
 }
 import com.hyperplan.domain.errors.ProjectError._
 import com.hyperplan.domain.models
-import com.hyperplan.domain.models.backends.LocalClassification
+import com.hyperplan.domain.models.backends.LocalRandomClassification
 import org.http4s.client.blaze.BlazeClientBuilder
 import scala.concurrent.ExecutionContext
 
@@ -108,7 +108,6 @@ class ProjectsControllerSpec()
 
   val projectRepository = new ProjectsRepository()(xa)
   val domainRepository = new DomainRepository()(xa)
-  val algorithmsRepository = new AlgorithmsRepository()(xa)
 
   val domainService = new DomainService(domainRepository)
   val backendService = new BackendService(blazeClient)
@@ -116,7 +115,6 @@ class ProjectsControllerSpec()
   val projectCache: Cache[Project] = CaffeineCache[Project]
   val projectsService = new ProjectsService(
     projectRepository,
-    algorithmsRepository,
     domainService,
     backendService,
     projectCache

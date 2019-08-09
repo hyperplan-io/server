@@ -23,16 +23,27 @@ object BackendSerializer {
     implicit val classificationLabelDecoder: Decoder[Set[ClassificationLabel]] =
       ClassificationLabelSerializer.classificationLabelsSetDecoder
 
-    val localClassificationBackendEncoder: Encoder[LocalClassification] =
+    val localClassificationBackendEncoder: Encoder[LocalRandomClassification] =
       Encoder.forProduct2("class", "labels")(
-        backend => ("LocalClassification", backend.computed)
+        backend => (LocalRandomClassification.backendClass, backend.computed)
       )
-    val localClassificationBackendDecoder: Decoder[LocalClassification] =
+    val localClassificationBackendDecoder: Decoder[LocalRandomClassification] =
       Decoder
-        .forProduct2[LocalClassification, String, Set[String]](
+        .forProduct2[LocalRandomClassification, String, Set[String]](
           "class",
           "labels"
-        )((backendClass, labels) => LocalClassification(labels))
+        )((_, labels) => LocalRandomClassification(labels))
+
+    val localRegressionBackendEncoder: Encoder[LocalRandomRegression] =
+      Encoder.forProduct1("class")(
+        _ => LocalRandomRegression.backendClass
+      )
+
+    val localRegressionBackendDecoder: Decoder[LocalRandomRegression] =
+      Decoder
+        .forProduct1[LocalRandomRegression, String](
+          "class"
+        )(_ => LocalRandomRegression())
 
     val tensorFlowClassificationBackendEncoder
         : Encoder[TensorFlowClassificationBackend] =
@@ -166,8 +177,10 @@ object BackendSerializer {
           tensorFlowClassificationBackendDecoder(c)
         case TensorFlowRegressionBackend.backendClass =>
           tensorFlowRegressionBackendDecoder(c)
-        case LocalClassification.backendClass =>
+        case LocalRandomClassification.backendClass =>
           localClassificationBackendDecoder(c)
+        case LocalRandomRegression.backendClass =>
+          localRegressionBackendDecoder(c)
         case RasaNluClassificationBackend.backendClass =>
           rasaNluClassificationBackendDecoder(c)
 
@@ -178,8 +191,10 @@ object BackendSerializer {
       tensorFlowClassificationBackendEncoder(backend)
     case backend: TensorFlowRegressionBackend =>
       tensorFlowRegressionBackendEncoder(backend)
-    case backend: LocalClassification =>
+    case backend: LocalRandomClassification =>
       localClassificationBackendEncoder(backend)
+    case backend: LocalRandomRegression =>
+      localRegressionBackendEncoder(backend)
     case backend: RasaNluClassificationBackend =>
       rasaNluClassificationBackendEncoder(backend)
   }

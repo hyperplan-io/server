@@ -122,7 +122,6 @@ class PredictionsControllerSpec()
 
   val projectRepository = new ProjectsRepository()(xa)
   val domainRepository = new DomainRepository()(xa)
-  val algorithmsRepository = new AlgorithmsRepository()(xa)
   val predictionsRepository = new PredictionsRepository()(xa)
 
   val domainService = new DomainService(domainRepository)
@@ -131,7 +130,6 @@ class PredictionsControllerSpec()
   val projectCache: Cache[Project] = CaffeineCache[Project]
   val projectsService = new ProjectsService(
     projectRepository,
-    algorithmsRepository,
     domainService,
     backendService,
     projectCache
@@ -170,41 +168,6 @@ class PredictionsControllerSpec()
     domainService,
     predictionsService
   )
-
-  it should "fail to execute a prediction if no algorithms are available" in {
-    val featureVectorDescriptor =
-      ProjectUtils.createFeatures(featuresController)
-    val labelVectorDescriptor =
-      ProjectUtils.createDynamicLabels(labelsController)
-    val project = ProjectUtils.createClassificationProject(
-      projectsController,
-      featureVectorDescriptor,
-      labelVectorDescriptor
-    )
-
-    val response = predictionsController.service
-      .run(
-        Request[IO](
-          method = Method.POST,
-          uri = uri"/"
-        ).withEntity(ProjectUtils.genPredictionRequest(project.id))
-      )
-      .value
-      .map(_.get)
-
-    assert(
-      ControllerTestUtils.check[List[PredictionError]](
-        response,
-        Status.BadRequest,
-        Some(
-          List(
-            PredictionError.NoAlgorithmAvailableError()
-          )
-        )
-      )
-    )
-
-  }
 
   it should "fail to execute a prediction when selecting an algorithm that does not exist" in {
     val featureVectorDescriptor =
@@ -284,7 +247,7 @@ class PredictionsControllerSpec()
                 labels
                 ) =>
               projectId should be(requestEntity1.projectId)
-              algorithmId should be(algorithm1.id)
+              algorithmId should be(ProjectsService.defaultRandomAlgorithmId)
               features should be(requestEntity1.features)
               assert(examples.isEmpty)
               assert(labels.isEmpty)
@@ -323,7 +286,7 @@ class PredictionsControllerSpec()
                 labels
                 ) =>
               projectId should be(requestEntity2.projectId)
-              algorithmId should be(algorithm1.id)
+              algorithmId should be(ProjectsService.defaultRandomAlgorithmId)
               features should be(requestEntity2.features)
               assert(examples.isEmpty)
               assert(labels.isEmpty)

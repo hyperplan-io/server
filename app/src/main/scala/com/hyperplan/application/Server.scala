@@ -14,10 +14,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.{FiniteDuration, NANOSECONDS, TimeUnit}
 import scala.util.Properties.envOrNone
 import com.hyperplan.application.controllers._
-import com.hyperplan.domain.repositories.{
-  AlgorithmsRepository,
-  ProjectsRepository
-}
+import com.hyperplan.domain.repositories.ProjectsRepository
 
 import com.hyperplan.infrastructure.streaming._
 import com.hyperplan.domain.services._

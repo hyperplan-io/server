@@ -2,7 +2,7 @@ package com.hyperplan.test
 
 import java.util.UUID
 
-import com.hyperplan.domain.models.backends.LocalClassification
+import com.hyperplan.domain.models.backends.LocalRandomClassification
 import com.hyperplan.domain.models._
 
 object AlgorithmGenerator {
@@ -20,7 +20,7 @@ object AlgorithmGenerator {
 
   val defaultAlgorithm = Algorithm(
     "algorithm id",
-    LocalClassification(computed),
+    LocalRandomClassification(computed),
     "test project id",
     defaultSecurityConfig
   )
@@ -28,7 +28,7 @@ object AlgorithmGenerator {
   def withLocalBackend(algorithmId: Option[String] = None) =
     Algorithm(
       algorithmId.getOrElse(UUID.randomUUID().toString),
-      LocalClassification(computed),
+      LocalRandomClassification(computed),
       UUID.randomUUID().toString,
       defaultSecurityConfig
     )

@@ -82,7 +82,6 @@ class AlgorithmsControllerRasaNluSpec()
 
   val projectRepository = new ProjectsRepository()(xa)
   val domainRepository = new DomainRepository()(xa)
-  val algorithmsRepository = new AlgorithmsRepository()(xa)
   val predictionsRepository = new PredictionsRepository()(xa)
 
   val domainService = new DomainService(domainRepository)
@@ -91,7 +90,6 @@ class AlgorithmsControllerRasaNluSpec()
   val projectCache: Cache[Project] = CaffeineCache[Project]
   val projectsService = new ProjectsService(
     projectRepository,
-    algorithmsRepository,
     domainService,
     backendService,
     projectCache
