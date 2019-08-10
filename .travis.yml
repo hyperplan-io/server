@@ -42,7 +42,7 @@ jobs:
   - stage: validations-and-test
     script: sbt ++$TRAVIS_SCALA_VERSION "project app" "scalafmtCheck" "test:scalafmtCheck" "scalafmtSbtCheck"
     name: "Code validations (format, binary compatibilty, whitesource, etc.)"
-  - script: sbt ++$TRAVIS_SCALA_VERSION "project app" "coverage" "test" "coverageReport" "coverageOff" "package" "packageSrc" "publishLocal"
+  - script: sbt ++$TRAVIS_SCALA_VERSION "project app" "coverage" "test" "coverageReport" "coverageOff" "package" "packageSrc" "publishLocal" "stage"
     name: "Run tests for Scala 2.12"
 
 after_success:
