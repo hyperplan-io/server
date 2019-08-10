@@ -291,7 +291,7 @@ class PredictionsService(
     predictionsRepository.transact(transaction).flatMap {
       case Right(projectEvent) =>
         val (project, event) = projectEvent
-        logger.info("gonna publish") *> publishToStream(
+        publishToStream(
           event,
           project.configuration.dataStream
         ).map(_ => event.asRight)

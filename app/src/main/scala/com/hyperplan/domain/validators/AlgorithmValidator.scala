@@ -195,7 +195,6 @@ object AlgorithmValidator {
           )
           .toValidatedNec
       case _: LocalRandomRegression =>
-        print("should be valid !!!")
         Validated.valid(()).toValidatedNec
       case TensorFlowRegressionBackend(
           _,
