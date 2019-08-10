@@ -1,6 +1,6 @@
 addSbtPlugin("org.lyranthe.sbt" % "partial-unification" % "1.1.0")
 addSbtPlugin("io.spray" % "sbt-revolver" % "0.9.1")
-addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.0.0-RC5")
+addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.0.0")
 addSbtPlugin("com.github.cb372" % "sbt-explicit-dependencies" % "0.2.9")
 addSbtPlugin("com.typesafe.sbt" % "sbt-native-packager" % "1.3.18")
 addSbtPlugin("com.47deg" % "sbt-microsites" % "0.9.0")

@@ -1,19 +1,17 @@
 package com.hyperplan.test.domain.services
 
 import cats.effect.{IO, Timer}
-
 import scalacache.Cache
 import com.hyperplan.domain.models.Project
 import scalacache.caffeine.CaffeineCache
-
 import com.hyperplan.application._
 import com.hyperplan.domain.repositories.{
-  AlgorithmsRepository,
   DomainRepository,
   PredictionsRepository,
   ProjectsRepository
 }
 import com.hyperplan.domain.services.{
+  BackendService,
   DomainService,
   PredictionsService,
   ProjectsService
@@ -26,7 +24,6 @@ import com.hyperplan.infrastructure.streaming.{
 import com.hyperplan.test.TestDatabase
 import com.hyperplan.test.TestDatabase
 import org.scalatest._
-
 import org.scalatest.{BeforeAndAfterAll, Matchers, WordSpecLike}
 
 import scala.concurrent.ExecutionContext
@@ -50,6 +47,10 @@ class PredictionsServiceSpec()
 
   implicit val mat = ActorMaterializer()
   implicit val timer: Timer[IO] = IO.timer(ExecutionContext.global)
+
+  val blazeClient = BlazeClientBuilder[IO](
+    ExecutionContext.global
+  ).resource
 
   val config = ApplicationConfig(
     KinesisConfig(
@@ -102,7 +103,6 @@ class PredictionsServiceSpec()
   )
 
   val projectsRepository = new ProjectsRepository()(xa)
-  val algorithmsRepository = new AlgorithmsRepository()(xa)
   val predictionsRepository = new PredictionsRepository()(xa)
   val domainRepository = new DomainRepository()(xa)
 
@@ -116,26 +116,24 @@ class PredictionsServiceSpec()
   val domainService = new DomainService(
     domainRepository
   )
+  val backendService = new BackendService(blazeClient)
 
   val projectCache: Cache[Project] = CaffeineCache[Project]
   val projectsService = new ProjectsService(
     projectsRepository,
     domainService,
+    backendService,
     projectCache
   )
-
-  val blazeClient = BlazeClientBuilder[IO](
-    ExecutionContext.global
-  ).resource
 
   val predictionsService: PredictionsService =
     new PredictionsService(
       predictionsRepository,
       projectsService,
+      backendService,
       Some(kinesisService),
       Some(pubSubService),
       Some(kafkaService),
-      blazeClient,
       config
     )
 }

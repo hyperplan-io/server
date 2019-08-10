@@ -2,31 +2,16 @@ package com.hyperplan.test
 
 import java.util.UUID
 
-import com.hyperplan.domain.models.backends.LocalClassification
+import com.hyperplan.domain.models.backends.LocalRandomClassification
 import com.hyperplan.domain.models._
 
 object AlgorithmGenerator {
 
   val computed =
     Set(
-      labels.ClassificationLabel(
-        "class1",
-        0.1f,
-        "correct_url",
-        "incorrect_url"
-      ),
-      labels.ClassificationLabel(
-        "class2",
-        0.2f,
-        "correct_url",
-        "incorrect_url"
-      ),
-      labels.ClassificationLabel(
-        "class3",
-        0.3f,
-        "correct_url",
-        "incorrect_url"
-      )
+      "class1",
+      "class2",
+      "class3"
     )
 
   val defaultSecurityConfig = PlainSecurityConfiguration(
@@ -35,7 +20,7 @@ object AlgorithmGenerator {
 
   val defaultAlgorithm = Algorithm(
     "algorithm id",
-    LocalClassification(computed),
+    LocalRandomClassification(computed),
     "test project id",
     defaultSecurityConfig
   )
@@ -43,7 +28,7 @@ object AlgorithmGenerator {
   def withLocalBackend(algorithmId: Option[String] = None) =
     Algorithm(
       algorithmId.getOrElse(UUID.randomUUID().toString),
-      LocalClassification(computed),
+      LocalRandomClassification(computed),
       UUID.randomUUID().toString,
       defaultSecurityConfig
     )

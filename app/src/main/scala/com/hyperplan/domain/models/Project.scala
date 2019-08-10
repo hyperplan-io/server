@@ -1,5 +1,7 @@
 package com.hyperplan.domain.models
 
+import cats.kernel.Semigroup
+
 sealed trait ProjectConfiguration {
   val dataStream: Option[StreamConfiguration]
 }
@@ -31,6 +33,28 @@ sealed trait Project {
 
   lazy val algorithmsMap: Map[String, Algorithm] =
     algorithms.map(algorithm => algorithm.id -> algorithm).toMap
+}
+
+object Project {
+  implicit val semigroup: Semigroup[Project] = (x: Project, y: Project) =>
+    x match {
+      case ClassificationProject(id, name, configuration, algorithms, policy) =>
+        ClassificationProject(
+          id,
+          name,
+          configuration,
+          algorithms ::: y.algorithms,
+          policy
+        )
+      case RegressionProject(id, name, configuration, algorithms, policy) =>
+        RegressionProject(
+          id,
+          name,
+          configuration,
+          algorithms ::: y.algorithms,
+          policy
+        )
+    }
 }
 
 case class ClassificationProject(

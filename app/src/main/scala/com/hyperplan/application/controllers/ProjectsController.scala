@@ -35,7 +35,7 @@ class ProjectsController(
             MonadError[IO, Throwable],
             PostProjectRequestSerializer.entityDecoder
           )
-          project <- projectsService.createEmptyProject(request).value
+          project <- projectsService.createProject(request).value
         } yield project)
           .flatMap {
             case Right(project) =>

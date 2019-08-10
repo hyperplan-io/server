@@ -2,19 +2,20 @@ package com.hyperplan.domain.repositories
 
 import doobie._
 import doobie.implicits._
+
 import cats.effect.IO
 import cats.implicits._
-import com.hyperplan.domain.models._
+
 import com.hyperplan.infrastructure.serialization._
 import com.hyperplan.domain.models.backends.Backend
-import doobie.postgres.sqlstate
-import com.hyperplan.domain.errors.ProjectError
-import com.hyperplan.domain.errors.ProjectError._
-
 import com.hyperplan.domain.models._
+import com.hyperplan.infrastructure.logging.IOLogging
 
-class ProjectsRepository(implicit xa: Transactor[IO]) {
+class ProjectsRepository(implicit xa: Transactor[IO]) extends IOLogging {
 
+  /*
+   * project
+   */
   implicit val problemTypeGet: Get[Either[io.circe.Error, ProblemType]] =
     Get[String].map(ProblemTypeSerializer.decodeJson)
   implicit val problemTypePut: Put[ProblemType] =
@@ -59,12 +60,58 @@ class ProjectsRepository(implicit xa: Transactor[IO]) {
   implicit val labelsTypePut: Put[Set[String]] =
     Put[String].contramap(labels => s"${labels.mkString(separator)}")
 
+  implicit val readProjectRow: Read[ProjectRowData] = Read[
+    (
+        String,
+        String,
+        String,
+        String,
+        String,
+        String,
+        String,
+        String
+    )
+  ].map {
+    case (
+        projectId,
+        projectName,
+        problem,
+        policy,
+        configuration,
+        algorithmId,
+        backend,
+        securityConfiguration
+        ) =>
+      (
+        projectId,
+        projectName,
+        ProblemTypeSerializer.decodeJson(problem),
+        AlgorithmPolicySerializer.decodeJson(policy),
+        ProjectConfigurationSerializer.decodeJson(configuration),
+        algorithmId,
+        BackendSerializer.decodeJson(backend),
+        SecurityConfigurationSerializer.decodeJson(securityConfiguration)
+      )
+  }
+
+  implicit val writes: Write[Algorithm] = Write[
+    (
+        String,
+        Backend,
+        String,
+        SecurityConfiguration
+    )
+  ].contramap(
+    algorithm =>
+      (algorithm.id, algorithm.backend, algorithm.projectId, algorithm.security)
+  )
+
   def transact[T](io: ConnectionIO[T]) =
     io.transact(xa)
 
-  def insertQuery(project: Project) =
+  def insertProjectQuery(project: Project) =
     sql"""INSERT INTO projects(
-      id, 
+      id,
       name,
       problem,
       algorithm_policy,
@@ -77,185 +124,158 @@ class ProjectsRepository(implicit xa: Transactor[IO]) {
       ${project.configuration}
     )""".update
 
-  def insert(project: Project) =
-    insertQuery(project: Project).run
-      .attemptSomeSqlState {
-        case sqlstate.class23.UNIQUE_VIOLATION =>
-          ProjectError.ProjectAlreadyExistsError(
-            ProjectError.ProjectAlreadyExistsError.message(project.id)
-          )
-      }
-      .transact(xa)
+  def insertProject(project: Project): ConnectionIO[Project] =
+    for {
+      _ <- insertProjectQuery(project: Project).run
+      _ <- insertManyAlgorithm(project.algorithms)
+    } yield project
 
-  def readQuery(projectId: String): Query0[ProjectData] =
+  def readProjectQuery(projectId: String): Query0[ProjectRowData] =
     sql"""
-      SELECT id, name, problem, algorithm_policy, configuration
+      SELECT projects.id, name, problem, algorithm_policy, configuration, algorithms.id, backend, security
       FROM projects
-      WHERE id=$projectId
+      JOIN algorithms on algorithms.project_id = projects.id
+      WHERE projects.id=$projectId
       """
-      .query[ProjectsRepository.ProjectData]
+      .query[ProjectsRepository.ProjectRowData]
 
-  def read(projectId: String): ConnectionIO[Option[Project]] = {
-    readQuery(projectId).option
-      .flatMap {
-        case Some(project) =>
-          dataToProject(project).flatMap(retrieveProjectAlgorithms).map(_.some)
-        case None =>
-          none[Project].pure[ConnectionIO]
-      }
+  def readProject(projectId: String): ConnectionIO[Option[Project]] = {
+    readProjectQuery(projectId)
+      .to[List]
+      .map(_.flatMap(dataToProject).reduceOption(_ |+| _))
   }
 
-  def readAllProjectsQuery =
+  def readAllProjectsQuery: Query0[ProjectRowData] =
     sql"""
-        SELECT projects.id, name, problem, algorithm_policy, configuration
-      FROM projects 
+      SELECT projects.id, name, problem, algorithm_policy, configuration, algorithms.id, backend, security
+      FROM projects
+      INNER JOIN algorithms ON algorithms.project_id = projects.id
       """
-      .query[ProjectsRepository.ProjectData]
+      .query[ProjectsRepository.ProjectRowData]
 
-  def readProjectAlgorithmsQuery(
-      projectId: String
-  ): doobie.Query0[AlgorithmData] =
-    sql"""
-      SELECT id, backend, project_id, security
-      FROM algorithms 
-      WHERE project_id=$projectId
-      """
-      .query[AlgorithmData]
-
-  def readProjectAlgorithms(projectId: String): ConnectionIO[List[Algorithm]] =
-    readProjectAlgorithmsQuery(projectId)
-      .to[List]
-      .flatMap(dataListToAlgorithm)
-
-  def readAllAlgorithmsQuery(): doobie.Query0[AlgorithmData] =
-    sql"""
-      SELECT id, backend, project_id, security
-      FROM algorithms 
-      """
-      .query[AlgorithmData]
-
-  def readAll =
+  def readAllProjects =
     readAllProjectsQuery
       .to[List]
-      .flatMap(dataListToProject)
-      .flatMap(retrieveProjectsAlgorithms)
+      .map(
+        _.map(dataToProject)
+          .foldLeft(Map.empty[String, Project]) { (acc, elem) =>
+            elem match {
+              case Some(value) =>
+                acc
+                  .get(value.id)
+                  .fold(
+                    acc + (value.id -> value)
+                  )(project => acc + (project.id -> (project |+| value)))
+              case None => acc
+            }
+          }
+          .values
+          .toList
+      )
 
-  def updateQuery(project: Project) =
+  def updateProjectQuery(project: Project) =
     sql"""
         UPDATE projects SET name=${project.name}, algorithm_policy = ${project.policy}
       """.update
 
-  def update(project: Project) = updateQuery(project).run
+  def updateProject(project: Project) = updateProjectQuery(project).run
 
-  def retrieveProjectAlgorithms(project: Project): ConnectionIO[Project] =
-    project match {
-      case project: ClassificationProject =>
-        readProjectAlgorithms(project.id).map { newAlgorithms =>
-          project.copy(
-            algorithms = newAlgorithms
-          )
-        }
-      case project: RegressionProject =>
-        readProjectAlgorithms(project.id).map { newAlgorithms =>
-          project.copy(
-            algorithms = newAlgorithms
-          )
-        }
-    }
+  def insertAlgorithmQuery(algorithm: Algorithm): doobie.Update0 =
+    sql"""INSERT INTO algorithms(
+      id,
+      backend,
+      project_id,
+      security
+    ) VALUES(
+      ${algorithm.id},
+      ${algorithm.backend},
+      ${algorithm.projectId},
+      ${algorithm.security}
+    )""".update
 
-  def retrieveProjectsAlgorithms(projects: List[Project]) =
-    projects.map(retrieveProjectAlgorithms).sequence
+  def insertAlgorithm(algorithm: Algorithm): ConnectionIO[Algorithm] =
+    insertAlgorithmQuery(algorithm).run
+      .flatMap(_ => algorithm.pure[ConnectionIO])
+
+  def insertManyAlgorithm(algorithms: List[Algorithm]): ConnectionIO[Int] = {
+    val sql = """INSERT INTO algorithms(
+      id,
+      backend,
+      project_id,
+      security
+    ) VALUES(
+      ?,?,?,?
+    )"""
+    Update[Algorithm](sql).updateMany(algorithms)
+  }
 
 }
 
 object ProjectsRepository {
-  type ProjectData = (
-      String,
-      String,
-      Either[io.circe.Error, ProblemType],
-      Either[io.circe.Error, AlgorithmPolicy],
-      Either[io.circe.Error, ProjectConfiguration]
-  )
-
-  type AlgorithmData = (
-      String,
-      Either[io.circe.Error, Backend],
-      String,
-      Either[io.circe.Error, SecurityConfiguration]
-  )
-
-  type ProjectEntityData = (
+  type ProjectRowData = (
+      // project
       String,
       String,
       Either[io.circe.Error, ProblemType],
       Either[io.circe.Error, AlgorithmPolicy],
       Either[io.circe.Error, ProjectConfiguration],
+      // algorithm
       String,
       Either[io.circe.Error, Backend],
-      String,
       Either[io.circe.Error, SecurityConfiguration]
   )
 
-  def dataToProject(data: ProjectData): ConnectionIO[Project] = data match {
+  def dataToProject(data: ProjectRowData) = data match {
     case (
-        id,
+        projectId,
         name,
         Right(Classification),
         Right(policy),
-        Right(projectConfiguration: ClassificationConfiguration)
+        Right(projectConfiguration: ClassificationConfiguration),
+        algorithmId,
+        Right(backend: Backend),
+        Right(securityConfiguration: SecurityConfiguration)
         ) =>
-      (ClassificationProject(
-        id,
+      ClassificationProject(
+        projectId,
         name,
         projectConfiguration,
-        Nil,
+        List(
+          Algorithm(
+            algorithmId,
+            backend,
+            projectId,
+            securityConfiguration
+          )
+        ),
         policy
-      ): Project).pure[ConnectionIO]
+      ).some
     case (
-        id,
+        projectId,
         name,
         Right(Regression),
         Right(policy),
-        Right(projectConfiguration: RegressionConfiguration)
+        Right(projectConfiguration: RegressionConfiguration),
+        algorithmId,
+        Right(backend: Backend),
+        Right(securityConfiguration: SecurityConfiguration)
         ) =>
-      (RegressionProject(
-        id,
+      RegressionProject(
+        projectId,
         name,
         projectConfiguration,
-        Nil,
-        policy
-      ): Project).pure[ConnectionIO]
-    case _ =>
-      AsyncConnectionIO.raiseError(
-        ProjectError.ProjectDataInconsistentError(
-          ProjectError.ProjectDataInconsistentError.message(data._1)
-        )
-      )
-  }
-
-  def dataListToProject(dataList: List[ProjectData]) =
-    (dataList.map(dataToProject)).sequence
-
-  def dataToAlgorithm(data: AlgorithmData): ConnectionIO[Algorithm] =
-    data match {
-      case (
-          id,
-          Right(backend),
-          projectId,
-          Right(security)
-          ) =>
-        Algorithm(id, backend, projectId, security).pure[ConnectionIO]
-      case algorithmData =>
-        AsyncConnectionIO.raiseError(
-          AlgorithmDataIsIncorrectError(
-            AlgorithmDataIsIncorrectError.message(data._1)
+        List(
+          Algorithm(
+            algorithmId,
+            backend,
+            projectId,
+            securityConfiguration
           )
-        )
-    }
-
-  def dataListToAlgorithm(
-      dataList: List[AlgorithmData]
-  ): ConnectionIO[List[Algorithm]] =
-    (dataList.map(dataToAlgorithm)).sequence
+        ),
+        policy
+      ).some
+    case _ =>
+      none[Project]
+  }
 
 }

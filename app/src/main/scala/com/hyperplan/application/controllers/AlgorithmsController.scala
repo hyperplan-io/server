@@ -4,21 +4,19 @@ import cats.effect.IO
 import cats.implicits._
 import cats.Functor
 import cats.MonadError
-
 import org.http4s.{HttpRoutes, HttpService}
 import org.http4s.circe._
 import org.http4s.dsl.Http4sDsl
-
 import com.hyperplan.application.controllers.requests._
 import com.hyperplan.domain.errors.AlgorithmError
 import com.hyperplan.domain.errors.AlgorithmError._
-import com.hyperplan.domain.services.AlgorithmsService
+import com.hyperplan.domain.services.ProjectsService
 import com.hyperplan.infrastructure.serialization._
 import com.hyperplan.infrastructure.serialization.errors.AlgorithmErrorsSerializer
 import com.hyperplan.infrastructure.logging.IOLogging
 
 class AlgorithmsController(
-    algorithmsService: AlgorithmsService
+    algorithmsService: ProjectsService
 ) extends Http4sDsl[IO]
     with IOLogging {
 

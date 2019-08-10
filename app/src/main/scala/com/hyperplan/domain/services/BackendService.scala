@@ -27,9 +27,9 @@ import com.hyperplan.infrastructure.serialization.tensorflow._
 import com.hyperplan.infrastructure.serialization.rasa._
 import com.hyperplan.infrastructure.logging.IOLogging
 
-trait BackendService extends IOLogging {
+import scala.util.Random
 
-  val blazeClient: Resource[IO, Client[IO]]
+class BackendService(blazeClient: Resource[IO, Client[IO]]) extends IOLogging {
 
   def predictWithBackend(
       predictionId: String,
@@ -38,7 +38,11 @@ trait BackendService extends IOLogging {
       features: Features.Features
   )(implicit cs: ContextShift[IO]): IO[Either[PredictionError, Prediction]] =
     (algorithm.backend, project) match {
-      case (LocalClassification(preComputedLabels), _: ClassificationProject) =>
+      case (
+          LocalRandomClassification(preComputedLabels),
+          _: ClassificationProject
+          ) =>
+        val labelsSize = preComputedLabels.size
         IO.pure(
           ClassificationPrediction(
             predictionId,
@@ -46,9 +50,40 @@ trait BackendService extends IOLogging {
             algorithm.id,
             features,
             Nil,
-            preComputedLabels
+            preComputedLabels.map { label =>
+              ClassificationLabel(
+                label,
+                1f / labelsSize.toFloat,
+                ExampleUrlService
+                  .correctClassificationExampleUrl(predictionId, label),
+                ExampleUrlService.incorrectClassificationExampleUrl(
+                  predictionId,
+                  label
+                )
+              )
+            }
           ).asRight
         )
+      case (
+          LocalRandomRegression(),
+          _: RegressionProject
+          ) =>
+        IO.pure(
+          RegressionPrediction(
+            predictionId,
+            project.id,
+            algorithm.id,
+            features,
+            Nil,
+            Set(
+              RegressionLabel(
+                Random.nextFloat(),
+                ExampleUrlService.correctRegressionExampleUrl(predictionId)
+              )
+            )
+          ).asRight
+        )
+
       case (
           TensorFlowClassificationBackend(
             host,
