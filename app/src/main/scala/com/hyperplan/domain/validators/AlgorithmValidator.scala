@@ -108,7 +108,17 @@ object AlgorithmValidator {
       case LocalRandomClassification(computed) =>
         Validated.valid[AlgorithmError, Unit](Unit).toValidatedNec
       case LocalRandomRegression() =>
-        Validated.valid[AlgorithmError, Unit](Unit).toValidatedNec
+        Validated
+          .invalid[AlgorithmError, Unit](
+            IncompatibleAlgorithmError(
+              IncompatibleAlgorithmError.message(
+                algorithm.id,
+                algorithm.backend.getClass.getSimpleName,
+                project.problem
+              )
+            )
+          )
+          .toValidatedNec
       case TensorFlowClassificationBackend(
           _,
           _,
@@ -185,6 +195,7 @@ object AlgorithmValidator {
           )
           .toValidatedNec
       case _: LocalRandomRegression =>
+        print("should be valid !!!")
         Validated.valid(()).toValidatedNec
       case TensorFlowRegressionBackend(
           _,

@@ -27,6 +27,8 @@ import com.hyperplan.infrastructure.serialization.tensorflow._
 import com.hyperplan.infrastructure.serialization.rasa._
 import com.hyperplan.infrastructure.logging.IOLogging
 
+import scala.util.Random
+
 class BackendService(blazeClient: Resource[IO, Client[IO]]) extends IOLogging {
 
   def predictWithBackend(
@@ -62,6 +64,26 @@ class BackendService(blazeClient: Resource[IO, Client[IO]]) extends IOLogging {
             }
           ).asRight
         )
+      case (
+          LocalRandomRegression(),
+          _: RegressionProject
+          ) =>
+        IO.pure(
+          RegressionPrediction(
+            predictionId,
+            project.id,
+            algorithm.id,
+            features,
+            Nil,
+            Set(
+              RegressionLabel(
+                Random.nextFloat(),
+                ExampleUrlService.correctRegressionExampleUrl(predictionId)
+              )
+            )
+          ).asRight
+        )
+
       case (
           TensorFlowClassificationBackend(
             host,
