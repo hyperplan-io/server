@@ -50,7 +50,7 @@ after_success:
   scripts/publish-microsite.sh; fi
 - if [ "$TRAVIS_PULL_REQUEST" = "true" ]; then echo "Not in master branch, skipping
   deploy and release"; fi
-- if [ $TRAVIS_TAG ]; then echo "$DOCKER_PASSWORD" | docker login --username "$DOCKER_USERNAME" --password-stdin && docker build -t  hyperplan/server:$TRAVIS_TAG . && docker push hyperplan/server:$TRAVIS_TAG; fi
+- if [ $TRAVIS_TAG ]; then echo "$DOCKER_PASSWORD" | docker login --username "$DOCKER_LOGIN" --password-stdin && docker build -t  hyperplan/server:$TRAVIS_TAG . && docker push hyperplan/server:$TRAVIS_TAG; fi
 
 notifications:
   slack: foundaml:Gyf4WIYVB5wmf3g03NCc7iuU
