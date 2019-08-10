@@ -13,11 +13,7 @@ import org.http4s.dsl.Http4sDsl
 import com.hyperplan.application.AuthenticationMiddleware
 import com.hyperplan.application.controllers.requests._
 import com.hyperplan.domain.errors._
-import com.hyperplan.domain.services.{
-  DomainService,
-  PredictionsService,
-  ProjectsService
-}
+import com.hyperplan.domain.services._
 import com.hyperplan.infrastructure.logging.IOLogging
 import com.hyperplan.infrastructure.serialization.{
   PredictionRequestEntitySerializer,

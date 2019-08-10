@@ -97,17 +97,17 @@ object Main extends IOApp with IOLogging {
       } else {
         IO.pure(None)
       }
-      domainService = new DomainService(
+      domainService: DomainService = new DomainServiceLive(
         domainRepository
       )
-      backendService = new BackendService(blazeClient)
-      projectsService = new ProjectsService(
+      backendService: BackendService = new BackendServiceLive(blazeClient)
+      projectsService: ProjectsService = new ProjectsServiceLive(
         projectsRepository,
         domainService,
         backendService,
         projectCache
       )
-      predictionsService = new PredictionsService(
+      predictionsService: PredictionsService = new PredictionsServiceLive(
         predictionsRepository,
         projectsService,
         backendService,
@@ -116,7 +116,7 @@ object Main extends IOApp with IOLogging {
         kafkaService,
         config
       )
-      privacyService = new PrivacyService(predictionsRepository)
+      privacyService = new PrivacyServiceLive(predictionsRepository)
       port = 8080
       _ <- logger.info("Services have been correctly instantiated")
       _ <- logger.info(s"Starting http server on port $port")
