@@ -11,10 +11,10 @@ import com.hyperplan.domain.repositories.{
   ProjectsRepository
 }
 import com.hyperplan.domain.services.{
-  BackendService,
-  DomainService,
-  PredictionsService,
-  ProjectsService
+  BackendServiceLive,
+  DomainServiceLive,
+  PredictionsServiceLive,
+  ProjectsServiceLive
 }
 import com.hyperplan.infrastructure.streaming.{
   KafkaService,
@@ -113,21 +113,21 @@ class PredictionsServiceSpec()
   val kafkaService: KafkaService =
     KafkaService(config.kafka.topic, config.kafka.bootstrapServers)
       .unsafeRunSync()
-  val domainService = new DomainService(
+  val domainService = new DomainServiceLive(
     domainRepository
   )
-  val backendService = new BackendService(blazeClient)
+  val backendService = new BackendServiceLive(blazeClient)
 
   val projectCache: Cache[Project] = CaffeineCache[Project]
-  val projectsService = new ProjectsService(
+  val projectsService = new ProjectsServiceLive(
     projectsRepository,
     domainService,
     backendService,
     projectCache
   )
 
-  val predictionsService: PredictionsService =
-    new PredictionsService(
+  val predictionsService: PredictionsServiceLive =
+    new PredictionsServiceLive(
       predictionsRepository,
       projectsService,
       backendService,

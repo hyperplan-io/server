@@ -124,11 +124,11 @@ class PredictionsControllerSpec()
   val domainRepository = new DomainRepository()(xa)
   val predictionsRepository = new PredictionsRepository()(xa)
 
-  val domainService = new DomainService(domainRepository)
-  val backendService = new BackendService(blazeClient)
+  val domainService = new DomainServiceLive(domainRepository)
+  val backendService = new BackendServiceLive(blazeClient)
 
   val projectCache: Cache[Project] = CaffeineCache[Project]
-  val projectsService = new ProjectsService(
+  val projectsService = new ProjectsServiceLive(
     projectRepository,
     domainService,
     backendService,
@@ -137,7 +137,7 @@ class PredictionsControllerSpec()
 
   val config = pureconfig.loadConfig[ApplicationConfig].right.get
 
-  val predictionsService = new PredictionsService(
+  val predictionsService = new PredictionsServiceLive(
     predictionsRepository,
     projectsService,
     backendService,
@@ -247,7 +247,9 @@ class PredictionsControllerSpec()
                 labels
                 ) =>
               projectId should be(requestEntity1.projectId)
-              algorithmId should be(ProjectsService.defaultRandomAlgorithmId)
+              algorithmId should be(
+                ProjectsServiceLive.defaultRandomAlgorithmId
+              )
               features should be(requestEntity1.features)
               assert(examples.isEmpty)
               assert(labels.isEmpty)
@@ -286,7 +288,9 @@ class PredictionsControllerSpec()
                 labels
                 ) =>
               projectId should be(requestEntity2.projectId)
-              algorithmId should be(ProjectsService.defaultRandomAlgorithmId)
+              algorithmId should be(
+                ProjectsServiceLive.defaultRandomAlgorithmId
+              )
               features should be(requestEntity2.features)
               assert(examples.isEmpty)
               assert(labels.isEmpty)

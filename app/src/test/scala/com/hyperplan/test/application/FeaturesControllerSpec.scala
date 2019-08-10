@@ -43,7 +43,7 @@ class FeaturesControllerSpec()
     FeaturesConfigurationSerializer.entityEncoder
 
   val domainRepository = new DomainRepository()(xa)
-  val domainService = new DomainService(
+  val domainService = new DomainServiceLive(
     domainRepository
   )
 
