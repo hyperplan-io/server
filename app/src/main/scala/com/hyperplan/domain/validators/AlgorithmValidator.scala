@@ -1,39 +1,19 @@
-package com.hyperplan.domain.services
+package com.hyperplan.domain.validators
 
 import cats.data._
 import cats.effect.IO
 import cats.implicits._
 
-import io.lemonlabs.uri.{AbsoluteUrl, Url}
-
-import com.hyperplan.domain.models._
-import com.hyperplan.domain.models.backends.{
-  Backend,
-  LocalClassification,
-  TensorFlowClassificationBackend,
-  TensorFlowRegressionBackend
-}
 import com.hyperplan.domain.errors.AlgorithmError
 import com.hyperplan.domain.errors.AlgorithmError._
+
+import com.hyperplan.domain.models._
+import com.hyperplan.domain.models.backends._
 import com.hyperplan.domain.models.features.transformers.TensorFlowFeaturesTransformer
 import com.hyperplan.domain.models.labels.transformers.TensorFlowLabelsTransformer
-import com.hyperplan.domain.repositories.{
-  AlgorithmsRepository,
-  ProjectsRepository
-}
-import com.hyperplan.domain.services._
-import com.hyperplan.infrastructure.logging.IOLogging
-import com.hyperplan.domain.models.backends.RasaNluClassificationBackend
-import java.{util => ju}
-import cats.effect.ContextShift
+import io.lemonlabs.uri.AbsoluteUrl
 
-class AlgorithmsService(
-    projectsService: ProjectsService,
-    predictionsService: PredictionsService,
-    algorithmsRepository: AlgorithmsRepository,
-    projectsRepository: ProjectsRepository
-)(implicit cs: ContextShift[IO])
-    extends IOLogging {
+object AlgorithmValidator {
 
   type AlgorithmValidationResult[A] = ValidatedNec[AlgorithmError, A]
 
@@ -89,7 +69,9 @@ class AlgorithmsService(
   def validateProtocolAndVerifyCompatibility(
       backend: Backend
   ): AlgorithmValidationResult[Protocol] = backend match {
-    case LocalClassification(_) =>
+    case LocalRandomClassification(_) =>
+      Validated.valid[AlgorithmError, Protocol](LocalCompute).toValidatedNec
+    case LocalRandomRegression() =>
       Validated.valid[AlgorithmError, Protocol](LocalCompute).toValidatedNec
     case TensorFlowClassificationBackend(_, _, _, _) =>
       Validated.valid[AlgorithmError, Protocol](Http).toValidatedNec
@@ -123,8 +105,20 @@ class AlgorithmsService(
       project: ClassificationProject
   ): AlgorithmValidationResult[Unit] = {
     algorithm.backend match {
-      case LocalClassification(computed) =>
+      case LocalRandomClassification(computed) =>
         Validated.valid[AlgorithmError, Unit](Unit).toValidatedNec
+      case LocalRandomRegression() =>
+        Validated
+          .invalid[AlgorithmError, Unit](
+            IncompatibleAlgorithmError(
+              IncompatibleAlgorithmError.message(
+                algorithm.id,
+                algorithm.backend.getClass.getSimpleName,
+                project.problem
+              )
+            )
+          )
+          .toValidatedNec
       case TensorFlowClassificationBackend(
           _,
           _,
@@ -187,7 +181,7 @@ class AlgorithmsService(
       project: RegressionProject
   ): AlgorithmValidationResult[Unit] = {
     algorithm.backend match {
-      case backend: LocalClassification =>
+      case backend: LocalRandomClassification =>
         Validated
           .invalid(
             AlgorithmError.IncompatibleAlgorithmError(
@@ -200,6 +194,8 @@ class AlgorithmsService(
             )
           )
           .toValidatedNec
+      case _: LocalRandomRegression =>
+        Validated.valid(()).toValidatedNec
       case TensorFlowRegressionBackend(
           _,
           _,
@@ -275,86 +271,4 @@ class AlgorithmsService(
     }).andThen(_ => validateAlphanumericalAlgorithmId(algorithm.id))
       .andThen(_ => validateProtocolAndVerifyCompatibility(algorithm.backend))
 
-  def createAlgorithm(
-      id: String,
-      backend: Backend,
-      projectId: String,
-      security: SecurityConfiguration
-  ): EitherT[IO, NonEmptyChain[AlgorithmError], Algorithm] = {
-    for {
-      algorithm <- EitherT.rightT[IO, NonEmptyChain[AlgorithmError]](
-        Algorithm(
-          id,
-          backend,
-          projectId,
-          security
-        )
-      )
-      project <- EitherT
-        .fromOptionF[IO, NonEmptyChain[AlgorithmError], Project](
-          projectsService.readProject(projectId),
-          NonEmptyChain(
-            AlgorithmError.ProjectDoesNotExistError(
-              AlgorithmError.ProjectDoesNotExistError.message(projectId)
-            ): AlgorithmError
-          )
-        )
-      _ <- EitherT.fromEither[IO](
-        validateAlgorithmCreate(algorithm, project).toEither
-      )
-      _ <- EitherT[IO, NonEmptyChain[AlgorithmError], Prediction](
-        predictionsService
-          .predictWithBackend(
-            ju.UUID.randomUUID().toString,
-            project,
-            algorithm,
-            project.configuration match {
-              case ClassificationConfiguration(features, labels, dataStream) =>
-                FeatureVectorDescriptor.generateRandomFeatureVector(features)
-              case RegressionConfiguration(features, dataStream) =>
-                FeatureVectorDescriptor.generateRandomFeatureVector(features)
-            }
-          )
-          .flatMap {
-            case Right(prediction) => IO.pure(prediction.asRight)
-            case Left(err) =>
-              logger.warn(
-                s"The prediction dry run failed when creating algorithm ${algorithm.id} because ${err.message}"
-              ) *> IO(
-                NonEmptyChain(
-                  PredictionDryRunFailed(PredictionDryRunFailed.message(err))
-                ).asLeft
-              )
-          }
-      )
-      _ <- EitherT[IO, NonEmptyChain[AlgorithmError], Algorithm](
-        algorithmsRepository.insert(algorithm).map {
-          case Right(alg) => alg.asRight
-          case Left(error) => NonEmptyChain(error).asLeft
-        }
-      )
-      _ <- if (project.algorithms.isEmpty) {
-        (project match {
-          case _: ClassificationProject =>
-            projectsService
-              .updateProject(
-                projectId,
-                None,
-                Some(DefaultAlgorithm(id))
-              )
-          case _: RegressionProject =>
-            projectsService
-              .updateProject(
-                projectId,
-                None,
-                Some(DefaultAlgorithm(id))
-              )
-        }).leftFlatMap[Project, NonEmptyChain[AlgorithmError]](
-          _ => EitherT.rightT[IO, NonEmptyChain[AlgorithmError]](project)
-        )
-      } else {
-        EitherT.rightT[IO, NonEmptyChain[AlgorithmError]](project)
-      }
-    } yield algorithm
-  }
 }

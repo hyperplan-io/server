@@ -10,7 +10,6 @@ import cats.implicits._
 import com.hyperplan.application.AdminCredentials
 import com.hyperplan.application.controllers.requests._
 import com.hyperplan.domain.errors._
-import com.hyperplan.domain.services.AlgorithmsService
 import com.hyperplan.infrastructure.serialization._
 import com.hyperplan.infrastructure.logging.IOLogging
 import com.hyperplan.domain._

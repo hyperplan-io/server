@@ -9,7 +9,6 @@ import scalacache.caffeine._
 import pureconfig.generic.auto._
 
 import com.hyperplan.domain.repositories.{
-  AlgorithmsRepository,
   DomainRepository,
   PredictionsRepository,
   ProjectsRepository
@@ -69,7 +68,6 @@ object Main extends IOApp with IOLogging {
       }
       projectCache: Cache[Project] = CaffeineCache[Project]
       projectsRepository = new ProjectsRepository
-      algorithmsRepository = new AlgorithmsRepository
       predictionsRepository = new PredictionsRepository
       domainRepository = new DomainRepository
       blazeClient: Resource[IO, Client[IO]] = BlazeClientBuilder[IO](
@@ -102,25 +100,21 @@ object Main extends IOApp with IOLogging {
       domainService = new DomainService(
         domainRepository
       )
+      backendService = new BackendService(blazeClient)
       projectsService = new ProjectsService(
         projectsRepository,
         domainService,
+        backendService,
         projectCache
       )
       predictionsService = new PredictionsService(
         predictionsRepository,
         projectsService,
+        backendService,
         kinesisService,
         pubSubService,
         kafkaService,
-        blazeClient,
         config
-      )
-      algorithmsService = new AlgorithmsService(
-        projectsService,
-        predictionsService,
-        algorithmsRepository,
-        projectsRepository
       )
       privacyService = new PrivacyService(predictionsRepository)
       port = 8080
@@ -145,7 +139,6 @@ object Main extends IOApp with IOLogging {
           .stream(
             predictionsService,
             projectsService,
-            algorithmsService,
             domainService,
             privacyService,
             kafkaService,

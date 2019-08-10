@@ -1,30 +1,35 @@
 package com.hyperplan.domain.services
 
+import java.util.UUID
+
 import cats.effect.IO
 import cats.implicits._
 import cats.data._
-import com.hyperplan.domain.repositories.DomainRepository
-import com.hyperplan.application.controllers.requests.PostProjectRequest
-import com.hyperplan.domain.models._
-import com.hyperplan.domain.errors.ProjectError
-import com.hyperplan.domain.errors.ProjectError._
-import com.hyperplan.domain.models.features._
-import com.hyperplan.domain.repositories.ProjectsRepository
-import com.hyperplan.infrastructure.logging.IOLogging
-import doobie.free.connection.{ConnectionIO, AsyncConnectionIO}
-import doobie.util.invariant.UnexpectedEnd
+import cats.effect.ContextShift
+import doobie.free.connection.{AsyncConnectionIO, ConnectionIO}
 import scalacache.Cache
 import scalacache.CatsEffect.modes._
+import com.hyperplan.infrastructure.logging.IOLogging
+import com.hyperplan.application.controllers.requests.PostProjectRequest
+import com.hyperplan.domain.models.{backends, _}
+import com.hyperplan.domain.models.backends._
+import com.hyperplan.domain.errors.AlgorithmError.PredictionDryRunFailed
+import com.hyperplan.domain.errors.{AlgorithmError, ProjectError}
+import com.hyperplan.domain.errors.ProjectError._
+import com.hyperplan.domain.repositories._
+import com.hyperplan.domain.repositories.ProjectsRepository
+import com.hyperplan.domain.validators.AlgorithmValidator
+import com.hyperplan.domain.validators.ProjectValidator._
 
 class ProjectsService(
-    projectsRepository: ProjectsRepository,
-    domainService: DomainService,
-    cache: Cache[Project]
-) extends IOLogging {
+    val projectsRepository: ProjectsRepository,
+    val domainService: DomainService,
+    val backendService: BackendService,
+    val cache: Cache[Project]
+)(implicit val cs: ContextShift[IO])
+    extends IOLogging {
 
-  type ProjectValidationResult[A] = ValidatedNec[ProjectError, A]
-
-  def createEmptyClassificationProject(
+  def createClassificationProject(
       projectRequest: PostProjectRequest
   ): EitherT[IO, NonEmptyChain[ProjectError], Project] =
     for {
@@ -56,6 +61,23 @@ class ProjectsService(
             )
           )
         )
+      algorithmId = ProjectsService.defaultRandomAlgorithmId
+      (algorithm, policy) = labels.data match {
+        case DynamicLabelsDescriptor(_) =>
+          Algorithm(
+            algorithmId,
+            LocalRandomClassification(Set.empty),
+            projectRequest.id,
+            PlainSecurityConfiguration(Nil)
+          ) -> DefaultAlgorithm(algorithmId)
+        case OneOfLabelsDescriptor(oneOf, _) =>
+          Algorithm(
+            algorithmId,
+            LocalRandomClassification(oneOf),
+            projectRequest.id,
+            PlainSecurityConfiguration(Nil)
+          ) -> DefaultAlgorithm(algorithmId)
+      }
     } yield
       ClassificationProject(
         projectRequest.id,
@@ -65,65 +87,11 @@ class ProjectsService(
           labels,
           streamConfiguration
         ),
-        Nil,
-        NoAlgorithm()
+        List(algorithm),
+        policy
       )
 
-  def validateAlphanumericalProjectId(
-      id: String
-  ): ProjectValidationResult[String] =
-    Either
-      .cond(
-        id.matches("^[a-zA-Z0-9]*$"),
-        id,
-        ProjectIdIsNotAlphaNumericalError(
-          ProjectIdIsNotAlphaNumericalError.message(id)
-        )
-      )
-      .toValidatedNec
-
-  def validateProjectIdNotEmpty(id: String): ProjectValidationResult[String] =
-    Either
-      .cond(
-        id.nonEmpty,
-        id,
-        ProjectIdIsEmptyError()
-      )
-      .toValidatedNec
-
-  def validateProjectNameNotEmpty(id: String): ProjectValidationResult[String] =
-    Either
-      .cond(
-        id.nonEmpty,
-        id,
-        ProjectNameIsEmptyError()
-      )
-      .toValidatedNec
-
-  def validateLabels(
-      projectRequest: PostProjectRequest
-  ): ProjectValidationResult[Unit] = projectRequest.problem match {
-    case Classification if projectRequest.labelsId.isEmpty =>
-      Validated.invalid(
-        NonEmptyChain(ProjectLabelsAreRequiredForClassificationError())
-      )
-    case Classification if projectRequest.labelsId.isDefined =>
-      Validated.valid(Unit)
-    case Regression =>
-      Validated.valid(Unit)
-  }
-
-  def validateCreateProject(
-      projectRequest: PostProjectRequest
-  ): ProjectValidationResult[Unit] =
-    (
-      validateAlphanumericalProjectId(projectRequest.id),
-      validateProjectIdNotEmpty(projectRequest.id),
-      validateProjectNameNotEmpty(projectRequest.name),
-      validateLabels(projectRequest)
-    ).mapN((_, _, _, _) => Unit)
-
-  def createEmptyRegressionProject(
+  def createRegressionProject(
       projectRequest: PostProjectRequest
   ): EitherT[IO, NonEmptyChain[ProjectError], Project] =
     for {
@@ -144,6 +112,13 @@ class ProjectsService(
             )
           )
         )
+      algorithmId = ProjectsService.defaultRandomAlgorithmId
+      (algorithm, policy) = Algorithm(
+        algorithmId,
+        LocalRandomRegression(),
+        projectRequest.id,
+        PlainSecurityConfiguration(Nil)
+      ) -> DefaultAlgorithm(algorithmId)
     } yield
       RegressionProject(
         projectRequest.id,
@@ -152,36 +127,28 @@ class ProjectsService(
           features,
           streamConfiguration
         ),
-        Nil,
-        NoAlgorithm()
+        List(algorithm),
+        policy
       )
 
-  def createEmptyProject(
+  def createProject(
       projectRequest: PostProjectRequest
   ): EitherT[IO, NonEmptyChain[ProjectError], Project] =
     (projectRequest.problem match {
-      case Classification => createEmptyClassificationProject(projectRequest)
-      case Regression => createEmptyRegressionProject(projectRequest)
+      case Classification => createClassificationProject(projectRequest)
+      case Regression => createRegressionProject(projectRequest)
     }).flatMap { project =>
-      EitherT(projectsRepository.insert(project).map {
-        case Left(err) =>
-          // we need a NonEmptyChain of errors but insert returns a single error
-          NonEmptyChain(err).asLeft
-        case Right(count) => count.asRight
-      }).flatMap {
-        case insertedCount if insertedCount > 0 =>
+      EitherT
+        .liftF[IO, NonEmptyChain[ProjectError], Project](
+          projectsRepository.transact(
+            projectsRepository.insertProject(project)
+          )
+        )
+        .flatMap { _ =>
           EitherT.liftF[IO, NonEmptyChain[ProjectError], Project](
             cache.remove[IO](project.id).map(_ => project)
           )
-        case insertedCount if insertedCount <= 0 =>
-          EitherT.liftF[IO, NonEmptyChain[ProjectError], Project](
-            IO.raiseError(
-              new Exception(
-                "IO returned successfully but nothing was inserted in the database"
-              )
-            )
-          )
-      }
+        }
     }
 
   def updateProject(
@@ -202,7 +169,7 @@ class ProjectsService(
           projectsRepository
             .transact(
               projectsRepository
-                .read(projectId)
+                .readProject(projectId)
                 .flatMap[Project] {
                   case Some(project: ClassificationProject) =>
                     (project.copy(
@@ -255,7 +222,7 @@ class ProjectsService(
                   validated.fold[ConnectionIO[Project]](
                     err => AsyncConnectionIO.raiseError(err.head),
                     _ =>
-                      projectsRepository.update(project) *> project
+                      projectsRepository.updateProject(project) *> project
                         .pure[ConnectionIO]
                   )
 
@@ -277,15 +244,101 @@ class ProjectsService(
       }
 
   def readProjects =
-    projectsRepository.transact(projectsRepository.readAll)
+    projectsRepository.transact(projectsRepository.readAllProjects)
 
   def readProject(id: String): IO[Option[Project]] =
     cache.get[IO](id).flatMap { cacheElement =>
       cacheElement.fold(
-        projectsRepository.transact(projectsRepository.read(id))
+        projectsRepository.transact(projectsRepository.readProject(id))
       )(
         project => IO.pure(project.some)
       )
     }
 
+  def createAlgorithm(
+      id: String,
+      backend: Backend,
+      projectId: String,
+      security: SecurityConfiguration
+  ): EitherT[IO, NonEmptyChain[AlgorithmError], Algorithm] = {
+    for {
+      algorithm <- EitherT.rightT[IO, NonEmptyChain[AlgorithmError]](
+        Algorithm(
+          id,
+          backend,
+          projectId,
+          security
+        )
+      )
+      project <- EitherT
+        .fromOptionF[IO, NonEmptyChain[AlgorithmError], Project](
+          readProject(projectId),
+          NonEmptyChain(
+            AlgorithmError.ProjectDoesNotExistError(
+              AlgorithmError.ProjectDoesNotExistError.message(projectId)
+            ): AlgorithmError
+          )
+        )
+      _ <- EitherT.fromEither[IO](
+        AlgorithmValidator.validateAlgorithmCreate(algorithm, project).toEither
+      )
+      _ <- EitherT[IO, NonEmptyChain[AlgorithmError], Prediction](
+        backendService
+          .predictWithBackend(
+            UUID.randomUUID().toString,
+            project,
+            algorithm,
+            project.configuration match {
+              case ClassificationConfiguration(features, labels, dataStream) =>
+                FeatureVectorDescriptor.generateRandomFeatureVector(features)
+              case RegressionConfiguration(features, dataStream) =>
+                FeatureVectorDescriptor.generateRandomFeatureVector(features)
+            }
+          )
+          .flatMap {
+            case Right(prediction) => IO.pure(prediction.asRight)
+            case Left(err) =>
+              logger.warn(
+                s"The prediction dry run failed when creating algorithm ${algorithm.id} because ${err.message}"
+              ) *> IO(
+                NonEmptyChain(
+                  PredictionDryRunFailed(PredictionDryRunFailed.message(err))
+                ).asLeft
+              )
+          }
+      )
+      _ <- EitherT[IO, NonEmptyChain[AlgorithmError], Algorithm](
+        projectsRepository
+          .transact(projectsRepository.insertAlgorithm(algorithm))
+          .map { algorithm =>
+            algorithm.asRight
+          }
+      )
+      _ <- if (project.algorithms.isEmpty) {
+        (project match {
+          case _: ClassificationProject =>
+            updateProject(
+              projectId,
+              None,
+              Some(DefaultAlgorithm(id))
+            )
+          case _: RegressionProject =>
+            updateProject(
+              projectId,
+              None,
+              Some(DefaultAlgorithm(id))
+            )
+        }).leftFlatMap[Project, NonEmptyChain[AlgorithmError]](
+          _ => EitherT.rightT[IO, NonEmptyChain[AlgorithmError]](project)
+        )
+      } else {
+        EitherT.rightT[IO, NonEmptyChain[AlgorithmError]](project)
+      }
+    } yield algorithm
+  }
+
+}
+
+object ProjectsService {
+  val defaultRandomAlgorithmId = "random"
 }

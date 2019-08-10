@@ -12,7 +12,7 @@ import com.hyperplan.application.controllers.requests._
 import com.hyperplan.infrastructure.serialization._
 import com.hyperplan.application.controllers._
 import com.hyperplan.domain.models._
-import com.hyperplan.domain.models.backends.LocalClassification
+import com.hyperplan.domain.models.backends.LocalRandomClassification
 import io.circe.{Encoder, Json}
 
 import scala.util.Random
@@ -134,7 +134,7 @@ object ProjectUtils {
       List(
         StringFeature(
           "feature-1",
-          Random.nextString(10)
+          Random.alphanumeric.take(10).mkString
         )
       )
     )
@@ -273,7 +273,7 @@ object ProjectUtils {
     val entityBody = PostAlgorithmRequest(
       Random.alphanumeric.take(10).mkString(""),
       project.id,
-      LocalClassification(Set.empty),
+      LocalRandomClassification(Set.empty),
       PlainSecurityConfiguration(
         Nil
       )

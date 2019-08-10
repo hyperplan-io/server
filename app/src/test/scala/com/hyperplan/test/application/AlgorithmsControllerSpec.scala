@@ -32,7 +32,7 @@ import org.scalatest.{FlatSpec, Matchers, _}
 import scalacache._
 import scalacache.caffeine._
 import com.hyperplan.application.controllers.AlgorithmsController
-import com.hyperplan.domain.models.backends.LocalClassification
+import com.hyperplan.domain.models.backends.LocalRandomClassification
 import com.hyperplan.application.controllers.requests.PostAlgorithmRequest
 import com.hyperplan.test.ProjectUtils
 import com.hyperplan.domain.errors.AlgorithmError
@@ -75,40 +75,35 @@ class AlgorithmsControllerSpec()
   implicit val requestEntityDecoder: EntityDecoder[IO, PostAlgorithmRequest] =
     PostAlgorithmRequestEntitySerializer.entityDecoder
 
+  val blazeClient: Resource[IO, Client[IO]] = BlazeClientBuilder[IO](
+    ExecutionContext.global
+  ).resource
+
   val projectRepository = new ProjectsRepository()(xa)
   val domainRepository = new DomainRepository()(xa)
-  val algorithmsRepository = new AlgorithmsRepository()(xa)
   val predictionsRepository = new PredictionsRepository()(xa)
 
   val domainService = new DomainService(domainRepository)
+  val backendService = new BackendService(blazeClient)
 
   val projectCache: Cache[Project] = CaffeineCache[Project]
   val projectsService = new ProjectsService(
     projectRepository,
     domainService,
+    backendService,
     projectCache
   )
-
-  val blazeClient: Resource[IO, Client[IO]] = BlazeClientBuilder[IO](
-    ExecutionContext.global
-  ).resource
 
   val config = pureconfig.loadConfig[ApplicationConfig].right.get
 
   val predictionsService = new PredictionsService(
     predictionsRepository,
     projectsService,
+    backendService,
     None,
     None,
     None,
-    blazeClient,
     config
-  )
-  val algorithmsService = new AlgorithmsService(
-    projectsService,
-    predictionsService,
-    algorithmsRepository,
-    projectRepository
   )
 
   val featuresController = new FeaturesController(
@@ -124,12 +119,12 @@ class AlgorithmsControllerSpec()
   )
 
   val algorithmsController = new AlgorithmsController(
-    algorithmsService
+    projectsService
   )
 
   it should "fail to create an algorithm for a project that does not exist" in {
     val id = "test"
-    val backend = LocalClassification(Set.empty)
+    val backend = LocalRandomClassification(Set.empty)
     val projectId = "myproject"
     val security = PlainSecurityConfiguration(
       Nil
@@ -181,7 +176,7 @@ class AlgorithmsControllerSpec()
 
     val id = "test"
     val projectId = project.id
-    val backend = LocalClassification(Set.empty)
+    val backend = LocalRandomClassification(Set.empty)
     val security = PlainSecurityConfiguration(
       Nil
     )
@@ -305,7 +300,7 @@ class AlgorithmsControllerSpec()
 
     val id = "&erpokq"
     val projectId = project.id
-    val backend = LocalClassification(Set.empty)
+    val backend = LocalRandomClassification(Set.empty)
     val security = PlainSecurityConfiguration(
       Nil
     )
