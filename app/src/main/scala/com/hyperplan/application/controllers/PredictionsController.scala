@@ -22,9 +22,9 @@ import com.hyperplan.infrastructure.serialization.{
 import com.hyperplan.domain.services.FeaturesParserService
 import java.nio.charset.StandardCharsets
 
-import com.hyperplan.domain.errors.PredictionError.BackendExecutionError
+import com.hyperplan.domain.errors.PredictionError._
 import com.hyperplan.domain.models.features.Features.Features
-import com.hyperplan.domain.models.{Project, ProjectConfiguration}
+import com.hyperplan.domain.models.{Prediction, Project, ProjectConfiguration}
 import com.hyperplan.infrastructure.serialization.errors.PredictionErrorsSerializer
 
 class PredictionsController(
@@ -49,27 +49,35 @@ class PredictionsController(
             PredictionRequestEntitySerializer.requestDecoder
           )
           optProject <- projectsService.readProject(predictionRequest.projectId)
-          project <- optProject.fold[IO[Project]](
-            IO.raiseError(new Exception(""))
-          )(project => project.pure[IO])
-          body <- req.body.compile.toList
-          jsonBody <- IO.fromEither(
-            parse(new String(body.toArray, StandardCharsets.UTF_8))
-          )
-          features <- parseFeatures(
-            project.configuration,
-            jsonBody
-          )
-          prediction <- predictionsService.predict(
-            predictionRequest.projectId,
-            features,
-            predictionRequest.entityLinks.getOrElse(Nil),
-            predictionRequest.algorithmId
-          )
-          _ <- logger.debug(
-            s"Prediction computed for project ${predictionRequest.projectId} using algorithm ${predictionRequest.algorithmId}"
-          )
-        } yield prediction)
+          eitherProject <- optProject
+            .fold[IO[Either[PredictionError, Prediction]]](
+              IO.pure(
+                ProjectDoesNotExistError(
+                  ProjectDoesNotExistError.message(predictionRequest.projectId)
+                ).asLeft
+              )
+            ) { project =>
+              for {
+                body <- req.body.compile.toList
+                jsonBody <- IO.fromEither(
+                  parse(new String(body.toArray, StandardCharsets.UTF_8))
+                )
+                features <- parseFeatures(
+                  project.configuration,
+                  jsonBody
+                )
+                prediction <- predictionsService.predict(
+                  predictionRequest.projectId,
+                  features,
+                  predictionRequest.entityLinks.getOrElse(Nil),
+                  predictionRequest.algorithmId
+                )
+                _ <- logger.debug(
+                  s"Prediction computed for project ${predictionRequest.projectId} using algorithm ${predictionRequest.algorithmId}"
+                )
+              } yield prediction
+            }
+        } yield eitherProject)
           .flatMap {
             case Right(prediction) =>
               Created(

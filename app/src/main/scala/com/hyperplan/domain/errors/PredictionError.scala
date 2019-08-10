@@ -13,7 +13,8 @@ sealed trait PredictionError extends Exception {
 object PredictionError {
   case class ProjectDoesNotExistError(message: String) extends PredictionError
   object ProjectDoesNotExistError {
-    def message(projectId: String) = s"The project $projectId does not exist"
+    def message(projectId: String) =
+      s"""The project "$projectId" does not exist"""
   }
   case class NoAlgorithmAvailableError() extends PredictionError {
     val message: String =
