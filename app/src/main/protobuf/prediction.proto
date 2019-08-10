@@ -1,0 +1,109 @@
+syntax = "proto3";
+
+package com.hyperplan.protos;
+
+service Prediction {
+  // Sends a greeting
+  rpc Predict (PredictionRequest) returns (PredictionResponse) {}
+}
+
+message FloatScalarFeature {
+  float value = 1;
+}
+
+message FloatArrayFeature {
+  repeated float value = 1;
+}
+message FloatMatrixFeature {
+  repeated FloatArrayFeature value = 1;
+}
+
+message IntScalarFeature {
+  int32 value = 1;
+}
+
+message IntArrayFeature {
+  repeated int32 value = 1;
+}
+message IntMatrixFeature {
+  repeated IntArrayFeature value = 1;
+}
+
+message StringScalarFeature {
+  string value = 1;
+}
+
+message StringArrayFeature {
+  repeated string value = 1;
+}
+message StringMatrixFeature {
+  repeated StringArrayFeature value = 1;
+}
+
+message Feature {
+  oneof value {
+    float floatScalar = 1;
+    FloatArrayFeature floatArray = 2;
+    FloatMatrixFeature floatMatrix = 3;
+
+    int32 intScalar = 4;
+    IntArrayFeature intArray = 5;
+    IntMatrixFeature intMatrix = 6;
+
+    string stringScalar = 7;
+    StringArrayFeature stringArray = 8;
+    StringMatrixFeature stringMatrix = 9;
+  }
+}
+
+
+
+message ClassificationLabel {
+  string label = 1;
+  float probability = 2;
+  string correctExampleUrl = 3;
+  string incorrectExampleUrl = 4;
+}
+
+message RegressionLabel {
+  float label = 1;
+  string correctExampleUrl = 3;
+  string incorrectExampleUrl = 4;
+}
+
+message Label {
+  oneof value {
+    ClassificationLabel classificationLabel = 1;
+    RegressionLabel regressionLabel = 2;
+  }
+}
+
+message ClassificationExample {
+  string example = 1;
+}
+
+message RegressionExample {
+  float example = 1;
+}
+
+message Example {
+  oneof value {
+    ClassificationExample classificationExample = 1;
+    RegressionExample regressionExample = 2;
+  }
+}
+
+message PredictionRequest {
+  string projectId = 1;
+  string algorithmId = 2;
+  map<string, Feature> features = 3;
+}
+
+message PredictionResponse {
+  string predictionId = 1;
+  string projectId = 2;
+  string algorithmId = 3;
+  repeated Feature features = 4;
+  repeated Label labels = 5;
+  repeated Example examples = 6;
+}

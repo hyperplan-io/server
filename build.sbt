@@ -27,6 +27,7 @@ lazy val root = (project in file("."))
         "-unchecked",
         "-deprecation",
         "-feature",
+        "-language:higherKinds",
         "-Xfatal-warnings"
       ),
       fork in run := true,
@@ -37,16 +38,21 @@ lazy val root = (project in file("."))
       "org.http4s" %% "http4s-blaze-client" % Http4sVersion,
       "org.http4s" %% "http4s-circe" % Http4sVersion,
       "org.http4s" %% "http4s-dsl" % Http4sVersion,
+
       "org.specs2" %% "specs2-core" % Specs2Version % "test",
+
       "org.typelevel" %% "cats-core" % "1.6.0",
       "org.typelevel" %% "cats-effect" % "1.2.0",
+
       "io.circe" %% "circe-core" % circeVersion,
       "io.circe" %% "circe-generic" % circeVersion,
       "io.circe" %% "circe-generic-extras" % circeVersion,
       "io.circe" %% "circe-parser" % circeVersion,
+
       "com.amazonaws" % "aws-java-sdk-kinesis" % "1.11.534" excludeAll(
         ExclusionRule(organization = "org.jboss.logging")
       ),
+
       "org.tpolecat" %% "doobie-core" % DoobieVersion,
       "org.tpolecat" %% "doobie-hikari" % DoobieVersion,
       "org.tpolecat" %% "doobie-postgres" % DoobieVersion,
@@ -67,23 +73,29 @@ lazy val root = (project in file("."))
       "co.fs2" %% "fs2-core" % "1.0.4",
       "co.fs2" %% "fs2-io" % "1.0.4",
       "com.ovoenergy" %% "fs2-kafka" % "0.19.9",
+
       "com.kubukoz" %% "sup-core" % "0.4.0",
       "com.kubukoz" %% "sup-doobie" % "0.4.0",
+
       "io.kamon" %% "kamon-core" % "1.1.0",
       "io.kamon" %% "kamon-prometheus" % "1.1.1",
       "io.kamon" %% "kamon-jdbc" % "1.0.2",
       "io.kamon" %% "kamon-logback" % "1.0.6",
       "io.kamon" %% "kamon-system-metrics" % "1.0.0",
       "io.kamon" %% "kamon-http4s" % "1.0.8",
+
       "com.auth0" % "java-jwt" % "3.8.0",
+      "io.grpc" % "grpc-services" % scalapb.compiler.Version.grpcJavaVersion,
+      "io.grpc" % "grpc-netty-shaded" % scalapb.compiler.Version.grpcJavaVersion,
+
+
       "com.github.cb372" %% "scalacache-core" % "0.27.0",
       "com.github.cb372" %% "scalacache-caffeine" % "0.27.0",
       "com.github.cb372" %% "scalacache-cats-effect" % "0.27.0"
     ),
     addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.9.6"),
     addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.2.4"),
-   ).enablePlugins(JavaAppPackaging)
-
+   ).enablePlugins(Fs2Grpc, JavaAppPackaging)
 
   lazy val siteSettings = Seq(
     micrositeName := "FoundaML",

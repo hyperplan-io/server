@@ -2,12 +2,9 @@ package com.hyperplan.application
 
 import cats.effect.{ExitCode, IO, IOApp}
 import cats.implicits._
-
 import scalacache._
 import scalacache.caffeine._
-
 import pureconfig.generic.auto._
-
 import com.hyperplan.domain.repositories.{
   DomainRepository,
   PredictionsRepository,
@@ -28,9 +25,15 @@ import scala.util.{Left, Right}
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import org.http4s.client.blaze.BlazeClientBuilder
+
 import scala.concurrent.ExecutionContext
 import cats.effect.Resource
+import com.hyperplan.application.controllers.grpc.PredictionGrpcController
+import com.hyperplan.protos.prediction.{PredictionFs2Grpc, PredictionGrpc}
+import io.grpc._
+import io.grpc.protobuf.services._
 import org.http4s.client.Client
+import org.lyranthe.fs2_grpc.java_runtime.implicits._
 
 object Main extends IOApp with IOLogging {
 
@@ -117,6 +120,7 @@ object Main extends IOApp with IOLogging {
         config
       )
       privacyService = new PrivacyServiceLive(predictionsRepository)
+      //projectToProtobufService = new ProjectToProtobufService()
       port = 8080
       _ <- logger.info("Services have been correctly instantiated")
       _ <- logger.info(s"Starting http server on port $port")
@@ -135,7 +139,8 @@ object Main extends IOApp with IOLogging {
         implicit val privateKeyImplicit = privateKey
         implicit val secret = config.encryption.secret
         implicit val configImplicit = config
-        Server
+
+        val httpServer = Server
           .stream(
             predictionsService,
             projectsService,
@@ -149,6 +154,27 @@ object Main extends IOApp with IOLogging {
             err => IO.raiseError(err),
             _.compile.drain
           )
+
+        val predictionGrpcController: ServerServiceDefinition =
+          PredictionFs2Grpc.bindService(
+            new PredictionGrpcController(
+              projectsService,
+              domainService,
+              predictionsService
+            )
+          )
+        val grpcServer = ServerBuilder
+          .forPort(9999)
+          .addService(predictionGrpcController)
+          .addService(ProtoReflectionService.newInstance())
+          .stream[IO] // or for any F: Sync
+          .evalMap(server => IO(server.start())) // start server
+          .evalMap(_ => IO.never)
+
+        IO.race(
+          httpServer,
+          grpcServer.compile.drain
+        )
       }
     } yield ()
 
