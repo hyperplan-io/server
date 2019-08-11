@@ -213,15 +213,21 @@ class BackendServiceLive(blazeClient: Resource[IO, Client[IO]])
 
       case (
           backend @ TensorFlowRegressionBackend(
-            host,
-            port,
+            rootPath,
+            model,
+            modelVersion,
             featuresTransformer
           ),
           regressionProject: RegressionProject
           ) =>
         val transformedFeatures = featuresTransformer.transform(features)
 
-        val uriString = s"http://$host:$port"
+        val uriString = modelVersion match {
+          case Some(value) =>
+            s"$rootPath/v1/models/$model/versions/$value:regress"
+          case None =>
+            s"$rootPath/v1/models/$model:regress"
+        }
         buildRequestWithFeatures(
           uriString,
           algorithm.security.headers,

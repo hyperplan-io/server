@@ -81,8 +81,9 @@ object LocalRandomRegression {
   * @param labelsTransformer the labels transformation
   */
 case class TensorFlowRegressionBackend(
-    host: String,
-    port: Int,
+    rootPath: String,
+    model: String,
+    modelVersion: Option[String],
     featuresTransformer: TensorFlowFeaturesTransformer
 ) extends Backend {
   val labelsTransformer =

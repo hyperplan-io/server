@@ -1,6 +1,7 @@
 package com.hyperplan.test.application
 
 import cats.effect.{IO, Resource}
+import cats.implicits._
 
 import org.http4s._
 import org.http4s.client.Client
@@ -129,8 +130,9 @@ class AlgorithmsControllerWithMockedClientRegressionSpec()
     val id = "test"
     val projectId = project.id
     val backend = backends.TensorFlowRegressionBackend(
-      "0.0.0.0",
-      7089,
+      "http://0.0.0.0:7089",
+      "myModel",
+      "myVersion".some,
       TensorFlowFeaturesTransformer(
         "signature",
         project.configuration.features.data.map { featureDescriptor =>
