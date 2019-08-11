@@ -73,7 +73,7 @@ object AlgorithmValidator {
       Validated.valid[AlgorithmError, Protocol](LocalCompute).toValidatedNec
     case LocalRandomRegression() =>
       Validated.valid[AlgorithmError, Protocol](LocalCompute).toValidatedNec
-    case TensorFlowClassificationBackend(_, _, _, _) =>
+    case TensorFlowClassificationBackend(_, _, _, _, _) =>
       Validated.valid[AlgorithmError, Protocol](Http).toValidatedNec
     case TensorFlowRegressionBackend(_, _, _) =>
       Validated.valid[AlgorithmError, Protocol](Http).toValidatedNec
@@ -120,6 +120,7 @@ object AlgorithmValidator {
           )
           .toValidatedNec
       case TensorFlowClassificationBackend(
+          _,
           _,
           _,
           TensorFlowFeaturesTransformer(signatureName, fields),

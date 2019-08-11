@@ -88,8 +88,9 @@ class BackendServiceLive(blazeClient: Resource[IO, Client[IO]])
 
       case (
           TensorFlowClassificationBackend(
-            host,
-            port,
+            rootPath,
+            model,
+            modelVersion,
             featuresTransformer,
             labelsTransformer
           ),
@@ -97,7 +98,12 @@ class BackendServiceLive(blazeClient: Resource[IO, Client[IO]])
           ) =>
         val transformedFeatures = featuresTransformer.transform(features)
 
-        val uriString = s"http://$host:$port"
+        val uriString = modelVersion match {
+          case Some(value) =>
+            s"$rootPath/v1/models/$model/versions/$value:classify"
+          case None =>
+            s"$rootPath/v1/models/$model:classify"
+        }
         buildRequestWithFeatures(
           uriString,
           algorithm.security.headers,

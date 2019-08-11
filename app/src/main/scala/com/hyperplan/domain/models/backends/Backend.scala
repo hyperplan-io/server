@@ -33,8 +33,9 @@ object LocalRandomClassification {
   * @param labelsTransformer the labels transformation
   */
 case class TensorFlowClassificationBackend(
-    host: String,
-    port: Int,
+    rootPath: String,
+    model: String,
+    modelVersion: Option[String],
     featuresTransformer: TensorFlowFeaturesTransformer,
     labelsTransformer: TensorFlowLabelsTransformer
 ) extends Backend
