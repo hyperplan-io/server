@@ -204,7 +204,10 @@ object Main extends IOApp with IOLogging {
           case Right(_) =>
             databaseConnected(config)
           case Left(err) =>
-            logger.info(s"Could not connect to the database: $err")
+            val errorMessage = s"Could not connect to the database: $err"
+            logger.info(errorMessage) *> IO.raiseError(
+              new RuntimeException(errorMessage)
+            )
         }
       }
     } yield ()

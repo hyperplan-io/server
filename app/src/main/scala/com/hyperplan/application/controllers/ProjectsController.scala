@@ -128,6 +128,47 @@ class ProjectsController(
                 "An unknown error occurred"
               )
           }
+
+      case req @ PUT -> Root / projectId / "algorithms" / algorithmId =>
+        (for {
+          request <- req.as[PostAlgorithmRequest](
+            MonadError[IO, Throwable],
+            PostAlgorithmRequestEntitySerializer.entityDecoder
+          )
+          algorithm <- projectsService
+            .createAlgorithm(
+              algorithmId,
+              request.backend,
+              projectId,
+              request.security
+            )
+            .value
+        } yield algorithm)
+          .flatMap {
+            case Right(algorithm) =>
+              logger.info(
+                s"Algorithm created with id ${algorithm.id} on project ${algorithm.projectId}"
+              ) *> Created(AlgorithmsSerializer.encodeJson(algorithm))
+            case Left(errors) =>
+              val errorList = errors.toList
+              logger.warn(
+                s"Failed to create algorithm: ${errorList.mkString(",")}"
+              ) *> BadRequest(
+                AlgorithmErrorsSerializer.encodeJson(errorList: _*)
+              )
+          }
+          .handleErrorWith { err =>
+            logger.warn(s"Unhandled error in AlgorithmsController", err) *> InternalServerError(
+              "An unknown error occurred"
+            )
+          }
+      case _ @DELETE -> Root / projectId / "algorithms" / algorithmId =>
+        projectsService.deleteAlgorithm(projectId, algorithmId).flatMap {
+          case count if count > 0 =>
+            Ok()
+          case count if count <= 0 =>
+            NotFound()
+        }
     }
   }
 

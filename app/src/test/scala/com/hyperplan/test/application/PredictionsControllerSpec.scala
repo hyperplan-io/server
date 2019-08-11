@@ -159,10 +159,6 @@ class PredictionsControllerSpec()
     projectsService
   )
 
-  val algorithmsController = new AlgorithmsController(
-    projectsService
-  )
-
   val predictionsController = new PredictionsController(
     projectsService,
     domainService,
@@ -218,7 +214,7 @@ class PredictionsControllerSpec()
       labelVectorDescriptor
     )
     val algorithm1 = ProjectUtils.createAlgorithmLocalClassification(
-      algorithmsController,
+      projectsController,
       project
     )
     val requestEntity1 = ProjectUtils.genPredictionRequest(project.id)
@@ -259,7 +255,7 @@ class PredictionsControllerSpec()
     )
 
     val algorithm2 = ProjectUtils.createAlgorithmLocalClassification(
-      algorithmsController,
+      projectsController,
       project
     )
     val requestEntity2 = ProjectUtils.genPredictionRequest(project.id)

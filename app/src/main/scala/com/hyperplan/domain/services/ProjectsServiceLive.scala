@@ -242,6 +242,8 @@ class ProjectsServiceLive(
         )
 
       }
+  def deleteAlgorithm(projectId: String, algorithmId: String): IO[Int] =
+    projectsRepository.deleteAlgorithm(projectId, algorithmId)
 
   def readProjects: IO[List[Project]] =
     projectsRepository.transact(projectsRepository.readAllProjects)

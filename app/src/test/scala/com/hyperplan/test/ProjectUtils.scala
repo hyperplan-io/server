@@ -266,24 +266,24 @@ object ProjectUtils {
   }
 
   def createAlgorithmLocalClassification(
-      algorithmsController: AlgorithmsController,
+      projectsController: ProjectsController,
       project: Project
   ): Algorithm = {
 
+    val algorithmId = Random.alphanumeric.take(10).mkString("")
+    val projectId = project.id
     val entityBody = PostAlgorithmRequest(
-      Random.alphanumeric.take(10).mkString(""),
-      project.id,
       LocalRandomClassification(Set.empty),
       PlainSecurityConfiguration(
         Nil
       )
     )
 
-    val response = algorithmsController.service
+    val response = projectsController.service
       .run(
         Request[IO](
-          method = Method.POST,
-          uri = uri"/"
+          method = Method.PUT,
+          uri = uri"" / projectId / "algorithms" / algorithmId
         ).withEntity(entityBody)
       )
       .value
@@ -299,13 +299,12 @@ object ProjectUtils {
   }
 
   def createAlgorithmTensorFlowClassification(
-      algorithmsController: AlgorithmsController,
+      projectsController: ProjectsController,
       project: Project
   ): Algorithm = {
-
+    val algorithmId = Random.alphanumeric.take(10).mkString("")
+    val projectId = project.id
     val entityBody = PostAlgorithmRequest(
-      Random.alphanumeric.take(10).mkString(""),
-      project.id,
       TensorFlowClassificationBackend(
         "http://0.0.0.0:7089",
         "myModel",
@@ -337,11 +336,11 @@ object ProjectUtils {
       )
     )
 
-    val response = algorithmsController.service
+    val response = projectsController.service
       .run(
         Request[IO](
-          method = Method.POST,
-          uri = uri"/"
+          method = Method.PUT,
+          uri = uri"" / projectId / "algorithms" / algorithmId
         ).withEntity(entityBody)
       )
       .value

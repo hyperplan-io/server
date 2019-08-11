@@ -31,7 +31,6 @@ import com.hyperplan.test.TestDatabase
 import org.scalatest.{FlatSpec, Matchers, _}
 import scalacache._
 import scalacache.caffeine._
-import com.hyperplan.application.controllers.AlgorithmsController
 import com.hyperplan.domain.models.backends.LocalRandomClassification
 import com.hyperplan.application.controllers.requests.PostAlgorithmRequest
 import com.hyperplan.test.ProjectUtils
@@ -118,12 +117,8 @@ class AlgorithmsControllerSpec()
     projectsService
   )
 
-  val algorithmsController = new AlgorithmsController(
-    projectsService
-  )
-
   it should "fail to create an algorithm for a project that does not exist" in {
-    val id = "test"
+    val algorithmId = "test"
     val backend = LocalRandomClassification(Set.empty)
     val projectId = "myproject"
     val security = PlainSecurityConfiguration(
@@ -131,18 +126,16 @@ class AlgorithmsControllerSpec()
     )
 
     val entityRequest = PostAlgorithmRequest(
-      id,
-      projectId,
       backend,
       security
     )
 
-    val expectedAlgorithm = Algorithm(id, backend, projectId, security)
-    val response = algorithmsController.service
+    val expectedAlgorithm = Algorithm(algorithmId, backend, projectId, security)
+    val response = projectsController.service
       .run(
         Request(
-          method = Method.POST,
-          uri = uri"/"
+          method = Method.PUT,
+          uri = uri"" / projectId / "algorithms" / algorithmId
         ).withEntity(entityRequest)
       )
       .value
@@ -174,7 +167,7 @@ class AlgorithmsControllerSpec()
       labelVectorDescriptor
     )
 
-    val id = "test"
+    val algorithmId = "test"
     val projectId = project.id
     val backend = LocalRandomClassification(Set.empty)
     val security = PlainSecurityConfiguration(
@@ -182,18 +175,16 @@ class AlgorithmsControllerSpec()
     )
 
     val entityRequest = PostAlgorithmRequest(
-      id,
-      projectId,
       backend,
       security
     )
 
-    val expectedAlgorithm = Algorithm(id, backend, projectId, security)
-    val response = algorithmsController.service
+    val expectedAlgorithm = Algorithm(algorithmId, backend, projectId, security)
+    val response = projectsController.service
       .run(
         Request(
-          method = Method.POST,
-          uri = uri"/"
+          method = Method.PUT,
+          uri = uri"" / projectId / "algorithms" / algorithmId
         ).withEntity(entityRequest)
       )
       .value
@@ -222,7 +213,7 @@ class AlgorithmsControllerSpec()
       labelVectorDescriptor
     )
 
-    val id = "test"
+    val algorithmId = "test"
     val projectId = project.id
     val backend = TensorFlowClassificationBackend(
       "http://0.0.0.0:7089",
@@ -255,18 +246,16 @@ class AlgorithmsControllerSpec()
     )
 
     val entityRequest = PostAlgorithmRequest(
-      id,
-      projectId,
       backend,
       security
     )
 
-    val expectedAlgorithm = Algorithm(id, backend, projectId, security)
-    val response = algorithmsController.service
+    val expectedAlgorithm = Algorithm(algorithmId, backend, projectId, security)
+    val response = projectsController.service
       .run(
         Request(
-          method = Method.POST,
-          uri = uri"/"
+          method = Method.PUT,
+          uri = uri"" / projectId / "algorithms" / algorithmId
         ).withEntity(entityRequest)
       )
       .value
@@ -299,7 +288,7 @@ class AlgorithmsControllerSpec()
       labelVectorDescriptor
     )
 
-    val id = "&erpokq"
+    val algorithmId = "&erpokq"
     val projectId = project.id
     val backend = LocalRandomClassification(Set.empty)
     val security = PlainSecurityConfiguration(
@@ -307,18 +296,16 @@ class AlgorithmsControllerSpec()
     )
 
     val entityRequest = PostAlgorithmRequest(
-      id,
-      projectId,
       backend,
       security
     )
 
-    val expectedAlgorithm = Algorithm(id, backend, projectId, security)
-    val response = algorithmsController.service
+    val expectedAlgorithm = Algorithm(algorithmId, backend, projectId, security)
+    val response = projectsController.service
       .run(
         Request(
-          method = Method.POST,
-          uri = uri"/"
+          method = Method.PUT,
+          uri = uri"" / projectId / "algorithms" / algorithmId
         ).withEntity(entityRequest)
       )
       .value
@@ -330,7 +317,7 @@ class AlgorithmsControllerSpec()
         Some(
           List(
             AlgorithmError.AlgorithmIdIsNotAlphaNumerical(
-              AlgorithmError.AlgorithmIdIsNotAlphaNumerical.message(id)
+              AlgorithmError.AlgorithmIdIsNotAlphaNumerical.message(algorithmId)
             )
           )
         )
@@ -350,7 +337,7 @@ class AlgorithmsControllerSpec()
       labelVectorDescriptor
     )
 
-    val id = "testid"
+    val algorithmId = "testid"
     val projectId = project.id
     val backend = RasaNluClassificationBackend(
       "grpc://test",
@@ -367,18 +354,16 @@ class AlgorithmsControllerSpec()
     )
 
     val entityRequest = PostAlgorithmRequest(
-      id,
-      projectId,
       backend,
       security
     )
 
-    val expectedAlgorithm = Algorithm(id, backend, projectId, security)
-    val response = algorithmsController.service
+    val expectedAlgorithm = Algorithm(algorithmId, backend, projectId, security)
+    val response = projectsController.service
       .run(
         Request(
-          method = Method.POST,
-          uri = uri"/"
+          method = Method.PUT,
+          uri = uri"" / projectId / "algorithms" / algorithmId
         ).withEntity(entityRequest)
       )
       .value

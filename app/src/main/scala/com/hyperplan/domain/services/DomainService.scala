@@ -15,12 +15,14 @@ import com.hyperplan.domain.models.{
 trait DomainService {
   def readAllFeatures: IO[List[FeatureVectorDescriptor]]
   def readFeatures(id: String): IO[Option[FeatureVectorDescriptor]]
+  def deleteFeatures(id: String): IO[Int]
   def createFeatures(
       features: FeatureVectorDescriptor
   ): EitherT[IO, NonEmptyChain[FeatureVectorDescriptorError], FeatureVectorDescriptor]
 
   def readAllLabels: IO[List[LabelVectorDescriptor]]
   def readLabels(id: String): IO[Option[LabelVectorDescriptor]]
+  def deleteLabels(id: String): IO[Int]
   def createLabels(
       labelsConfiguration: LabelVectorDescriptor
   ): EitherT[IO, NonEmptyChain[LabelVectorDescriptorError], LabelVectorDescriptor]

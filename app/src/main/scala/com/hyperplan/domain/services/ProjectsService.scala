@@ -25,6 +25,7 @@ trait ProjectsService {
   ): EitherT[IO, NonEmptyChain[ProjectError], Project]
   def readProjects: IO[List[Project]]
   def readProject(id: String): IO[Option[Project]]
+  def deleteAlgorithm(projectId: String, algorithmId: String): IO[Int]
   def createAlgorithm(
       id: String,
       backend: Backend,

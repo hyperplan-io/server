@@ -119,6 +119,20 @@ class DomainRepository(implicit xa: Transactor[IO]) extends IOLogging {
       .transact(xa)
       .flatMap(dataToFeaturesConfiguration _)
 
+  def deleteLabelsQuery(labelsId: String): doobie.Update0 =
+    sql"""DELETE FROM labels WHERE id = $labelsId""".update
+
+  def deleteLabels(labelsId: String): IO[Int] =
+    deleteLabelsQuery(labelsId).run
+      .transact(xa)
+
+  def deleteFeaturesQuery(featuresId: String): doobie.Update0 =
+    sql"""DELETE FROM features WHERE id = $featuresId""".update
+
+  def deleteFeatures(featuresId: String): IO[Int] =
+    deleteFeaturesQuery(featuresId).run
+      .transact(xa)
+
   def readLabelsQuery(
       id: String
   ): doobie.Query0[DomainRepository.LabelsConfigurationData] =

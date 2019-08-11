@@ -32,6 +32,7 @@ class DomainServiceLive(domainRepository: DomainRepository)
       case UnexpectedEnd =>
         IO.pure(none[FeatureVectorDescriptor])
     }
+  def deleteFeatures(id: String): IO[Int] = domainRepository.deleteFeatures(id)
 
   def readAllLabels = domainRepository.readAllLabels
 
@@ -40,6 +41,7 @@ class DomainServiceLive(domainRepository: DomainRepository)
       case UnexpectedEnd =>
         IO.pure(none[LabelVectorDescriptor])
     }
+  def deleteLabels(id: String): IO[Int] = domainRepository.deleteLabels(id)
 
   def createFeatures(
       features: FeatureVectorDescriptor

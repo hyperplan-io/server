@@ -23,18 +23,14 @@ object PostAlgorithmRequestEntitySerializer {
   implicit val decoder: Decoder[PostAlgorithmRequest] =
     (c: HCursor) =>
       for {
-        id <- c.downField("id").as[String]
-        projectId <- c.downField("projectId").as[String]
         backend <- c.downField("backend").as[Backend]
         security <- c.downField("security").as[SecurityConfiguration]
-      } yield PostAlgorithmRequest(id, projectId, backend, security)
+      } yield PostAlgorithmRequest(backend, security)
 
-  implicit val encoder: Encoder[PostAlgorithmRequest] = Encoder.forProduct4(
-    "id",
-    "projectId",
+  implicit val encoder: Encoder[PostAlgorithmRequest] = Encoder.forProduct2(
     "backend",
     "security"
-  )(r => (r.id, r.projectId, r.backend, r.security))
+  )(r => (r.backend, r.security))
   implicit val entityDecoder: EntityDecoder[IO, PostAlgorithmRequest] =
     jsonOf[IO, PostAlgorithmRequest]
 

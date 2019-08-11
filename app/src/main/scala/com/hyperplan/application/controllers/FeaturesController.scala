@@ -81,6 +81,13 @@ class FeaturesController(domainService: DomainService)
                 unhandledErrorMessage
               )
           }
+      case _ @DELETE -> Root / featuresId =>
+        domainService.deleteFeatures(featuresId).flatMap {
+          case count if count > 0 =>
+            Ok()
+          case count if count <= 0 =>
+            NotFound()
+        }
     }
   }
 

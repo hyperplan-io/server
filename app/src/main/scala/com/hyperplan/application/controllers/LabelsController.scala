@@ -81,6 +81,13 @@ class LabelsController(domainService: DomainService)
                 unhandledErrorMessage
               )
           }
+      case _ @DELETE -> Root / labelsId =>
+        domainService.deleteLabels(labelsId).flatMap {
+          case count if count > 0 =>
+            Ok()
+          case count if count <= 0 =>
+            NotFound()
+        }
     }
   }
 
