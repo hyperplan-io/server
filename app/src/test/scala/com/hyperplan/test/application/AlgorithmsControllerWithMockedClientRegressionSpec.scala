@@ -14,7 +14,6 @@ import pureconfig.generic.auto._
 import com.hyperplan.application.ApplicationConfig
 import com.hyperplan.application.controllers.requests.PostAlgorithmRequest
 import com.hyperplan.application.controllers.{
-  AlgorithmsController,
   FeaturesController,
   LabelsController,
   ProjectsController
@@ -112,10 +111,6 @@ class AlgorithmsControllerWithMockedClientRegressionSpec()
     projectsService
   )
 
-  val algorithmsController = new AlgorithmsController(
-    projectsService
-  )
-
   it should "successfully to create an algorithm with Tensorflow regression" in {
 
     val featureVectorDescriptor =
@@ -127,7 +122,7 @@ class AlgorithmsControllerWithMockedClientRegressionSpec()
       featureVectorDescriptor
     )
 
-    val id = "test"
+    val algorithmId = "test"
     val projectId = project.id
     val backend = backends.TensorFlowRegressionBackend(
       "http://0.0.0.0:7089",
@@ -145,18 +140,16 @@ class AlgorithmsControllerWithMockedClientRegressionSpec()
     )
 
     val entityRequest = PostAlgorithmRequest(
-      id,
-      projectId,
       backend,
       security
     )
 
-    val expectedAlgorithm = Algorithm(id, backend, projectId, security)
-    val response = algorithmsController.service
+    val expectedAlgorithm = Algorithm(algorithmId, backend, projectId, security)
+    val response = projectsController.service
       .run(
         Request(
-          method = Method.POST,
-          uri = uri"/"
+          method = Method.PUT,
+          uri = uri"" / projectId / "algorithms" / algorithmId
         ).withEntity(entityRequest)
       )
       .value

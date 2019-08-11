@@ -10,7 +10,6 @@ import scalacache.caffeine._
 import com.hyperplan.application.ApplicationConfig
 import com.hyperplan.application.controllers.requests.PostAlgorithmRequest
 import com.hyperplan.application.controllers.{
-  AlgorithmsController,
   FeaturesController,
   LabelsController,
   ProjectsController
@@ -119,10 +118,6 @@ class AlgorithmsControllerRasaNluSpec()
     projectsService
   )
 
-  val algorithmsController = new AlgorithmsController(
-    projectsService
-  )
-
   it should "successfully to create an algorithm with Rasa Nlu classification" in {
 
     val featureVectorDescriptor =
@@ -135,7 +130,7 @@ class AlgorithmsControllerRasaNluSpec()
       labelVectorDescriptor
     )
 
-    val id = "test"
+    val algorithmId = "test"
     val projectId = project.id
     val backend = RasaNluClassificationBackend(
       "http://0.0.0.0",
@@ -152,18 +147,16 @@ class AlgorithmsControllerRasaNluSpec()
     )
 
     val entityRequest = PostAlgorithmRequest(
-      id,
-      projectId,
       backend,
       security
     )
 
-    val expectedAlgorithm = Algorithm(id, backend, projectId, security)
-    val response = algorithmsController.service
+    val expectedAlgorithm = Algorithm(algorithmId, backend, projectId, security)
+    val response = projectsController.service
       .run(
         Request(
-          method = Method.POST,
-          uri = uri"/"
+          method = Method.PUT,
+          uri = uri"" / projectId / "algorithms" / algorithmId
         ).withEntity(entityRequest)
       )
       .value
@@ -192,7 +185,7 @@ class AlgorithmsControllerRasaNluSpec()
       labelVectorDescriptor
     )
 
-    val id = "test"
+    val algorithmId = "test"
     val projectId = project.id
     val backend = RasaNluClassificationBackend(
       "grpc://0.0.0.0",
@@ -209,18 +202,16 @@ class AlgorithmsControllerRasaNluSpec()
     )
 
     val entityRequest = PostAlgorithmRequest(
-      id,
-      projectId,
       backend,
       security
     )
 
-    val expectedAlgorithm = Algorithm(id, backend, projectId, security)
-    val response = algorithmsController.service
+    val expectedAlgorithm = Algorithm(algorithmId, backend, projectId, security)
+    val response = projectsController.service
       .run(
         Request(
-          method = Method.POST,
-          uri = uri"/"
+          method = Method.PUT,
+          uri = uri"" / projectId / "algorithms" / algorithmId
         ).withEntity(entityRequest)
       )
       .value

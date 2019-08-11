@@ -10,7 +10,6 @@ import scalacache.caffeine._
 import com.hyperplan.application.ApplicationConfig
 import com.hyperplan.application.controllers.requests.PostAlgorithmRequest
 import com.hyperplan.application.controllers.{
-  AlgorithmsController,
   FeaturesController,
   LabelsController,
   ProjectsController
@@ -114,10 +113,6 @@ class AlgorithmsControllerWithMockedClientClassificationSpec()
     projectsService
   )
 
-  val algorithmsController = new AlgorithmsController(
-    projectsService
-  )
-
   it should "successfully to create an algorithm with Tensorflow classification" in {
 
     val featureVectorDescriptor =
@@ -130,7 +125,7 @@ class AlgorithmsControllerWithMockedClientClassificationSpec()
       labelVectorDescriptor
     )
 
-    val id = "test"
+    val algorithmId = "test"
     val projectId = project.id
     val backend = TensorFlowClassificationBackend(
       "http://0.0.0.0:7089",
@@ -155,18 +150,16 @@ class AlgorithmsControllerWithMockedClientClassificationSpec()
     )
 
     val entityRequest = PostAlgorithmRequest(
-      id,
-      projectId,
       backend,
       security
     )
 
-    val expectedAlgorithm = Algorithm(id, backend, projectId, security)
-    val response = algorithmsController.service
+    val expectedAlgorithm = Algorithm(algorithmId, backend, projectId, security)
+    val response = projectsController.service
       .run(
         Request(
-          method = Method.POST,
-          uri = uri"/"
+          method = Method.PUT,
+          uri = uri"" / projectId / "algorithms" / algorithmId
         ).withEntity(entityRequest)
       )
       .value

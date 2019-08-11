@@ -52,9 +52,6 @@ object Server {
     val projectsController = new ProjectsController(
       projectsService
     )
-    val algorithmsController = new AlgorithmsController(
-      projectsService
-    )
     val examplesController = new ExamplesController(
       predictionsService
     )
@@ -129,12 +126,6 @@ object Server {
               "/projects" -> (
                 authMiddleware(
                   projectsController.service,
-                  AuthenticationService.AdminScope
-                )
-              ),
-              "/algorithms" -> (
-                authMiddleware(
-                  algorithmsController.service,
                   AuthenticationService.AdminScope
                 )
               ),

@@ -145,6 +145,16 @@ class ProjectsRepository(implicit xa: Transactor[IO]) extends IOLogging {
       .map(_.flatMap(dataToProject).reduceOption(_ |+| _))
   }
 
+  def deleteAlgorithmQuery(
+      projectId: String,
+      algorithmId: String
+  ): doobie.Update0 =
+    sql"""DELETE FROM algorithms WHERE project_id = $projectId AND id = $algorithmId""".update
+
+  def deleteAlgorithm(projectId: String, algorithmId: String): IO[Int] =
+    deleteAlgorithmQuery(projectId, algorithmId).run
+      .transact(xa)
+
   def readAllProjectsQuery: Query0[ProjectRowData] =
     sql"""
       SELECT projects.id, name, problem, algorithm_policy, configuration, algorithms.id, backend, security
