@@ -1,15 +1,18 @@
 package com.hyperplan.domain.repositories
 
+import cats.data.NonEmptyChain
 import doobie._
 import doobie.implicits._
-
+import doobie.postgres._
 import cats.effect.IO
 import cats.implicits._
-
+import com.hyperplan.domain.errors.ProjectError
+import com.hyperplan.domain.errors.ProjectError.ProjectAlreadyExistsError
 import com.hyperplan.infrastructure.serialization._
 import com.hyperplan.domain.models.backends.Backend
 import com.hyperplan.domain.models._
 import com.hyperplan.infrastructure.logging.IOLogging
+import eu.timepit.refined.collection.NonEmpty
 
 class ProjectsRepository(implicit xa: Transactor[IO]) extends IOLogging {
 
@@ -124,11 +127,24 @@ class ProjectsRepository(implicit xa: Transactor[IO]) extends IOLogging {
       ${project.configuration}
     )""".update
 
-  def insertProject(project: Project): ConnectionIO[Project] =
-    for {
-      _ <- insertProjectQuery(project: Project).run
-      _ <- insertManyAlgorithm(project.algorithms)
-    } yield project
+  def insertProject(
+      project: Project
+  ): ConnectionIO[Either[NonEmptyChain[ProjectError], Project]] =
+    insertProjectQuery(project: Project).run
+      .attemptSomeSqlState {
+        case sqlstate.class23.UNIQUE_VIOLATION =>
+          NonEmptyChain(
+            ProjectAlreadyExistsError(
+              ProjectAlreadyExistsError.message(project.id)
+            ): ProjectError
+          ).asLeft[Project]
+      }
+      .flatMap {
+        case Right(_) =>
+          insertManyAlgorithm(project.algorithms).map(_ => project.asRight)
+        case Left(err) =>
+          err.pure[ConnectionIO]
+      }
 
   def readProjectQuery(projectId: String): Query0[ProjectRowData] =
     sql"""

@@ -130,11 +130,11 @@ object AlgorithmValidator {
           case OneOfLabelsDescriptor(oneOf, _) =>
             Either
               .cond(
-                oneOf.size == fields.size,
+                oneOf.size == labels.size,
                 (),
                 WrongNumberOfLabelsInTransformerError(
                   WrongNumberOfLabelsInTransformerError.message(
-                    fields.size,
+                    labels.size,
                     oneOf.size
                   )
                 ): AlgorithmError

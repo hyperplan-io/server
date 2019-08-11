@@ -47,7 +47,10 @@ object Main extends IOApp with IOLogging {
   override def run(args: List[String]): IO[ExitCode] =
     loadConfigAndStart().attempt.flatMap(
       _.fold(
-        err => killAll *> logger.error(err.getMessage).as(ExitCode.Error),
+        err =>
+          logger.error("Failed to start Hyperplan", err) *> IO.pure(
+            ExitCode.Error
+          ),
         res => IO.pure(ExitCode.Success)
       )
     )
@@ -120,7 +123,6 @@ object Main extends IOApp with IOLogging {
         config
       )
       privacyService = new PrivacyServiceLive(predictionsRepository)
-      //projectToProtobufService = new ProjectToProtobufService()
       port = 8080
       _ <- logger.info("Services have been correctly instantiated")
       _ <- logger.info(s"Starting http server on port $port")
@@ -178,7 +180,7 @@ object Main extends IOApp with IOLogging {
       }
     } yield ()
 
-  def loadConfigAndStart() =
+  def loadConfigAndStart(): IO[Unit] =
     pureconfig
       .loadConfig[ApplicationConfig]
       .fold(
@@ -204,8 +206,8 @@ object Main extends IOApp with IOLogging {
           case Right(_) =>
             databaseConnected(config)
           case Left(err) =>
-            val errorMessage = s"Could not connect to the database: $err"
-            logger.info(errorMessage) *> IO.raiseError(
+            val errorMessage = s"Could not connect to the database"
+            logger.info(errorMessage, err) *> IO.raiseError(
               new RuntimeException(errorMessage)
             )
         }
