@@ -307,8 +307,9 @@ object ProjectUtils {
       Random.alphanumeric.take(10).mkString(""),
       project.id,
       TensorFlowClassificationBackend(
-        "0.0.0.0",
-        7089,
+        "http://0.0.0.0:7089",
+        "myModel",
+        None,
         TensorFlowFeaturesTransformer(
           "signature",
           project.configuration

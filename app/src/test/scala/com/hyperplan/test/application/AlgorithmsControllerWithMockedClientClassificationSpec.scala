@@ -133,8 +133,9 @@ class AlgorithmsControllerWithMockedClientClassificationSpec()
     val id = "test"
     val projectId = project.id
     val backend = TensorFlowClassificationBackend(
-      "0.0.0.0",
-      7089,
+      "http://0.0.0.0:7089",
+      "myModel",
+      None,
       TensorFlowFeaturesTransformer(
         "signature",
         project.configuration.features.data.map { featureDescriptor =>

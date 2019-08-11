@@ -53,8 +53,12 @@ object BackendSerializer {
             "class",
             Json.fromString(TensorFlowClassificationBackend.backendClass)
           ),
-          ("host", Json.fromString(backend.host)),
-          ("port", Json.fromInt(backend.port)),
+          ("rootPath", Json.fromString(backend.rootPath)),
+          ("model", Json.fromString(backend.model)),
+          (
+            "modelVersion",
+            backend.modelVersion.fold(Json.Null)(Json.fromString)
+          ),
           (
             "featuresTransformer",
             tfTransformerEncoder.apply(backend.featuresTransformer)
@@ -69,8 +73,9 @@ object BackendSerializer {
         : Decoder[TensorFlowClassificationBackend] =
       (c: HCursor) =>
         for {
-          host <- c.downField("host").as[String]
-          port <- c.downField("port").as[Int]
+          rootPath <- c.downField("rootPath").as[String]
+          model <- c.downField("model").as[String]
+          modelVersion <- c.downField("modelVersion").as[Option[String]]
           featuresTransformer <- c
             .downField("featuresTransformer")
             .as[TensorFlowFeaturesTransformer]
@@ -79,8 +84,9 @@ object BackendSerializer {
             .as[TensorFlowLabelsTransformer]
         } yield
           TensorFlowClassificationBackend(
-            host,
-            port,
+            rootPath,
+            model,
+            modelVersion,
             featuresTransformer,
             labelsTransformer
           )
@@ -90,8 +96,12 @@ object BackendSerializer {
       (backend: TensorFlowRegressionBackend) =>
         Json.obj(
           ("class", Json.fromString(TensorFlowRegressionBackend.backendClass)),
-          ("host", Json.fromString(backend.host)),
-          ("port", Json.fromInt(backend.port)),
+          ("rootPath", Json.fromString(backend.rootPath)),
+          ("model", Json.fromString(backend.model)),
+          (
+            "modelVersion",
+            backend.modelVersion.fold(Json.Null)(Json.fromString)
+          ),
           (
             "featuresTransformer",
             tfTransformerEncoder.apply(backend.featuresTransformer)
@@ -102,12 +112,19 @@ object BackendSerializer {
         : Decoder[TensorFlowRegressionBackend] =
       (c: HCursor) =>
         for {
-          host <- c.downField("host").as[String]
-          port <- c.downField("port").as[Int]
+          rootPath <- c.downField("rootPath").as[String]
+          model <- c.downField("model").as[String]
+          modelVersion <- c.downField("modelVersion").as[Option[String]]
           featuresTransformer <- c
             .downField("featuresTransformer")
             .as[TensorFlowFeaturesTransformer]
-        } yield TensorFlowRegressionBackend(host, port, featuresTransformer)
+        } yield
+          TensorFlowRegressionBackend(
+            rootPath,
+            model,
+            modelVersion,
+            featuresTransformer
+          )
 
     implicit val tfTransformerEncoder: Encoder[TensorFlowFeaturesTransformer] =
       FeaturesTransformerSerializer.tfTransformerEncoder
