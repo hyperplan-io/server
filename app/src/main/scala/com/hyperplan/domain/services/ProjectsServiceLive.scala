@@ -143,10 +143,10 @@ class ProjectsServiceLive(
           projectsRepository.insertProject(project)
         )
       ).flatMap { _ =>
-          EitherT.liftF[IO, NonEmptyChain[ProjectError], Project](
-            cache.remove[IO](project.id).map(_ => project)
-          )
-        }
+        EitherT.liftF[IO, NonEmptyChain[ProjectError], Project](
+          cache.remove[IO](project.id).map(_ => project)
+        )
+      }
     }
 
   def updateProject(
