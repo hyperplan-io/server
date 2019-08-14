@@ -240,6 +240,15 @@ class ProjectsServiceLive(
         )
 
       }
+
+  def deleteProject(projectId: String): IO[Int] =
+    projectsRepository.transact(
+      for {
+        _ <- projectsRepository.deleteProjectAlgorithms(projectId)
+        count <- projectsRepository.deleteProject(projectId)
+      } yield count
+    )
+
   def deleteAlgorithm(projectId: String, algorithmId: String): IO[Int] =
     projectsRepository.deleteAlgorithm(projectId, algorithmId)
 

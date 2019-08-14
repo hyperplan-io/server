@@ -162,6 +162,15 @@ class ProjectsController(
               "An unknown error occurred"
             )
           }
+
+      case _ @DELETE -> Root / projectId =>
+        projectsService.deleteProject(projectId).flatMap {
+          case count if count > 0 =>
+            Ok()
+          case count if count <= 0 =>
+            NotFound()
+        }
+
       case _ @DELETE -> Root / projectId / "algorithms" / algorithmId =>
         projectsService.deleteAlgorithm(projectId, algorithmId).flatMap {
           case count if count > 0 =>

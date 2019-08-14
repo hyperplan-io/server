@@ -23,6 +23,8 @@ trait ProjectsService {
       name: Option[String],
       policy: Option[AlgorithmPolicy]
   ): EitherT[IO, NonEmptyChain[ProjectError], Project]
+  def deleteProject(projectId: String): IO[Int]
+
   def readProjects: IO[List[Project]]
   def readProject(id: String): IO[Option[Project]]
   def deleteAlgorithm(projectId: String, algorithmId: String): IO[Int]
