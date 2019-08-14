@@ -377,15 +377,15 @@ class ProjectsRepository(domainRepository: DomainRepository)(
 object ProjectsRepository {
   type ProjectRowData = (
       // project
-      String, // id
-      String, // name
+      String, // project id
+      String, // project name
       Either[io.circe.Error, ProblemType],
       Either[io.circe.Error, AlgorithmPolicy],
       String, // featuresId
       Option[String], // labelsId
-      Option[String], //topic
+      Option[String], // topic
       // algorithm
-      String,
+      String, // algorithm id
       Either[io.circe.Error, Backend],
       Either[io.circe.Error, SecurityConfiguration]
   )
