@@ -102,9 +102,9 @@ class PredictionsServiceSpec()
     )
   )
 
-  val projectsRepository = new ProjectsRepository()(xa)
   val predictionsRepository = new PredictionsRepository()(xa)
   val domainRepository = new DomainRepository()(xa)
+  val projectsRepository = new ProjectsRepository(domainRepository)(xa)
 
   val kinesisService: KinesisService =
     KinesisService("fake-region").unsafeRunSync()

@@ -1,6 +1,6 @@
 package com.hyperplan.domain.repositories
 
-import cats.data.NonEmptyChain
+import cats.data.{NonEmptyChain, NonEmptyList}
 import doobie._
 import doobie.implicits._
 import doobie.postgres._
@@ -8,13 +8,16 @@ import cats.effect.IO
 import cats.implicits._
 import com.hyperplan.domain.errors.ProjectError
 import com.hyperplan.domain.errors.ProjectError.ProjectAlreadyExistsError
+import com.hyperplan.domain.models
 import com.hyperplan.infrastructure.serialization._
 import com.hyperplan.domain.models.backends.Backend
 import com.hyperplan.domain.models._
 import com.hyperplan.infrastructure.logging.IOLogging
 import eu.timepit.refined.collection.NonEmpty
 
-class ProjectsRepository(implicit xa: Transactor[IO]) extends IOLogging {
+class ProjectsRepository(domainRepository: DomainRepository)(
+    implicit xa: Transactor[IO]
+) extends IOLogging {
 
   /*
    * project
@@ -70,6 +73,8 @@ class ProjectsRepository(implicit xa: Transactor[IO]) extends IOLogging {
         String,
         String,
         String,
+        Option[String],
+        Option[String],
         String,
         String,
         String
@@ -80,7 +85,9 @@ class ProjectsRepository(implicit xa: Transactor[IO]) extends IOLogging {
         projectName,
         problem,
         policy,
-        configuration,
+        featuresId,
+        labelsId,
+        topic,
         algorithmId,
         backend,
         securityConfiguration
@@ -90,7 +97,9 @@ class ProjectsRepository(implicit xa: Transactor[IO]) extends IOLogging {
         projectName,
         ProblemTypeSerializer.decodeJson(problem),
         AlgorithmPolicySerializer.decodeJson(policy),
-        ProjectConfigurationSerializer.decodeJson(configuration),
+        featuresId,
+        labelsId,
+        topic,
         algorithmId,
         BackendSerializer.decodeJson(backend),
         SecurityConfigurationSerializer.decodeJson(securityConfiguration)
@@ -113,19 +122,43 @@ class ProjectsRepository(implicit xa: Transactor[IO]) extends IOLogging {
     io.transact(xa)
 
   def insertProjectQuery(project: Project) =
-    sql"""INSERT INTO projects(
-      id,
-      name,
-      problem,
-      algorithm_policy,
-      configuration
-    ) VALUES(
-      ${project.id},
-      ${project.name},
-      ${project.problem},
-      ${project.policy},
-      ${project.configuration}
-    )""".update
+    project.configuration match {
+      case ClassificationConfiguration(features, labels, dataStream) =>
+        sql"""INSERT INTO projects(
+          id,
+          name,
+          problem,
+          algorithm_policy,
+          features_id,
+          labels_id,
+          topic
+        ) VALUES(
+          ${project.id},
+          ${project.name},
+          ${project.problem},
+          ${project.policy},
+          ${features.id},
+          ${labels.id},
+          ${dataStream.map(_.topic).getOrElse("")}
+        )""".update
+
+      case RegressionConfiguration(features, dataStream) =>
+        sql"""INSERT INTO projects(
+          id,
+          name,
+          problem,
+          algorithm_policy,
+          features_id,
+          topic
+        ) VALUES(
+          ${project.id},
+          ${project.name},
+          ${project.problem},
+          ${project.policy},
+          ${features.id},
+          ${dataStream.map(_.topic).getOrElse("")}
+        )""".update
+    }
 
   def insertProject(
       project: Project
@@ -148,17 +181,127 @@ class ProjectsRepository(implicit xa: Transactor[IO]) extends IOLogging {
 
   def readProjectQuery(projectId: String): Query0[ProjectRowData] =
     sql"""
-      SELECT projects.id, name, problem, algorithm_policy, configuration, algorithms.id, backend, security
+      SELECT projects.id, name, problem, algorithm_policy, features_id, labels_id, topic, algorithms.id, backend, security
       FROM projects
       JOIN algorithms on algorithms.project_id = projects.id
       WHERE projects.id=$projectId
       """
       .query[ProjectsRepository.ProjectRowData]
 
+  def rowToProject(
+      projectRowData: ProjectRowData,
+      allRows: List[ProjectRowData]
+  ) = {
+    val (
+      projectId,
+      projectName,
+      projectProblem,
+      projectPolicy,
+      featuresId,
+      maybeLabelsId,
+      topic,
+      _,
+      _,
+      _
+    ) = projectRowData
+
+    projectPolicy match {
+      case Left(_) =>
+        none[Project].pure[ConnectionIO]
+      case Right(policy) =>
+        val algorithms = allRows.collect {
+          case (
+              id,
+              _,
+              _,
+              _,
+              _,
+              _,
+              _,
+              algorithmId,
+              Right(backend),
+              Right(securityConfiguration)
+              ) if id == projectId =>
+            Algorithm(
+              algorithmId,
+              backend,
+              projectId,
+              securityConfiguration
+            )
+        }
+        val streamConfiguration = topic.map(t => StreamConfiguration(t))
+
+        val projectConfigurationConnectionIO =
+          projectProblem.fold[ConnectionIO[Option[ProjectConfiguration]]](
+            _ => none[ProjectConfiguration].pure[ConnectionIO], {
+              case Classification =>
+                maybeLabelsId match {
+                  case Some(labelsId) =>
+                    (
+                      domainRepository.readFeatures(featuresId),
+                      domainRepository.readLabels(labelsId)
+                    ).mapN {
+                      case (Some(features), Some(labels)) =>
+                        ClassificationConfiguration(
+                          features,
+                          labels,
+                          streamConfiguration
+                        ).some
+                      case (None, Some(labels)) =>
+                        none[ProjectConfiguration]
+                      case (Some(features), None) =>
+                        none[ProjectConfiguration]
+                      case (None, None) =>
+                        none[ProjectConfiguration]
+                    }
+                  case None =>
+                    none[ProjectConfiguration].pure[ConnectionIO]
+                }
+
+              case Regression =>
+                domainRepository.readFeatures(featuresId).map {
+                  case Some(features) =>
+                    RegressionConfiguration(
+                      features,
+                      streamConfiguration
+                    ).some
+                  case None =>
+                    none[ProjectConfiguration]
+                }
+            }
+          )
+        projectConfigurationConnectionIO.map {
+          case Some(projectConfiguration: ClassificationConfiguration) =>
+            ClassificationProject(
+              projectId,
+              projectName,
+              projectConfiguration,
+              algorithms,
+              policy
+            ).some
+          case Some(projectConfiguration: RegressionConfiguration) =>
+            RegressionProject(
+              projectId,
+              projectName,
+              projectConfiguration,
+              algorithms,
+              policy
+            ).some
+          case None =>
+            none[Project]
+        }
+    }
+  }
+
   def readProject(projectId: String): ConnectionIO[Option[Project]] = {
-    readProjectQuery(projectId)
-      .to[List]
-      .map(_.flatMap(dataToProject).reduceOption(_ |+| _))
+
+    readProjectQuery(projectId).to[List].flatMap {
+      case allRows @ head :: _ =>
+        rowToProject(head, allRows)
+      case _ =>
+        none[Project].pure[ConnectionIO]
+    }
+
   }
 
   def deleteAlgorithmQuery(
@@ -173,31 +316,25 @@ class ProjectsRepository(implicit xa: Transactor[IO]) extends IOLogging {
 
   def readAllProjectsQuery: Query0[ProjectRowData] =
     sql"""
-      SELECT projects.id, name, problem, algorithm_policy, configuration, algorithms.id, backend, security
+      SELECT projects.id, name, problem, algorithm_policy, features_id, labels_id, topic, algorithms.id, backend, security
       FROM projects
       INNER JOIN algorithms ON algorithms.project_id = projects.id
       """
       .query[ProjectsRepository.ProjectRowData]
 
-  def readAllProjects =
+  def readAllProjects: ConnectionIO[List[Project]] = {
+
     readAllProjectsQuery
       .to[List]
-      .map(
-        _.map(dataToProject)
-          .foldLeft(Map.empty[String, Project]) { (acc, elem) =>
-            elem match {
-              case Some(value) =>
-                acc
-                  .get(value.id)
-                  .fold(
-                    acc + (value.id -> value)
-                  )(project => acc + (project.id -> (project |+| value)))
-              case None => acc
-            }
+      .flatMap { rows =>
+        rows
+          .map { row =>
+            rowToProject(row, rows)
           }
-          .values
-          .toList
-      )
+          .sequence
+          .map(_.flatten)
+      }
+  }
 
   def updateProjectQuery(project: Project) =
     sql"""
@@ -240,24 +377,28 @@ class ProjectsRepository(implicit xa: Transactor[IO]) extends IOLogging {
 object ProjectsRepository {
   type ProjectRowData = (
       // project
-      String,
-      String,
+      String, // id
+      String, // name
       Either[io.circe.Error, ProblemType],
       Either[io.circe.Error, AlgorithmPolicy],
-      Either[io.circe.Error, ProjectConfiguration],
+      String, // featuresId
+      Option[String], // labelsId
+      Option[String], //topic
       // algorithm
       String,
       Either[io.circe.Error, Backend],
       Either[io.circe.Error, SecurityConfiguration]
   )
-
+  /*
   def dataToProject(data: ProjectRowData) = data match {
     case (
         projectId,
         name,
         Right(Classification),
         Right(policy),
-        Right(projectConfiguration: ClassificationConfiguration),
+        featuresId,
+        labelsId,
+        topic,
         algorithmId,
         Right(backend: Backend),
         Right(securityConfiguration: SecurityConfiguration)
@@ -265,7 +406,9 @@ object ProjectsRepository {
       ClassificationProject(
         projectId,
         name,
-        projectConfiguration,
+        ClassificationConfiguration(
+
+        ),
         List(
           Algorithm(
             algorithmId,
@@ -281,7 +424,9 @@ object ProjectsRepository {
         name,
         Right(Regression),
         Right(policy),
-        Right(projectConfiguration: RegressionConfiguration),
+        featuresId,
+        labelsId,
+        topic,
         algorithmId,
         Right(backend: Backend),
         Right(securityConfiguration: SecurityConfiguration)
@@ -303,5 +448,5 @@ object ProjectsRepository {
     case _ =>
       none[Project]
   }
-
+ */
 }

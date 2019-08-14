@@ -70,6 +70,7 @@ case class ClassificationProject(
 }
 
 object ClassificationProject {
+  /*
   def apply(
       id: String,
       name: String,
@@ -78,7 +79,7 @@ object ClassificationProject {
       policy: AlgorithmPolicy
   ): ClassificationProject =
     ClassificationProject(id, name, configuration, Nil, policy)
-
+   */
   def apply(
       id: String,
       name: String,

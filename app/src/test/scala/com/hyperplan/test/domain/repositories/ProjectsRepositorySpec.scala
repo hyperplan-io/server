@@ -15,7 +15,8 @@ class ProjectsRepositorySpec
     with TaskChecker
     with TestDatabase {
 
-  val projectRepository = new ProjectsRepository()(xa)
+  val domainRepository = new DomainRepository()(xa)
+  val projectRepository = new ProjectsRepository(domainRepository)(xa)
 
   it should "insert and read projects correctly" in {
     withInMemoryDatabase { _ =>

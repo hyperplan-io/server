@@ -25,22 +25,18 @@ class DomainServiceLive(domainRepository: DomainRepository)
   type LabelsValidationResult[A] = ValidatedNec[LabelVectorDescriptorError, A]
 
   def readAllFeatures =
-    domainRepository.readAllFeatures
+    domainRepository.transact(domainRepository.readAllFeatures())
 
   def readFeatures(id: String): IO[Option[FeatureVectorDescriptor]] =
-    domainRepository.readFeatures(id).map(_.some).handleErrorWith {
-      case UnexpectedEnd =>
-        IO.pure(none[FeatureVectorDescriptor])
-    }
+    domainRepository.transact(domainRepository.readFeatures(id))
   def deleteFeatures(id: String): IO[Int] = domainRepository.deleteFeatures(id)
 
-  def readAllLabels = domainRepository.readAllLabels
+  def readAllLabels =
+    domainRepository.transact(domainRepository.readAllLabels())
 
   def readLabels(id: String): IO[Option[LabelVectorDescriptor]] =
-    domainRepository.readLabels(id).map(_.some).handleErrorWith {
-      case UnexpectedEnd =>
-        IO.pure(none[LabelVectorDescriptor])
-    }
+    domainRepository.transact(domainRepository.readLabels(id))
+
   def deleteLabels(id: String): IO[Int] = domainRepository.deleteLabels(id)
 
   def createFeatures(

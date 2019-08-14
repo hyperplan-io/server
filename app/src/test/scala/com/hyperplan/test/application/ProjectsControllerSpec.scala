@@ -106,8 +106,8 @@ class ProjectsControllerSpec()
     ExecutionContext.global
   ).resource
 
-  val projectRepository = new ProjectsRepository()(xa)
   val domainRepository = new DomainRepository()(xa)
+  val projectRepository = new ProjectsRepository(domainRepository)(xa)
 
   val domainService = new DomainServiceLive(domainRepository)
   val backendService = new BackendServiceLive(blazeClient)
