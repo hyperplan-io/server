@@ -138,17 +138,15 @@ class ProjectsServiceLive(
       case Classification => createClassificationProject(projectRequest)
       case Regression => createRegressionProject(projectRequest)
     }).flatMap { project =>
-      EitherT
-        .liftF[IO, NonEmptyChain[ProjectError], Project](
-          projectsRepository.transact(
-            projectsRepository.insertProject(project)
-          )
+      EitherT[IO, NonEmptyChain[ProjectError], Project](
+        projectsRepository.transact(
+          projectsRepository.insertProject(project)
         )
-        .flatMap { _ =>
-          EitherT.liftF[IO, NonEmptyChain[ProjectError], Project](
-            cache.remove[IO](project.id).map(_ => project)
-          )
-        }
+      ).flatMap { _ =>
+        EitherT.liftF[IO, NonEmptyChain[ProjectError], Project](
+          cache.remove[IO](project.id).map(_ => project)
+        )
+      }
     }
 
   def updateProject(
