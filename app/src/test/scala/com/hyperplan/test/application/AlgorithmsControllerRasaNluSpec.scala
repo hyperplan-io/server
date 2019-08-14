@@ -79,8 +79,8 @@ class AlgorithmsControllerRasaNluSpec()
   val client = Client.fromHttpApp(app)
   val blazeClient = Resource.make(IO(client))(_ => IO.unit)
 
-  val projectRepository = new ProjectsRepository()(xa)
   val domainRepository = new DomainRepository()(xa)
+  val projectRepository = new ProjectsRepository(domainRepository)(xa)
   val predictionsRepository = new PredictionsRepository()(xa)
 
   val domainService = new DomainServiceLive(domainRepository)

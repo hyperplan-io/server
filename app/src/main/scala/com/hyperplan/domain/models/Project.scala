@@ -70,14 +70,6 @@ case class ClassificationProject(
 }
 
 object ClassificationProject {
-  def apply(
-      id: String,
-      name: String,
-      configuration: ClassificationConfiguration,
-      algorithms: Option[List[Algorithm]],
-      policy: AlgorithmPolicy
-  ): ClassificationProject =
-    ClassificationProject(id, name, configuration, Nil, policy)
 
   def apply(
       id: String,
@@ -102,14 +94,6 @@ case class RegressionProject(
 }
 
 object RegressionProject {
-  def apply(
-      id: String,
-      name: String,
-      configuration: RegressionConfiguration,
-      algorithms: Option[List[Algorithm]],
-      policy: AlgorithmPolicy
-  ): RegressionProject =
-    RegressionProject(id, name, configuration, Nil, policy)
 
   def apply(
       id: String,

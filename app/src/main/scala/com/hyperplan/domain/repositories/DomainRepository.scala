@@ -68,6 +68,9 @@ class DomainRepository(implicit xa: Transactor[IO]) extends IOLogging {
       LabelsConfigurationSerializer.encodeJsonConfigurationListNoSpaces
     )
 
+  def transact[T](io: ConnectionIO[T]) =
+    io.transact(xa)
+
   def insertFeaturesQuery(features: FeatureVectorDescriptor): doobie.Update0 =
     sql"""INSERT INTO features(
       id, 
@@ -114,10 +117,12 @@ class DomainRepository(implicit xa: Transactor[IO]) extends IOLogging {
       """
       .query[DomainRepository.FeaturesConfigurationData]
 
-  def readFeatures(id: String): IO[FeatureVectorDescriptor] =
-    readFeaturesQuery(id).unique
-      .transact(xa)
-      .flatMap(dataToFeaturesConfiguration _)
+  def readFeatures(id: String): ConnectionIO[Option[FeatureVectorDescriptor]] =
+    readFeaturesQuery(id).option
+      .flatMap {
+        case Some(data) => dataToFeaturesConfiguration(data).map(_.some)
+        case None => none[FeatureVectorDescriptor].pure[ConnectionIO]
+      }
 
   def deleteLabelsQuery(labelsId: String): doobie.Update0 =
     sql"""DELETE FROM labels WHERE id = $labelsId""".update
@@ -143,8 +148,11 @@ class DomainRepository(implicit xa: Transactor[IO]) extends IOLogging {
       """
       .query[DomainRepository.LabelsConfigurationData]
 
-  def readLabels(id: String): IO[LabelVectorDescriptor] =
-    readLabelsQuery(id).unique.transact(xa).flatMap(dataToLabelsConfiguration _)
+  def readLabels(id: String): ConnectionIO[Option[LabelVectorDescriptor]] =
+    readLabelsQuery(id).option.flatMap {
+      case Some(data) => dataToLabelsConfiguration(data).map(_.some)
+      case None => none[LabelVectorDescriptor].pure[ConnectionIO]
+    }
 
   def readAllFeaturesQuery()
       : doobie.Query0[DomainRepository.FeaturesConfigurationData] =
@@ -154,10 +162,9 @@ class DomainRepository(implicit xa: Transactor[IO]) extends IOLogging {
       """
       .query[DomainRepository.FeaturesConfigurationData]
 
-  def readAllFeatures(): IO[List[FeatureVectorDescriptor]] =
+  def readAllFeatures(): ConnectionIO[List[FeatureVectorDescriptor]] =
     readAllFeaturesQuery()
       .to[List]
-      .transact(xa)
       .flatMap(_.map(dataToFeaturesConfiguration _).sequence)
 
   def readAllLabelsQuery()
@@ -168,44 +175,35 @@ class DomainRepository(implicit xa: Transactor[IO]) extends IOLogging {
       """
       .query[DomainRepository.LabelsConfigurationData]
 
-  def readAllLabels(): IO[List[LabelVectorDescriptor]] =
+  def readAllLabels(): ConnectionIO[List[LabelVectorDescriptor]] =
     readAllLabelsQuery()
       .to[List]
-      .transact(xa)
       .flatMap(_.map(dataToLabelsConfiguration _).sequence)
 
   def dataToFeaturesConfiguration(
       data: DomainRepository.FeaturesConfigurationData
-  ): IO[FeatureVectorDescriptor] = data match {
+  ): ConnectionIO[FeatureVectorDescriptor] = data match {
     case (
         id,
         Right(data)
         ) =>
-      IO.pure(
-        FeatureVectorDescriptor(id, data)
-      )
+      FeatureVectorDescriptor(id, data).pure[ConnectionIO]
 
-    case featuresClassData =>
-      logger.warn(
-        s"Could not rebuild features class with repository, data is $featuresClassData"
-      ) *> IO.raiseError(DomainClassDataIncorrect(data._1))
+    case _ =>
+      AsyncConnectionIO.raiseError(DomainClassDataIncorrect(data._1))
   }
 
   def dataToLabelsConfiguration(
       data: DomainRepository.LabelsConfigurationData
-  ): IO[LabelVectorDescriptor] = data match {
+  ): ConnectionIO[LabelVectorDescriptor] = data match {
     case (
         id,
         Right(data)
         ) =>
-      IO.pure(
-        LabelVectorDescriptor(id, data)
-      )
+      LabelVectorDescriptor(id, data).pure[ConnectionIO]
 
     case labelsClassData =>
-      logger.warn(
-        s"Could not rebuild features class with repository, data is $labelsClassData"
-      ) *> IO.raiseError(DomainClassDataIncorrect(data._1))
+      AsyncConnectionIO.raiseError(DomainClassDataIncorrect(data._1))
   }
 
   def dataListToFeaturesConfiguration(

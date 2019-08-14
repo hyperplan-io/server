@@ -73,9 +73,9 @@ object Main extends IOApp with IOLogging {
         logger.info("prediction route is not protected")
       }
       projectCache: Cache[Project] = CaffeineCache[Project]
-      projectsRepository = new ProjectsRepository
       predictionsRepository = new PredictionsRepository
       domainRepository = new DomainRepository
+      projectsRepository = new ProjectsRepository(domainRepository)
       blazeClient: Resource[IO, Client[IO]] = BlazeClientBuilder[IO](
         ExecutionContext.global
       ).resource

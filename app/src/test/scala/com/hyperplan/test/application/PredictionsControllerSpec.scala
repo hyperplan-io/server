@@ -120,8 +120,8 @@ class PredictionsControllerSpec()
     ExecutionContext.global
   ).resource
 
-  val projectRepository = new ProjectsRepository()(xa)
   val domainRepository = new DomainRepository()(xa)
+  val projectRepository = new ProjectsRepository(domainRepository)(xa)
   val predictionsRepository = new PredictionsRepository()(xa)
 
   val domainService = new DomainServiceLive(domainRepository)
