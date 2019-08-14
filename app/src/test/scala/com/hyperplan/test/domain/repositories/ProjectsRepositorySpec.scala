@@ -18,15 +18,17 @@ class ProjectsRepositorySpec
   val domainRepository = new DomainRepository()(xa)
   val projectRepository = new ProjectsRepository(domainRepository)(xa)
 
-  it should "insert and read projects correctly" in {
+  it should "insert, read and delete projects correctly" in {
     withInMemoryDatabase { _ =>
       val project = ProjectGenerator.withLocalBackend()
       val insertIO = projectRepository.insertProjectQuery(project)
       val readIO = projectRepository.readProjectQuery(project.id)
       val readAllIO = projectRepository.readAllProjectsQuery
+      val deleteIO = projectRepository.deleteProjectQuery(project.id)
       check(insertIO)
       check(readIO)
       check(readAllIO)
+      check(deleteIO)
       assert(true)
     }
   }
