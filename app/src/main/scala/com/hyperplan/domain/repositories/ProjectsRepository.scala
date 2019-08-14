@@ -304,6 +304,22 @@ class ProjectsRepository(domainRepository: DomainRepository)(
 
   }
 
+  def deleteProjectQuery(
+      projectId: String
+  ): doobie.Update0 =
+    sql"""DELETE FROM projects WHERE id = $projectId""".update
+
+  def deleteProject(projectId: String): ConnectionIO[Int] =
+    deleteProjectQuery(projectId).run
+
+  def deleteProjectAlgorithmsQuery(
+      projectId: String
+  ): doobie.Update0 =
+    sql"""DELETE FROM algorithms WHERE project_id = $projectId""".update
+
+  def deleteProjectAlgorithms(projectId: String): ConnectionIO[Int] =
+    deleteProjectAlgorithmsQuery(projectId).run
+
   def deleteAlgorithmQuery(
       projectId: String,
       algorithmId: String
