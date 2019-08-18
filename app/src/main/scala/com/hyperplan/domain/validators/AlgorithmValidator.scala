@@ -73,6 +73,8 @@ object AlgorithmValidator {
       Validated.valid[AlgorithmError, Protocol](LocalCompute).toValidatedNec
     case LocalRandomRegression() =>
       Validated.valid[AlgorithmError, Protocol](LocalCompute).toValidatedNec
+    case BasicHttpClassification(_, _) =>
+      Validated.valid[AlgorithmError, Protocol](Http).toValidatedNec
     case TensorFlowClassificationBackend(_, _, _, _, _) =>
       Validated.valid[AlgorithmError, Protocol](Http).toValidatedNec
     case TensorFlowRegressionBackend(_, _, _, _) =>
@@ -119,6 +121,8 @@ object AlgorithmValidator {
             )
           )
           .toValidatedNec
+      case BasicHttpClassification(_, _) =>
+        Validated.valid[AlgorithmError, Unit](Unit).toValidatedNec
       case TensorFlowClassificationBackend(
           _,
           _,
@@ -197,6 +201,19 @@ object AlgorithmValidator {
           .toValidatedNec
       case _: LocalRandomRegression =>
         Validated.valid(()).toValidatedNec
+      case backend: BasicHttpClassification =>
+        Validated
+          .invalid(
+            AlgorithmError.IncompatibleAlgorithmError(
+              AlgorithmError.IncompatibleAlgorithmError
+                .message(
+                  algorithm.id,
+                  backend.getClass.getSimpleName,
+                  project.problem
+                )
+            )
+          )
+          .toValidatedNec
       case TensorFlowRegressionBackend(
           _,
           _,
