@@ -74,10 +74,12 @@ class DomainRepository(implicit xa: Transactor[IO]) extends IOLogging {
   def insertFeaturesQuery(features: FeatureVectorDescriptor): doobie.Update0 =
     sql"""INSERT INTO features(
       id, 
-      data
+      data,
+      created_at
     ) VALUES(
       ${features.id},
-      ${features.data}
+      ${features.data},
+      NOW()
     )""".update
 
   def insertFeatures(
@@ -93,10 +95,12 @@ class DomainRepository(implicit xa: Transactor[IO]) extends IOLogging {
   def insertLabelsQuery(labels: LabelVectorDescriptor): doobie.Update0 =
     sql"""INSERT INTO labels(
       id, 
-      data
+      data,
+      created_at
     ) VALUES(
       ${labels.id},
-      ${labels.data}
+      ${labels.data},
+      NOW()
     )""".update
 
   def insertLabels(labels: LabelVectorDescriptor) =

@@ -131,7 +131,8 @@ class ProjectsRepository(domainRepository: DomainRepository)(
           algorithm_policy,
           features_id,
           labels_id,
-          topic
+          topic,
+          created_at
         ) VALUES(
           ${project.id},
           ${project.name},
@@ -139,7 +140,8 @@ class ProjectsRepository(domainRepository: DomainRepository)(
           ${project.policy},
           ${features.id},
           ${labels.id},
-          ${dataStream.map(_.topic).getOrElse("")}
+          ${dataStream.map(_.topic).getOrElse("")},
+          NOW()
         )""".update
 
       case RegressionConfiguration(features, dataStream) =>
@@ -149,14 +151,16 @@ class ProjectsRepository(domainRepository: DomainRepository)(
           problem,
           algorithm_policy,
           features_id,
-          topic
+          topic,
+          created_at
         ) VALUES(
           ${project.id},
           ${project.name},
           ${project.problem},
           ${project.policy},
           ${features.id},
-          ${dataStream.map(_.topic).getOrElse("")}
+          ${dataStream.map(_.topic).getOrElse("")},
+          NOW()
         )""".update
     }
 
@@ -364,12 +368,14 @@ class ProjectsRepository(domainRepository: DomainRepository)(
       id,
       backend,
       project_id,
-      security
+      security,
+      created_at
     ) VALUES(
       ${algorithm.id},
       ${algorithm.backend},
       ${algorithm.projectId},
-      ${algorithm.security}
+      ${algorithm.security},
+      NOW()
     )""".update
 
   def insertAlgorithm(algorithm: Algorithm): ConnectionIO[Algorithm] =
@@ -381,9 +387,10 @@ class ProjectsRepository(domainRepository: DomainRepository)(
       id,
       backend,
       project_id,
-      security
+      security,
+      created_at
     ) VALUES(
-      ?,?,?,?
+      ?,?,?,?, NOW()
     )"""
     Update[Algorithm](sql).updateMany(algorithms)
   }
