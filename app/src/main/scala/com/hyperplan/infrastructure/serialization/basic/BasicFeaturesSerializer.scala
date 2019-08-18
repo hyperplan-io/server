@@ -11,42 +11,57 @@ import cats.implicits._
 
 object BasicFeaturesSerializer {
 
-  implicit val stringMatrixEncoder: Encoder[StringMatrixFeature] = 
-    (f: StringMatrixFeature) => Json.obj(f.key -> 
-      Json.arr(
-        f.data.map(innerData => Json.arr(innerData.map(Json.fromString): _*)): _*
+  implicit val stringMatrixEncoder: Encoder[StringMatrixFeature] =
+    (f: StringMatrixFeature) =>
+      Json.obj(
+        f.key ->
+          Json.arr(
+            f.data.map(
+              innerData => Json.arr(innerData.map(Json.fromString): _*)
+            ): _*
+          )
       )
-    )
-  implicit val stringArrayEncoder: Encoder[StringArrayFeature] = 
-    (f: StringArrayFeature) => Json.obj(f.key -> Json.arr(f.data.map(Json.fromString): _*))
-  implicit val stringEncoder: Encoder[StringFeature] = 
+  implicit val stringArrayEncoder: Encoder[StringArrayFeature] =
+    (f: StringArrayFeature) =>
+      Json.obj(f.key -> Json.arr(f.data.map(Json.fromString): _*))
+  implicit val stringEncoder: Encoder[StringFeature] =
     (f: StringFeature) => Json.obj(f.key -> Json.fromString(f.value))
 
-  implicit val floatMatrixEncoder: Encoder[FloatMatrixFeature] = 
-    (f: FloatMatrixFeature) => Json.obj(f.key -> 
-      Json.arr(
-        f.data.map(innerData => Json.arr(innerData.map(Json.fromFloatOrNull): _*)): _*
+  implicit val floatMatrixEncoder: Encoder[FloatMatrixFeature] =
+    (f: FloatMatrixFeature) =>
+      Json.obj(
+        f.key ->
+          Json.arr(
+            f.data.map(
+              innerData => Json.arr(innerData.map(Json.fromFloatOrNull): _*)
+            ): _*
+          )
       )
-    )
-  implicit val floatArrayEncoder: Encoder[FloatArrayFeature] = 
-    (f: FloatArrayFeature) => Json.obj(f.key -> Json.arr(f.data.map(Json.fromFloatOrNull): _*))
-  implicit val floatEncoder: Encoder[FloatFeature] = 
+  implicit val floatArrayEncoder: Encoder[FloatArrayFeature] =
+    (f: FloatArrayFeature) =>
+      Json.obj(f.key -> Json.arr(f.data.map(Json.fromFloatOrNull): _*))
+  implicit val floatEncoder: Encoder[FloatFeature] =
     (f: FloatFeature) => Json.obj(f.key -> Json.fromFloatOrNull(f.value))
 
-  implicit val intMatrixEncoder: Encoder[IntMatrixFeature] = 
-    (f: IntMatrixFeature) => Json.obj(f.key -> 
-      Json.arr(
-        f.data.map(innerData => Json.arr(innerData.map(Json.fromInt): _*)): _*
+  implicit val intMatrixEncoder: Encoder[IntMatrixFeature] =
+    (f: IntMatrixFeature) =>
+      Json.obj(
+        f.key ->
+          Json.arr(
+            f.data
+              .map(innerData => Json.arr(innerData.map(Json.fromInt): _*)): _*
+          )
       )
-    )
-  implicit val intArrayEncoder: Encoder[IntArrayFeature] = 
-    (f: IntArrayFeature) => Json.obj(f.key -> Json.arr(f.data.map(Json.fromInt): _*))
-  implicit val intEncoder: Encoder[IntFeature] = 
+  implicit val intArrayEncoder: Encoder[IntArrayFeature] =
+    (f: IntArrayFeature) =>
+      Json.obj(f.key -> Json.arr(f.data.map(Json.fromInt): _*))
+  implicit val intEncoder: Encoder[IntFeature] =
     (f: IntFeature) => Json.obj(f.key -> Json.fromInt(f.value))
 
   implicit val encoder: Encoder[Features] =
-    (features: Features) => features.foldLeft(Json.obj()) { 
-        case (json: Json, f: StringFeature) => 
+    (features: Features) =>
+      features.foldLeft(Json.obj()) {
+        case (json: Json, f: StringFeature) =>
           json.deepMerge(stringEncoder(f))
         case (json: Json, f: StringArrayFeature) =>
           json.deepMerge(stringArrayEncoder(f))
@@ -65,9 +80,8 @@ object BasicFeaturesSerializer {
         case (json: Json, f: FloatMatrixFeature) =>
           json.deepMerge(floatMatrixEncoder(f))
         case (json: Json, f: ReferenceFeature) =>
-          json 
-    }
-      
+          json
+      }
 
   implicit val entityEncoder: EntityEncoder[IO, Features] =
     jsonEncoderOf[IO, Features]

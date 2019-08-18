@@ -8,5 +8,4 @@ case class DidNotFindField(field: String) extends RasaFeaturesTransformerError
 case class EmptyFieldNotAllowed(field: String)
     extends RasaFeaturesTransformerError
 
-
 sealed trait BasicHttpAPIFeaturesTransformerError extends Throwable

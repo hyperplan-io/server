@@ -19,10 +19,10 @@ object BasicLabelsSerializer {
   implicit val basicLabelEncoder: Encoder[BasicLabel] = deriveEncoder
   implicit val basicLabelDecoder: Decoder[BasicLabel] = deriveDecoder
 
-  implicit val encoder: Encoder[BasicLabels] = 
+  implicit val encoder: Encoder[BasicLabels] =
     Encoder.encodeList[BasicLabel]
   implicit val decoder: Decoder[BasicLabels] =
-      Decoder.decodeList[BasicLabel]
+    Decoder.decodeList[BasicLabel]
 
   implicit val entityDecoder: EntityDecoder[IO, BasicLabels] =
     jsonOf[IO, BasicLabels]

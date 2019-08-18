@@ -87,56 +87,57 @@ class BackendServiceLive(blazeClient: Resource[IO, Client[IO]])
           ).asRight
         )
       case (
-        BasicHttpClassification(
-          rootPath,
-          labelsTransformer
-        ),
-        classificationProject: ClassificationProject
-        ) =>
+          BasicHttpClassification(
+            rootPath,
+            labelsTransformer
+          ),
+          classificationProject: ClassificationProject
+          ) =>
         buildRequestWithFeatures(
           rootPath,
           algorithm.security.headers,
-          features 
+          features
         )(BasicFeaturesSerializer.entityEncoder)
           .fold[IO[Either[PredictionError, Prediction]]](
             err => IO.raiseError(err),
-            request => 
+            request =>
               callHttpBackend(
                 request,
                 labelsTransformer.transform(
                   classificationProject.configuration.labels,
                   predictionId,
-                  _: BasicLabels 
+                  _: BasicLabels
                 )
               )(BasicLabelsSerializer.entityDecoder).flatMap {
                 case Right(labels) =>
-                    IO.pure(
-                      ClassificationPrediction(
-                        predictionId,
-                        project.id,
-                        algorithm.id,
-                        features,
-                        Nil,
-                        labels
-                      ).asRight
-                    )
-                  case Left(err) =>
-                    logger.warn(
-                      "An error occurred with labels transformer",
-                      err
-                    ) *> IO.raiseError(err)
-              
+                  IO.pure(
+                    ClassificationPrediction(
+                      predictionId,
+                      project.id,
+                      algorithm.id,
+                      features,
+                      Nil,
+                      labels
+                    ).asRight
+                  )
+                case Left(err) =>
+                  logger.warn(
+                    "An error occurred with labels transformer",
+                    err
+                  ) *> IO.raiseError(err)
+
               }
-          ).handleErrorWith {
-                  case err =>
-                    val error = BackendExecutionError(
-                      BackendExecutionError.message(err)
-                    ).asLeft
-                    logger.warn("An error occurred with backend", err) *> IO
-                      .pure(
-                        error
-                      )
-                }
+          )
+          .handleErrorWith {
+            case err =>
+              val error = BackendExecutionError(
+                BackendExecutionError.message(err)
+              ).asLeft
+              logger.warn("An error occurred with backend", err) *> IO
+                .pure(
+                  error
+                )
+          }
       case (
           TensorFlowClassificationBackend(
             rootPath,

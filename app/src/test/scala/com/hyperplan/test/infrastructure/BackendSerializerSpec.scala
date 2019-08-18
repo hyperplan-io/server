@@ -16,6 +16,7 @@ import com.hyperplan.test.SerializerTester
 import io.circe.{Decoder, Encoder, Json}
 import org.scalatest.{FlatSpec, Matchers}
 import org.scalatest.Inside.inside
+import com.hyperplan.domain.models.backends.BasicHttpClassification
 
 class BackendSerializerSpec
     extends FlatSpec
@@ -220,4 +221,38 @@ class BackendSerializerSpec
     }(decoder)
   }
 
+  it should "correctly encode a basic http backend" in {
+
+    val predictionId = UUID.randomUUID().toString
+
+    val rootPath = "http://127.0.0.1:8080"
+
+    val backend =
+      BasicHttpClassification(
+        rootPath
+      )
+
+    testEncoder(backend: Backend) { json =>
+      val expectedJson =
+        s"""{"class":"BasicHttpClassification","rootPath":"$rootPath"}"""
+      json.noSpaces should be(expectedJson)
+    }(encoder)
+  }
+
+  it should "correctly decode a basic http classification backend" in {
+
+    val expectedRootPath = "http://127.0.0.1:8080"
+    val backendJson =
+      s"""{"class":"BasicHttpClassification","rootPath":"$expectedRootPath"}"""
+
+    testDecoder[Backend](backendJson) { backend =>
+      inside(backend) {
+        case BasicHttpClassification(
+            rootPath,
+            _
+            ) =>
+          rootPath should be(expectedRootPath)
+      }
+    }(decoder)
+  }
 }

@@ -15,7 +15,7 @@ case class BasicLabelsTransformer() {
   def transform(
       labelsConfiguration: LabelVectorDescriptor,
       predictionId: String,
-      labels: BasicLabels 
+      labels: BasicLabels
   ): Either[BasicLabelsTransformerError, Set[ClassificationLabel]] =
     labelsConfiguration.data match {
       case OneOfLabelsDescriptor(oneOf, description) =>
@@ -30,7 +30,7 @@ case class BasicLabelsTransformer() {
               ),
               ExampleUrlService.incorrectClassificationExampleUrl(
                 predictionId,
-                label 
+                label
               )
             )
         }.toSet
@@ -42,20 +42,24 @@ case class BasicLabelsTransformer() {
         }
 
       case DynamicLabelsDescriptor(_) =>
-        labels.map { case BasicLabel(label, prob) =>
-        ClassificationLabel(
-              label,
-              prob,
-              ExampleUrlService.correctClassificationExampleUrl(
-                predictionId,
-                label
-              ),
-              ExampleUrlService.incorrectClassificationExampleUrl(
-                predictionId,
-                label 
+        labels
+          .map {
+            case BasicLabel(label, prob) =>
+              ClassificationLabel(
+                label,
+                prob,
+                ExampleUrlService.correctClassificationExampleUrl(
+                  predictionId,
+                  label
+                ),
+                ExampleUrlService.incorrectClassificationExampleUrl(
+                  predictionId,
+                  label
+                )
               )
-            )
-        }.toSet.asRight
+          }
+          .toSet
+          .asRight
     }
 
 }

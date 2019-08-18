@@ -9,11 +9,10 @@ import cats.data.NonEmptyList
 import scala.collection.immutable.Nil
 
 case class BasicHttpAPIFeaturesTransformer(
-
-) {
+    ) {
 
   def transform(
       features: Features
-  ): Features = features 
+  ): Features = features
 
 }

@@ -113,8 +113,14 @@ object TensorFlowRegressionBackend {
 /**
   * Describe a basic http API for classification
   */
-case class BasicHttpClassification(rootPath: String, labelsTransformer: BasicLabelsTransformer) extends Backend
+case class BasicHttpClassification(
+    rootPath: String,
+    labelsTransformer: BasicLabelsTransformer
+) extends Backend
 
 object BasicHttpClassification {
+  def apply(rootPath: String): BasicHttpClassification =
+    BasicHttpClassification(rootPath, new BasicLabelsTransformer())
+
   val backendClass = "BasicHttpClassification"
 }
