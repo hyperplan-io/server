@@ -85,7 +85,10 @@ object PostgresqlService {
         features_id VARCHAR NOT NULL,
         labels_id VARCHAR,
         topic VARCHAR,
-        problem VARCHAR NOT NULL
+        problem VARCHAR NOT NULL,
+        created_at TIMESTAMP NOT NULL,
+        updated_at TIMESTAMP,
+        deleted_at TIMESTAMP
       )
     """.update.run
 
@@ -95,6 +98,9 @@ object PostgresqlService {
         backend VARCHAR NOT NULL,
         project_id VARCHAR(36) NOT NULL,
         security VARCHAR NOT NULL,
+        created_at TIMESTAMP NOT NULL,
+        updated_at TIMESTAMP,
+        deleted_at TIMESTAMP,
         PRIMARY KEY (id, project_id),
         FOREIGN KEY (project_id) references projects(id)
       );
@@ -123,14 +129,20 @@ object PostgresqlService {
   val createFeaturesTable: doobie.ConnectionIO[Int] = sql"""
       CREATE TABLE IF NOT EXISTS features(
         id VARCHAR(36) PRIMARY KEY,
-        data VARCHAR NOT NULL
+        data VARCHAR NOT NULL,
+        created_at TIMESTAMP NOT NULL,
+        updated_at TIMESTAMP,
+        deleted_at TIMESTAMP
       )
     """.update.run
 
   val createLabelsTable: doobie.ConnectionIO[Int] = sql"""
       CREATE TABLE IF NOT EXISTS labels(
         id VARCHAR(36) PRIMARY KEY,
-        data VARCHAR NOT NULL
+        data VARCHAR NOT NULL,
+        created_at TIMESTAMP NOT NULL,
+        updated_at TIMESTAMP,
+        deleted_at TIMESTAMP
       )
     """.update.run
 
