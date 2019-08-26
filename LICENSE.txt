@@ -659,3 +659,9 @@ specific requirements.
 if any, to sign a "copyright disclaimer" for the program, if necessary.
 For more information on this, and how to apply and follow the GNU AGPL, see
 <https://www.gnu.org/licenses/>. 
+
+
+ You can be released from the requirements of the license by purchasing
+ a commercial license. Buying such a license is mandatory as soon as you
+ develop commercial activities involving the Hyperplan software without
+ disclosing the source code of your own applications.
