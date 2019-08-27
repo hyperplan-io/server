@@ -379,7 +379,7 @@ class ProjectsRepository(domainRepository: DomainRepository)(
             rowToProject(row, rows)
           }
           .sequence
-          .map(_.flatten)
+          .map(_.flatten.distinct)
       }
   }
 

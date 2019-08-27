@@ -72,6 +72,22 @@ object BackendSerializer {
           "class"
         )(_ => LocalRandomRegression())
 
+    val basicHttpClassificationBackendEncoder
+        : Encoder[BasicHttpClassification] =
+      Encoder.forProduct2("class", "rootPath")(
+        backend => (BasicHttpClassification.backendClass, backend.rootPath)
+      )
+    val basicHttpClassificationBackendDecoder
+        : Decoder[BasicHttpClassification] =
+      Decoder
+        .forProduct2[BasicHttpClassification, String, String](
+          "class",
+          "rootPath"
+        )(
+          (_, rootPath) =>
+            BasicHttpClassification(rootPath, new BasicLabelsTransformer())
+        )
+
     val tensorFlowClassificationBackendEncoder
         : Encoder[TensorFlowClassificationBackend] =
       (backend: TensorFlowClassificationBackend) =>
@@ -225,6 +241,8 @@ object BackendSerializer {
           localClassificationBackendDecoder(c)
         case LocalRandomRegression.backendClass =>
           localRegressionBackendDecoder(c)
+        case BasicHttpClassification.backendClass =>
+          basicHttpClassificationBackendDecoder(c)
         case RasaNluClassificationBackend.backendClass =>
           rasaNluClassificationBackendDecoder(c)
 
@@ -237,6 +255,8 @@ object BackendSerializer {
       tensorFlowRegressionBackendEncoder(backend)
     case backend: LocalRandomClassification =>
       localClassificationBackendEncoder(backend)
+    case backend: BasicHttpClassification =>
+      basicHttpClassificationBackendEncoder(backend)
     case backend: LocalRandomRegression =>
       localRegressionBackendEncoder(backend)
     case backend: RasaNluClassificationBackend =>
