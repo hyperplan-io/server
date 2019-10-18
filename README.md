@@ -13,7 +13,7 @@ Hyperplan is the interface between data scientists and developers. It is a proxy
 
 **Useful links**
 
-[Hyperplan website](https://hyperplan.io
+[Hyperplan website](https://hyperplan.io)
 
 [Generating data with Hyperplan](https://medium.com/@sauray.antoine/data-generation-for-machine-learning-using-foundaml-5e324e6939f5)
 
